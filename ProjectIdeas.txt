@@ -1,0 +1,12 @@
+1. Write a standalone profiler c++ library
+
+	"Nearly every game needs a profiler. A good profiler can drastically increase development speed. But developers are often hesitant to spend the time writing their own profiler. They would rather use one off the shelf. My profiler provides that solution. The profiler is interested primarily in data gathering and not data display. The profiler will allow developers to any code block in a variety of ways. The goals of minimal setup and maintainance time will mean the profiler relies on no outside code besides what is platform necessary. The profiler will support android and win32 environments."
+
+2. Write my own Game Definition Language
+	- Have already done some research. Will need to do more to see the pitfalls of what is currently out there and how I can make something better.
+
+	"Strategy game designers have a problem. They cannot quickly iterate on game ideas without the need for extensive systems programming. Game definition languages are a possible solution to this problem. A game definition language allows designers to effectively 'program' a comprehensive rule set for a strategy game. The game definition language will be designed in such a way to better facilitate testing and iteration on strategy game ideas, while completely avoiding the code necessary to actualize these rule sets on a computer. The results of a 'compiled program' written in a game definition language is a playable strategy game."
+
+3. Write a basic game engine in a Rust. 
+
+	"Rust is a relatively new programming language. It claims to have solved many of the problems with Java and with c++. A basic game engine in the language will allow me to explore the language while proving for myself it's claimed productivity gains. The game will be be a simple 2d block pushing game. Because of the goal of proving the language and the engine the game will have a simple top down perspective and minimal art."
