@@ -3,7 +3,6 @@
 	"Nearly every game needs a profiler. A good profiler can drastically increase development speed. But developers are often hesitant to spend the time writing their own profiler. They would rather use one off the shelf. My profiler provides that solution. The profiler is interested primarily in data gathering and not data display. The profiler will allow developers to any code block in a variety of ways. The goals of minimal setup and maintainance time will mean the profiler relies on no outside code besides what is platform necessary. The profiler will support android and win32 environments."
 
 2. Write a front end which utilizes GDL to enhance strategy game design development process
-	- 
 
 	"Strategy game designers have a problem. They cannot quickly iterate on game ideas without the need for extensive systems programming. Game definition languages are a possible solution to this problem. A game definition language allows designers to effectively 'program' a comprehensive rule set for a strategy game. The game definition language will be designed in such a way to better facilitate testing and iteration on strategy game ideas, while completely avoiding the code necessary to actualize these rule sets on a computer. The results of a 'compiled program' written in a game definition language is a playable strategy game."
 
