@@ -1,0 +1,19 @@
+# Some notes to get started running the binaries
+
+To run the executables in this archive, the Visual C++ Redistributable for
+Visual Studio 2015 has to be installed.  To use Python and Lua enabled
+gringo-script.exe and clingo-script.exe executables, Python 2.7 has to be
+installed.  Both requirements can be downloaded from their respective websites.
+For convenience, the installers are available in the third-party folder.
+
+To use the clingo Python module, the file python-api\clingo.pyd has to be
+available in Python's search path.  For quickly getting started, a simple
+solution is to copy the file in the same folder as the Python script importing
+the clingo module.  It is also possible to set Python's search path to point to
+the folder containing the module.  Please check the Python documentation for
+more information.  Another option (not recommended) to make the module globally
+available is to copy clingo.pyd into the dll folder of the python installation.
+To check if the installation worked, try one of the python examples:
+
+    cd examples\clingo\robots
+    python visualize.py
