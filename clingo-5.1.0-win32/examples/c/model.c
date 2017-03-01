@@ -133,7 +133,7 @@ out:
   return ret;
 }
 
-int main(int argc, char const **argv) {
+int main(int argc, char const **argv)   {
   char const *error_message;
   int ret = 0;
   clingo_solve_result_bitset_t solve_ret;

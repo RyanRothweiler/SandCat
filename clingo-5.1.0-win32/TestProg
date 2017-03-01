@@ -1,0 +1,6 @@
+cat.
+dog.
+
+dog(active) : dogfood.
+cat(scared) : dog(active).
+cat(happy) : not dog(active).

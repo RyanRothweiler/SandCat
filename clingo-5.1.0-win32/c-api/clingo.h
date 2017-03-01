@@ -2381,9 +2381,9 @@ typedef struct clingo_ast_body_literal {
 // {{{2 theory definitions
 
 enum clingo_ast_theory_operator_type {
-     clingo_ast_theory_operator_type_unary        = 0,
-     clingo_ast_theory_operator_type_binary_left  = 1,
-     clingo_ast_theory_operator_type_binary_right = 2
+    clingo_ast_theory_operator_type_unary        = 0,
+    clingo_ast_theory_operator_type_binary_left  = 1,
+    clingo_ast_theory_operator_type_binary_right = 2
 };
 typedef int clingo_ast_theory_operator_type_t;
 
