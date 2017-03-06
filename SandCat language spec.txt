@@ -1,0 +1,86 @@
+####################################
+Reserved Words Specifics
+####################################
+
+role		Creates roles to identify players.
+events		Something which triggers a change in state.
+fluents		Something which is true. Used generally to hold state.
+sees		Allows to sepecify which roles can 'see' which fluents.
+(will need to do something for randomness. Can figure that outlater)
+
+
+
+
+####################################
+Reserved Words Specifics
+####################################
+
+role(r).
+	r is a player (or computer).
+
+sees(r, f).
+	Role r can 'see' fluent f. If r is a player then the player can see f.
+
+sees(r, e).
+	Role r can 'see' event e.
+
+fluents(f).
+	Fluent f is true.
+
+event EventName (fA1, ..., fAn): fB1, ..., fBn.
+	Fluent(s) fA1 through fAn will be true (or false) if fluent(s) fB1 through fBn all resolve to true. 
+
+
+
+
+####################################
+Examples
+####################################
+
+HelloJohn.sc
+-------------
+//BEGIN PROG
+
+role(John).
+
+fluent(JohnPositionX(5)).
+fluent(JohnPositionY(5)).
+
+fluent(GridMin(0)).
+fluent(GridMax(10)).
+
+event MoveRight (JohnPosition(JohnPositionX + 1)) : JohnPositionX + 1 < GridMax.
+event MoveLeft (JohnPosition(JohnPositionX - 1)) : JohnPositionX - 1 > GridMin.
+
+sees(John, MoveRight).
+sees(John, MoveLeft).
+sees(JohnPositionX).
+
+//END PROG 
+
+
+
+
+####################################
+Notes
+####################################
+
+An sc file defines a game. They must be ran by a Manager.
+
+
+
+Steps of Manager.
+
+On Startup
+1. Load roles.
+2. Load fluents.
+
+During Play
+1. Loop through sees statements and print out those.
+
+
+
+What is needed
+
+Rules
+	- If programmer writes math, then the fluent body is parsed as a number. If the fluent body is not a number then an error is thrown.

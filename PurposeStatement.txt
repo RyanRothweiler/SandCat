@@ -1,0 +1,9 @@
+Goals for SandCat.
+
+1. Archiveable. 
+	Something written in SandCat should still be playable in 10 years. 
+2. Expressive. 
+	SandCat should be expressive enough to write something of decent rule complexity within an hour. 
+	SandCat should be able to express a highly diverse set of games.
+3. Light.  
+	SandCat should be light and efficient. The purpose is quick design iteration times so the designer should not be waiting for SandCat.

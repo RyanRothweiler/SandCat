@@ -47,6 +47,9 @@ bool on_model(clingo_model_t *model, void *data, bool *goon) {
 		// determine size of the string representation of the next symbol in the model
 		if (!clingo_symbol_to_string_size(*it, &n)) { goto error; }
 
+		bool isPositive = false;
+		clingo_symbol_is_positive(*it, &isPositive);
+
 		if (str_n < n) {
 			// allocate required memory to hold the symbol's string
 			if (!(str_new = (char*)realloc(str, sizeof(*str) * n))) {
@@ -95,19 +98,17 @@ char* LoadProg(char* FileName) {
 	return (Prog);
 }
 
+clingo_control_t *ClingoControl = NULL;
+
 void main(int argc, char const **argv) {
 	Print("Starting");
 
-	clingo_control_t *ClingoControl = NULL;
 
 	// create a control object and pass command line arguments
 	if (!clingo_control_new(argv + 1, argc - 1, NULL, NULL, 20, &ClingoControl) != 0) { PrintError(); }
 
-	// add program
-	{
-		char* Prog = LoadProg("TestProg.lp");
-		if (!clingo_control_add(ClingoControl, "base", NULL, 0, Prog)) { PrintError(); }
-	}
+
+	if (!clingo_control_load(ClingoControl, "TestProg.lp")) { PrintError(); }
 
 	// ground it
 	clingo_part_t GroundParts[] = {{ "base", NULL, 0 }};
@@ -118,7 +119,8 @@ void main(int argc, char const **argv) {
 		printf("----------------------- \n");
 		printf("1 - Show State \n");
 		printf("2 - Quit \n");
-		printf("3 - Test \n");
+		printf("3 - Clear state and reload \n");
+		printf("4 - Cleanup and solve \n");
 		printf("\n");
 
 		char Input[100];
@@ -132,9 +134,24 @@ void main(int argc, char const **argv) {
 		} else if (Selection == '2') {
 			running = false;
 		} else if (Selection == '3') {
-			if (!clingo_control_add(ClingoControl, "base", NULL, 0, "cat_x(board_x(0)).")) { PrintError(); }
+
+			// destroy and create new clingo control
+			if (ClingoControl) { clingo_control_free(ClingoControl); }
+			if (!clingo_control_new(argv + 1, argc - 1, NULL, NULL, 20, &ClingoControl) != 0) { PrintError(); }
+
+			if (!clingo_control_load(ClingoControl, "TestProg.lp")) { PrintError(); }
+
 			clingo_part_t GroundParts[] = {{ "base", NULL, 0 }};
 			if (!clingo_control_ground(ClingoControl, GroundParts, 1, NULL, NULL)) { PrintError(); }
+
+			clingo_solve_result_bitset_t solve_ret;
+			if (!clingo_control_solve(ClingoControl, on_model, NULL, NULL, 0, &solve_ret)) { PrintError(); }
+		} else if (Selection == '4') {
+			clingo_control_cleanup(ClingoControl);
+
+			clingo_part_t GroundParts[] = {{ "base", NULL, 0 }};
+			if (!clingo_control_ground(ClingoControl, GroundParts, 1, NULL, NULL)) { PrintError(); }
+
 			clingo_solve_result_bitset_t solve_ret;
 			if (!clingo_control_solve(ClingoControl, on_model, NULL, NULL, 0, &solve_ret)) { PrintError(); }
 		}

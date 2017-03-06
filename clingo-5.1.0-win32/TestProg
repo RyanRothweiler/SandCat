@@ -1,6 +1,15 @@
-cat.
-dog.
+#include "EC/DEC.lp".
 
-dog(active) : dogfood.
-cat(scared) : dog(active).
-cat(happy) : not dog(active).
+timepoint(0..10).
+
+human(john).
+
+fluent(sick(A)) :- human(A).
+fluent(healthy(A)) :- human(A).
+holds_at(healthy(john, 0)).
+
+event(plague).
+
+initiates(plague, sick(A), T) :- human(A), timepoint(T).
+
+..happens(plague, 5).
