@@ -41,20 +41,20 @@ HelloJohn.sc
 -------------
 //BEGIN PROG
 
-role(John).
+role(John)
 
-fluent(JohnPositionX(5)).
-fluent(JohnPositionY(5)).
+fluent(JohnPositionX(5))
+fluent(JohnPositionY(5))
 
-fluent(GridMin(0)).
-fluent(GridMax(10)).
+fluent(GridMin(0))
+fluent(GridMax(10))
 
-event MoveRight (JohnPosition(JohnPositionX + 1)) : JohnPositionX + 1 < GridMax.
-event MoveLeft (JohnPosition(JohnPositionX - 1)) : JohnPositionX - 1 > GridMin.
+event(MoveRight(JohnPosition(JohnPositionX + 1)) : JohnPositionX + 1 < GridMax)
+event(MoveLeft(JohnPosition(JohnPositionX - 1)) : JohnPositionX - 1 > GridMin)
 
-sees(John, MoveRight).
-sees(John, MoveLeft).
-sees(JohnPositionX).
+sees(John, MoveRight)
+sees(John, MoveLeft)
+sees(John, JohnPositionX)
 
 //END PROG 
 
@@ -76,7 +76,11 @@ On Startup
 2. Load fluents.
 
 During Play
-1. Loop through sees statements and print out those.
+1. Loop through sees statements and print them out.
+	1. If fluent, print it out.
+	2. If event, evaluate the condition, if true then print it out.
+2. Wait for player to chose an event to trigger.
+3. Once an event is triggered, change the fluents in the event, and return to step 1.
 
 
 
@@ -84,3 +88,5 @@ What is needed
 
 Rules
 	- If programmer writes math, then the fluent body is parsed as a number. If the fluent body is not a number then an error is thrown.
+
+Would be good to have a separate file which decides how the information is displayed. 
