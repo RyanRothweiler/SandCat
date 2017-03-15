@@ -1,0 +1,41 @@
+---
+Need some way to specify 'macros'. I'm being forced to retype lots of the same concepts. They could be packaged into reusable pieces.
+
+This...
+	event(GoToCostco) - false(HasGas), true(CarAtCostco), false(CarAtHome), false(CarAtBlockbuster) : true(HasGas), false(CarAtCostco).
+	event(GoToBlockbuster) - false(HasGas), true(CarAtBlockbuster), false(CarAtCostco) : true(HasGas), false(CarAtBlockbuster).
+has a lot of repetition. Need something like MoveCar(CarAtCostco).
+Possibly something mutualy exclusive? Car entity which can only be at one location at a time
+
+Methods? Something like
+	method(MoveCar) [LOCATION] ??????
+No, that won't work. Need some way to say 'CAR can only have ONE LOCATION'
+---
+
+
+---
+Rename events. They're actually available player moves. 
+Events should be triggerable by other events.
+---
+
+
+---
+SYNTAX RULES
+- true(TITLE(VALUE))
+	Value must be a whole number.
+- Events must have a period at the end.
+- Whole program must end with a period.
+---
+
+
+---
+TODO
+- Fluents with values.
+	- Fluents can have values.
+	- Events can modify fluents values.
+	- Add boolean values to fluents. Fluents should not
+- Comments.
+- Randomness.
+- Output helpful errors when syntax of sc file is incorrect
+
+---

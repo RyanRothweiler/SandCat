@@ -1,5 +1,8 @@
+// windows stuff
 #include <iostream>
 #include <windows.h>
+
+// my stuff
 #include "RyansTypes.cpp"
 #include "String.cpp"
 
@@ -15,37 +18,45 @@ void Print(string Output) {
 }
 
 char* LoadProg(char* FileName) {
-	OFSTRUCT FileInfo = {};
-	HFILE FileHandle = OpenFile(FileName, &FileInfo, OF_READ);
+	HANDLE FileHandle = CreateFile(FileName, GENERIC_READ, FILE_SHARE_READ,
+	                               NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
-	// Make sure we got the file handle
-	Assert(FileHandle != -1);
+	int32 FileSizeBytes = GetFileSize(FileHandle, NULL);
 
-	char* Prog = (char*)malloc(FileInfo.cBytes);
-	ZeroMemory(Prog, FileInfo.cBytes);
+	// Make sure we got the file
+	Assert(FileSizeBytes != 0);
+
+	char* Prog = (char*)malloc(FileSizeBytes);
+	ZeroMemory(Prog, FileSizeBytes);
 
 	DWORD BytesRead;
-	if (!ReadFile((HANDLE)FileHandle, (void*)Prog, FileInfo.cBytes, &BytesRead, NULL)) {
+	if (!ReadFile(FileHandle, (void*)Prog, FileSizeBytes, &BytesRead, NULL)) {
 		// Couldn't read the file. Something wrong happened
 		Assert(0);
 	}
 
+	CloseHandle(FileHandle);
 	return (Prog);
 }
 
 struct fluent {
-	string FluentName;
+	string Name;
 	bool32 IsTrue;
 
-	fluent* NestedFluent;
-	bool32 IsNested;
+	bool32 HasValue;
+	real64 Value;
 
-	// If this fluent has been named. This is janky and should be done a different way.
-	bool32 Completed;
+	bool32 Using;
 };
 
 struct event {
-	string EventName;
+	string Name;
+
+	fluent ConsquenceFluents[100];
+	int32 NextConsqFluent;
+
+	fluent ValidationFluents[100];
+	int32 NextValidFluent;
 };
 
 enum event_parse_state {
@@ -57,7 +68,6 @@ enum event_parse_state {
 enum parser_state {
 	ParserState_NoGoal,
 	ParserState_GrabbingRole,
-	ParserState_GrabbingFluent,
 	ParserState_GrabbingEvent,
 };
 
@@ -70,57 +80,172 @@ struct parser {
 	int32 WordOnIndex = 0;
 };
 
-void ResetParserWord(parser* Parser) {
+void
+ResetParserWord(parser* Parser) {
 	ZeroMemory(&Parser->WordOn, ARRAY_SIZE(Parser->WordOn, char));
 	Parser->WordOnIndex = 0;
 }
 
-void ChangeState(parser* Parser, parser_state NewState) {
+void
+ChangeState(parser* Parser, parser_state NewState) {
 	ResetParserWord(Parser);
 	Parser->State = NewState;
 }
 
-void AddToParser(parser* Parser, char NewChar) {
-	Parser->WordOn[Parser->WordOnIndex] = NewChar;
+void
+AddToParser(parser* Parser) {
+	Parser->WordOn[Parser->WordOnIndex] = *Parser->CharOn;
 	Parser->WordOnIndex++;
 }
 
+real64
+GetValueInFluent(parser* Parser) {
+	ResetParserWord(Parser);
+	while (*Parser->CharOn != ')') {
+		// NOTE here is where we check to make sure what is in the fluent is infact a number
+		if (*Parser->CharOn != '(') {
+			AddToParser(Parser);
+		}
+		Parser->CharOn++;
+	}
 
-fluent GrabFluent(parser* Parser) {
+	bool32 IsNum = StringIsInt(Parser->WordOn);
+	if (IsNum) {
+		// Is just a value
+		return ((real64)StringToInt32(Parser->WordOn));
+	} else {
+		// Is probably an equation
+
+		char Word[100] = {};
+		int32 WordIndex = 0;
+
+
+		int32 x = 0;
+
+		return (124);
+	}
+}
+
+fluent
+GrabFluent(parser* Parser) {
 	fluent FinalFluent = {};
+
+	FinalFluent.Using = true;
 	FinalFluent.IsTrue = (Parser->WordOn == TrueLiteral);
 
 	ResetParserWord(Parser);
 
+	// Consume the '('
+	Parser->CharOn++;
+
 	for (;;) {
 		char ThisChar = *Parser->CharOn;
 
+		// Throw away these characters
+		if (ThisChar == ',' || ThisChar == ' ' || ThisChar == '-') {
+			Parser->CharOn++;
+			continue;
+		}
+
 		if (ThisChar == ')') {
-			FinalFluent.FluentName = Parser->WordOn;
-			FinalFluent.Completed = true;
+			FinalFluent.Name = Parser->WordOn;
 			break;
 		} else if (ThisChar == '(') {
-			// TODO maybe this?? A feature we might want later.
-
-			// // Nest the fluents
-			// FLuent.FluentName = Parser.WordOn;
-			// FLuent.NestedFluent = &Fluents[NextFluent + 1];
-			// FLuent.Completed = true;
-			// FLuent.IsNested = false;
-
-			// Fluents[NextFluent + 1].IsNested = true;
-
-			// NextFluent++;
-			// ResetParserWord(&Parser);
+			// This means the fluent has a value
+			FinalFluent.Name = Parser->WordOn;
+			FinalFluent.HasValue = true;
+			FinalFluent.Value = GetValueInFluent(Parser);
+			goto end;
 		} else {
-			AddToParser(Parser, ThisChar);
+			AddToParser(Parser);
 		}
 
 		Parser->CharOn++;
 	}
 
+end:
 	ResetParserWord(Parser);
 	return (FinalFluent);
+}
+
+bool32
+EventValid(event* Event, fluent* Fluents, int32 FluentsCount) {
+
+	/* VALID WHEN
+		If fluent is true, then there must be a true fluent in the world.
+		If fluent is false, then either the existing fluent in the world must be false, or no such fluent exists in the world
+
+	*/
+
+	for (int32 Index = 0; Index < Event->NextValidFluent; Index++) {
+		fluent FluentTesting = Event->ValidationFluents[Index];
+
+		bool32 FoundFluent = false;
+		for (int32 FIndex = 0; FIndex < FluentsCount; FIndex++) {
+			if (FluentTesting.Name == Fluents[FIndex].Name) {
+				FoundFluent = true;
+
+				// Fluent is false, and it's found in the world, so then the world fluent must also be false, else not valid event
+				if (!FluentTesting.IsTrue && Fluents[FIndex].IsTrue) {
+					return (false);
+				}
+
+				// Fluent testing is true, but the world fluent is false, so not valid event
+				if (FluentTesting.IsTrue && !Fluents[FIndex].IsTrue) {
+					return (false);
+				}
+			}
+		}
+
+		// Fluent is true, but did not find it in the world, so not valid event.
+		if (!FoundFluent && FluentTesting.IsTrue) {
+			return (false);
+		}
+	}
+
+	return (true);
+}
+
+void
+PrintHeader(string Str) {
+	Print("---- " + Str + " ----");
+}
+
+void
+PrintOptions(fluent* Fluents, int32 FluentsCount, event* Events, int32 EventsCount) {
+	// Print State
+	{
+		PrintHeader("STATE");
+		for (int32 Index = 0; Index < FluentsCount; Index++) {
+			string StrIndex = Index;
+			string TruthString = {};
+			Fluents[Index].IsTrue ? TruthString = "TRUE" : TruthString = "FALSE";
+
+			string ValueString = "";
+			if (Fluents[Index].HasValue) {
+				ValueString = Fluents[Index].Value;
+			}
+
+			Print(Fluents[Index].Name + " " + TruthString + " " + ValueString);
+		}
+		Print("\n");
+	}
+
+	// Print Actions
+	{
+		PrintHeader("POSSIBLE ACTIONS");
+		for (int32 Index = 0; Index < EventsCount; Index++) {
+			if (EventValid(&Events[Index], Fluents, FluentsCount)) {
+				string StrIndex = Index;
+				Print(StrIndex + ") " + Events[Index].Name);
+			}
+		}
+		// Print("----------------------- ");
+	}
+
+	Print("\n \n----------------------- ");
+	Print("Enter action number you wish.");
+	Print("");
 }
 
 void main(int argc, char const **argv) {
@@ -134,29 +259,27 @@ void main(int argc, char const **argv) {
 
 	int32 MaxEvents = 100;
 	event* Events = (event*)malloc(MaxEvents * sizeof(event));
-	int32 NextEvent = 0;
+	event* NextEvent = Events;
+	int32 EventsCount = 0;
 
 	// This is the parsing part. Load initial data from script.
 	{
 		parser Parser = {};
 		ChangeState(&Parser, ParserState_NoGoal);
 
-		Parser.CharOn = LoadProg("../Games/Gas.sc");
+		Parser.CharOn = LoadProg("T:/Games/Gas.sc");
 
 		event_parse_state EventParseState = EventParseState_Name;
 
 		for (;;) {
 			char ThisChar = *Parser.CharOn;
-			if (ThisChar == '.') {
+			if (Parser.State == ParserState_NoGoal && ThisChar == '.') {
 				// end of program
 				break;
 			}
 
 			// discard unwanted characters
-			if (ThisChar == '\r') {
-				Parser.CharOn++;
-				continue;
-			} else if (ThisChar == '\n') {
+			if (ThisChar == '\r' || ThisChar == '\n' || ThisChar == '-' || ThisChar == ' ' || ThisChar == ',') {
 				Parser.CharOn++;
 				continue;
 			}
@@ -167,34 +290,49 @@ void main(int argc, char const **argv) {
 					RoleName = Parser.WordOn;
 
 					ChangeState(&Parser, ParserState_NoGoal);
-				} else  {
-					AddToParser(&Parser, ThisChar);
+				} else {
+					AddToParser(&Parser);
 				}
-			} else if (Parser.State == ParserState_GrabbingFluent) {
 			} else if (Parser.State == ParserState_GrabbingEvent) {
-				// // event(GoToStore(false(HasGas), false(FoodAtCostco), true(FoodAtHome)) : HasGas, FoodAtCostco)
-				// if (ThisChar == '(') {
-				// 	if (EventParseState == EventParseState_Name) {
-				// 		Events[NextEvent].Name = Parse.WordOn;
-				// 		ResetparserWord(&Parser);
-				// 		NextChar++;
-				// 		EventParseState = EventParseState_Consquences;
-				// 	} else if (EventParseState == EventParseState_Consquences) {
-				// 		EventParseState = EventParseState_Validation;
-				// 	} else if (EventParseState == EventParseState_Validation) {
+				// event(GoToCostco) - true(FoodAtCostco) true(CarAtHome) : false(HasGas), true(HasFood), false(FoodAtCostco) false(CarAtHome) true(CarAtCostco).
+				// event(NAME) - CONSQUENCE FLUENTS : VALIDATION FLUENTS.
 
-				// 	}
+				if (EventParseState == EventParseState_Name && ThisChar == ')') {
+					NextEvent[0] = {};
+					NextEvent->Name = Parser.WordOn;
+					EventsCount++;
 
-				// } else if (ThisChar == ',' && EventParseState == EventParseState_Consquences) {
-				// 	Events[NextEvent].
-				// } else {
-				// 	AddToParser(&Parser, ThisChar);
-				// }
+					ResetParserWord(&Parser);
+					EventParseState = EventParseState_Consquences;
+				} else if (EventParseState == EventParseState_Consquences || EventParseState == EventParseState_Validation) {
+					if (Parser.WordOn == TrueLiteral || Parser.WordOn == FalseLiteral) {
+						fluent Fluent = GrabFluent(&Parser);
+
+						if (EventParseState == EventParseState_Consquences) {
+							NextEvent->ConsquenceFluents[NextEvent->NextConsqFluent] = Fluent;
+							NextEvent->NextConsqFluent++;
+						} else if (EventParseState == EventParseState_Validation) {
+							NextEvent->ValidationFluents[NextEvent->NextValidFluent] = Fluent;
+							NextEvent->NextValidFluent++;
+						}
+
+						// Parser.CharOn++;
+					} else if (ThisChar == ':') {
+						EventParseState = EventParseState_Validation;
+					} else if (ThisChar == '.') {
+						ChangeState(&Parser, ParserState_NoGoal);
+						NextEvent++;
+					} else {
+						AddToParser(&Parser);
+					}
+				} else {
+					AddToParser(&Parser);
+				}
 			} else if (Parser.State == ParserState_NoGoal) {
 
 				// we only want to look for things that could possibly be a reserved word
 				if (ThisChar != ')') {
-					AddToParser(&Parser, ThisChar);
+					AddToParser(&Parser);
 				}
 
 				if (Parser.WordOn == RoleLiteral) {
@@ -216,38 +354,51 @@ void main(int argc, char const **argv) {
 		}
 	}
 
+
+
 	// This is the playing part
 	{
+		PrintOptions(Fluents, NextFluent, Events, EventsCount);
+
 		bool32 Running = true;
 		while (Running) {
-			Print("----------------------- ");
-			Print("1 - Show State ");
-			Print("2 - Show Actions");
-			Print("9 - Quit ");
-			Print("");
-
 			char Input[100];
 			scanf("%99s", &Input);
 			char Selection = Input[0];
+			system("cls");
 
-			if (Selection == '1') {
-				// Print State
-				Print("\n ---- STATE ----");
-				for (int32 Index = 0; Index < NextFluent; Index++) {
-					string StrIndex = Index;
-					string TruthString = {};
-					Fluents[Index].IsTrue ? TruthString = "TRUE" : TruthString = "FALSE";
-					Print(StrIndex + ") " + Fluents[Index].FluentName + " " + TruthString);
+			string SelStr = Selection;
+			int32 SelInt = StringToInt32(SelStr);
+			if (SelInt < EventsCount) {
+				// Print("Did Event -> " + Events[SelInt].Name + "\n \n");
+				event* EventDoing = &Events[SelInt];
+
+				for (int32 Index = 0; Index < EventDoing->NextConsqFluent; Index++) {
+					fluent NewFluent = EventDoing->ConsquenceFluents[Index];
+					bool32 FoundFluent = false;
+
+					// Change that fluent state if it exists
+					for (int32 FIndex = 0; FIndex < NextFluent; FIndex++) {
+						if (NewFluent.Name == Fluents[FIndex].Name) {
+							Fluents[FIndex].IsTrue = NewFluent.IsTrue;
+							FoundFluent = true;
+							break;
+						}
+					}
+
+					// We need to make that fluent if it wasn't found
+					if (!FoundFluent) {
+						Fluents[NextFluent] = NewFluent;
+						NextFluent++;
+					}
 				}
-			} else if (Selection == '2') {
-				Print("ACTIONS");
+			} else {
+				Print("Not a valid action");
 			}
-			else if (Selection == '9') {
-				Running = false;
-			}
+
+			PrintOptions(Fluents, NextFluent, Events, EventsCount);
 		}
 	}
-
 
 	Print("Closing");
 	return;
