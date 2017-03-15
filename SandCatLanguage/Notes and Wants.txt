@@ -15,7 +15,7 @@ No, that won't work. Need some way to say 'CAR can only have ONE LOCATION'
 
 ---
 Rename events. They're actually available player moves. 
-Events should be triggerable by other events.
+Need a way to specify in game logic which is not a player move. 
 ---
 
 
@@ -37,8 +37,14 @@ TODO
 	- Fluents can have values.
 	- Events can modify fluents values.
 	- Add boolean values to fluents. Fluents should not
-- Comments.
 - Randomness.
 - Output helpful errors when syntax of sc file is incorrect
+
+---
+
+
+---
+DONE
+- Comments.
 
 ---

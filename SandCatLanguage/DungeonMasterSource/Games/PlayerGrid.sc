@@ -1,13 +1,17 @@
 
+// Roles
 role(Player)
 
-true(PlayerX(2))
-true(PlayerY(2))
-
+// Initial state
 true(GridMaxX(10))
+true(GridMinX(0))
 true(GridMaxY(10))
+true(GridMinY(0))
 
-event(MoveUp) - true(PlayerX(PlayerX + 1)) : true(Test).
-event(MoveDown) - true(PlayerX(PlayerX - 1)).
+true(PlayerX(GridMaxX / 2))
+true(PlayerY(GridMaxY / 2))
+
+// Events
+event(MoveDown) - true(PlayerY(PlayerY - 1)) : conditional(PlayerY > GridMin).
 
 .

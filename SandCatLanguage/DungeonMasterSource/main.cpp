@@ -11,6 +11,8 @@ string RoleLiteral = "role";
 string TrueLiteral = "true";
 string FalseLiteral = "false";
 string EventLiteral = "event";
+string CommentLiteral = "//";
+string ConditionalLiteral = "conditional";
 
 void Print(string Output) {
 	Output = Output + "\n";
@@ -46,6 +48,14 @@ struct fluent {
 	bool32 HasValue;
 	real64 Value;
 
+	/* If the fluent has arithmetic as a fluent value, then it is stored here.
+		This is is only used when the fluent is part of an event events.
+		The initial fluents are evaluated when they're parsed.
+		Event fluents are evaluated when they're triggered, so they need to be saved and 'parsed' when they're triggered.
+	*/
+	bool32 HasArithmetic;
+	string Arithmetic;
+
 	bool32 Using;
 };
 
@@ -69,6 +79,8 @@ enum parser_state {
 	ParserState_NoGoal,
 	ParserState_GrabbingRole,
 	ParserState_GrabbingEvent,
+	ParserState_IgnoringComment,
+	ParserState_Conditional,
 };
 
 struct parser {
@@ -92,6 +104,7 @@ ChangeState(parser* Parser, parser_state NewState) {
 	Parser->State = NewState;
 }
 
+//NOTE the line Parser->CharOn++; always follows this, we can just put that line in here.
 void
 AddToParser(parser* Parser) {
 	Parser->WordOn[Parser->WordOnIndex] = *Parser->CharOn;
@@ -139,20 +152,24 @@ skip_assert:
 }
 
 real64
-GetValueInFluent(parser* Parser, fluent* Fluents, int32 FluentsCount) {
-	ResetParserWord(Parser);
-	while (*Parser->CharOn != ')') {
+EvaluateFluentValue(char* FluentString, fluent* Fluents, int32 FluentsCount) {
+
+	char InsideFluent[100] = {};
+	int32 InsideIndex = 0;
+
+	while (*FluentString != NULL && *FluentString != ')') {
 		// NOTE here is where we check to make sure what is in the fluent is infact a number
-		if (*Parser->CharOn != '(') {
-			AddToParser(Parser);
+		if (*FluentString != '(') {
+			InsideFluent[InsideIndex] = *FluentString;
+			InsideIndex++;
 		}
-		Parser->CharOn++;
+		FluentString++;
 	}
 
-	bool32 IsNum = StringIsInt(Parser->WordOn);
+	bool32 IsNum = StringIsInt(InsideFluent);
 	if (IsNum) {
 		// Is just a value
-		return ((real64)StringToInt32(Parser->WordOn));
+		return ((real64)StringToInt32(InsideFluent));
 	} else {
 		// Is probably an equation
 
@@ -162,38 +179,38 @@ GetValueInFluent(parser* Parser, fluent* Fluents, int32 FluentsCount) {
 		char Word[100] = {};
 		int32 WordIndex = 0;
 
-		for (int32 Index = 0; Index < Parser->WordOnIndex; Index++) {
+		for (int32 Index = 0; Index < InsideIndex; Index++) {
 
-			if (Parser->WordOn[Index] == ' ')  {
+			if (InsideFluent[Index] == ' ')  {
 				continue;
 			}
 
-			if (Parser->WordOn[Index] == '+') {
+			if (InsideFluent[Index] == '+') {
 				Accumulator = InfixAccumulate(Accumulator, Word, AccumState, Fluents, FluentsCount);
 				AccumState = accum_add;
 
 				ZeroMemory(Word, 100);
 				WordIndex = 0;
-			} else if (Parser->WordOn[Index] == '-') {
+			} else if (InsideFluent[Index] == '-') {
 				Accumulator = InfixAccumulate(Accumulator, Word, AccumState, Fluents, FluentsCount);
 				AccumState = accum_sub;
 
 				ZeroMemory(Word, 100);
 				WordIndex = 0;
-			} else if (Parser->WordOn[Index] == '*') {
+			} else if (InsideFluent[Index] == '*') {
 				Accumulator = InfixAccumulate(Accumulator, Word, AccumState, Fluents, FluentsCount);
 				AccumState = accum_mult;
 
 				ZeroMemory(Word, 100);
 				WordIndex = 0;
-			} else if (Parser->WordOn[Index] == '/') {
+			} else if (InsideFluent[Index] == '/') {
 				Accumulator = InfixAccumulate(Accumulator, Word, AccumState, Fluents, FluentsCount);
 				AccumState = accum_div;
 
 				ZeroMemory(Word, 100);
 				WordIndex = 0;
 			} else {
-				Word[WordIndex] = Parser->WordOn[Index];
+				Word[WordIndex] = InsideFluent[Index];
 				WordIndex++;
 			}
 		}
@@ -204,7 +221,7 @@ GetValueInFluent(parser* Parser, fluent* Fluents, int32 FluentsCount) {
 }
 
 fluent
-GrabFluent(parser* Parser, fluent* Fluents, int32 FluentsCount) {
+GrabFluent(parser* Parser, fluent* Fluents, int32 FluentsCount, bool32 EvaluateArithmetic) {
 	fluent FinalFluent = {};
 
 	FinalFluent.Using = true;
@@ -230,8 +247,26 @@ GrabFluent(parser* Parser, fluent* Fluents, int32 FluentsCount) {
 		} else if (ThisChar == '(') {
 			// This means the fluent has a value
 			FinalFluent.Name = Parser->WordOn;
-			FinalFluent.HasValue = true;
-			FinalFluent.Value = GetValueInFluent(Parser, Fluents, FluentsCount);
+			if (EvaluateArithmetic) {
+				FinalFluent.HasValue = true;
+				FinalFluent.Value = EvaluateFluentValue(Parser->CharOn, Fluents, FluentsCount);
+			} else {
+				ResetParserWord(Parser);
+
+				// Consume the '('
+				Parser->CharOn++;
+
+				while (*Parser->CharOn != ')') {
+					AddToParser(Parser);
+					Parser->CharOn++;
+				}
+
+				// Consume the ')'
+				Parser->CharOn++;
+
+				FinalFluent.HasArithmetic = true;
+				FinalFluent.Arithmetic = Parser->WordOn;
+			}
 			goto end;
 		} else {
 			AddToParser(Parser);
@@ -358,6 +393,17 @@ void main(int argc, char const **argv) {
 			// discard unwanted characters
 			if (ThisChar == '\r' || ThisChar == '\n' || ThisChar == '-' || ThisChar == ' ' || ThisChar == ',') {
 				Parser.CharOn++;
+
+				if (Parser.State == ParserState_IgnoringComment && ThisChar == '\n') {
+					ChangeState(&Parser, ParserState_NoGoal);
+				}
+
+				/* This is somewhat of a catch all. Sometimes the fluents are indeed parsed but the characters are not consumed (because worrying about that is annoying). 
+					This resets everything so the next line can be parsed correctly.
+				*/
+				if (ThisChar == '\r' || ThisChar == '\n') {
+					ResetParserWord(&Parser);
+				}
 				continue;
 			}
 
@@ -383,7 +429,7 @@ void main(int argc, char const **argv) {
 					EventParseState = EventParseState_Consquences;
 				} else if (EventParseState == EventParseState_Consquences || EventParseState == EventParseState_Validation) {
 					if (Parser.WordOn == TrueLiteral || Parser.WordOn == FalseLiteral) {
-						fluent Fluent = GrabFluent(&Parser, Fluents, NextFluent);
+						fluent Fluent = GrabFluent(&Parser, Fluents, NextFluent, false);
 
 						if (EventParseState == EventParseState_Consquences) {
 							NextEvent->ConsquenceFluents[NextEvent->NextConsqFluent] = Fluent;
@@ -417,13 +463,16 @@ void main(int argc, char const **argv) {
 					ChangeState(&Parser, ParserState_GrabbingRole);
 				} else if (Parser.WordOn == TrueLiteral || Parser.WordOn == FalseLiteral) {
 					Parser.CharOn++;
-					Fluents[NextFluent] = GrabFluent(&Parser, Fluents, NextFluent);
+					Fluents[NextFluent] = GrabFluent(&Parser, Fluents, NextFluent, true);
 					NextFluent++;
 					Assert(NextFluent < MaxFluents);
 				} else if (Parser.WordOn == EventLiteral) {
 					Parser.CharOn++;
 					EventParseState = EventParseState_Name;
 					ChangeState(&Parser, ParserState_GrabbingEvent);
+				} else if (Parser.WordOn == CommentLiteral) {
+					Parser.CharOn++;
+					ChangeState(&Parser, ParserState_IgnoringComment);
 				}
 			}
 
@@ -447,7 +496,8 @@ void main(int argc, char const **argv) {
 			string SelStr = Selection;
 			int32 SelInt = StringToInt32(SelStr);
 			if (SelInt < EventsCount) {
-				// Print("Did Event -> " + Events[SelInt].Name + "\n \n");
+				// Do the event
+
 				event* EventDoing = &Events[SelInt];
 
 				for (int32 Index = 0; Index < EventDoing->NextConsqFluent; Index++) {
@@ -458,6 +508,10 @@ void main(int argc, char const **argv) {
 					for (int32 FIndex = 0; FIndex < NextFluent; FIndex++) {
 						if (NewFluent.Name == Fluents[FIndex].Name) {
 							Fluents[FIndex].IsTrue = NewFluent.IsTrue;
+							if (NewFluent.HasArithmetic) {
+								Fluents[FIndex].Value = EvaluateFluentValue(NewFluent.Arithmetic.CharArray, Fluents, NextFluent);
+							}
+
 							FoundFluent = true;
 							break;
 						}
