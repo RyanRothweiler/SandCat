@@ -21,10 +21,13 @@ Events should be triggerable by other events.
 
 ---
 SYNTAX RULES
+(These are all probably temporary, but they are the current state)
+
 - true(TITLE(VALUE))
-	Value must be a whole number.
+	Values in fluents must be whole numbers. In the above, Value must be a whole number.
 - Events must have a period at the end.
 - Whole program must end with a period.
+- Arithmetic requires spaces between operands and operators
 ---
 
 

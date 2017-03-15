@@ -98,8 +98,48 @@ AddToParser(parser* Parser) {
 	Parser->WordOnIndex++;
 }
 
+enum accum_state {
+	accum_add, accum_sub, accum_div, accum_mult, accum_none
+};
+
 real64
-GetValueInFluent(parser* Parser) {
+InfixAccumulate(real64 Accum, char* StringOperand, accum_state Operator,
+                fluent* Fluents, int32 FluentsCount) {
+
+	real64 NewOperand = 0.0f;
+	if (StringIsInt(StringOperand)) {
+		// string is number
+		NewOperand = (real64)StringToInt32(StringOperand);
+	} else {
+		// string is a fluent, we should get the value from the fluent
+		for (int32 Index = 0; Index < FluentsCount; Index++) {
+			if (Fluents[Index].Name == StringOperand) {
+				NewOperand = Fluents[Index].Value;
+				goto skip_assert;
+			}
+		}
+
+		// We did not find that fluent
+		Assert(0);
+	}
+
+skip_assert:
+
+	if (Operator == accum_add) {
+		return (Accum + NewOperand);
+	} else if (Operator == accum_sub) {
+		return (Accum - NewOperand);
+	} else if (Operator == accum_mult) {
+		return (Accum * NewOperand);
+	} else if (Operator == accum_div) {
+		return (Accum / NewOperand);
+	} else {
+		return (NewOperand);
+	}
+}
+
+real64
+GetValueInFluent(parser* Parser, fluent* Fluents, int32 FluentsCount) {
 	ResetParserWord(Parser);
 	while (*Parser->CharOn != ')') {
 		// NOTE here is where we check to make sure what is in the fluent is infact a number
@@ -116,18 +156,55 @@ GetValueInFluent(parser* Parser) {
 	} else {
 		// Is probably an equation
 
+		real64 Accumulator = 0;
+		accum_state AccumState = accum_none;
+
 		char Word[100] = {};
 		int32 WordIndex = 0;
 
+		for (int32 Index = 0; Index < Parser->WordOnIndex; Index++) {
 
-		int32 x = 0;
+			if (Parser->WordOn[Index] == ' ')  {
+				continue;
+			}
 
-		return (124);
+			if (Parser->WordOn[Index] == '+') {
+				Accumulator = InfixAccumulate(Accumulator, Word, AccumState, Fluents, FluentsCount);
+				AccumState = accum_add;
+
+				ZeroMemory(Word, 100);
+				WordIndex = 0;
+			} else if (Parser->WordOn[Index] == '-') {
+				Accumulator = InfixAccumulate(Accumulator, Word, AccumState, Fluents, FluentsCount);
+				AccumState = accum_sub;
+
+				ZeroMemory(Word, 100);
+				WordIndex = 0;
+			} else if (Parser->WordOn[Index] == '*') {
+				Accumulator = InfixAccumulate(Accumulator, Word, AccumState, Fluents, FluentsCount);
+				AccumState = accum_mult;
+
+				ZeroMemory(Word, 100);
+				WordIndex = 0;
+			} else if (Parser->WordOn[Index] == '/') {
+				Accumulator = InfixAccumulate(Accumulator, Word, AccumState, Fluents, FluentsCount);
+				AccumState = accum_div;
+
+				ZeroMemory(Word, 100);
+				WordIndex = 0;
+			} else {
+				Word[WordIndex] = Parser->WordOn[Index];
+				WordIndex++;
+			}
+		}
+
+		Accumulator = InfixAccumulate(Accumulator, Word, AccumState, Fluents, FluentsCount);
+		return (Accumulator);
 	}
 }
 
 fluent
-GrabFluent(parser* Parser) {
+GrabFluent(parser* Parser, fluent* Fluents, int32 FluentsCount) {
 	fluent FinalFluent = {};
 
 	FinalFluent.Using = true;
@@ -154,7 +231,7 @@ GrabFluent(parser* Parser) {
 			// This means the fluent has a value
 			FinalFluent.Name = Parser->WordOn;
 			FinalFluent.HasValue = true;
-			FinalFluent.Value = GetValueInFluent(Parser);
+			FinalFluent.Value = GetValueInFluent(Parser, Fluents, FluentsCount);
 			goto end;
 		} else {
 			AddToParser(Parser);
@@ -267,7 +344,7 @@ void main(int argc, char const **argv) {
 		parser Parser = {};
 		ChangeState(&Parser, ParserState_NoGoal);
 
-		Parser.CharOn = LoadProg("T:/Games/Gas.sc");
+		Parser.CharOn = LoadProg("T:/Games/PlayerGrid.sc");
 
 		event_parse_state EventParseState = EventParseState_Name;
 
@@ -306,7 +383,7 @@ void main(int argc, char const **argv) {
 					EventParseState = EventParseState_Consquences;
 				} else if (EventParseState == EventParseState_Consquences || EventParseState == EventParseState_Validation) {
 					if (Parser.WordOn == TrueLiteral || Parser.WordOn == FalseLiteral) {
-						fluent Fluent = GrabFluent(&Parser);
+						fluent Fluent = GrabFluent(&Parser, Fluents, NextFluent);
 
 						if (EventParseState == EventParseState_Consquences) {
 							NextEvent->ConsquenceFluents[NextEvent->NextConsqFluent] = Fluent;
@@ -340,7 +417,7 @@ void main(int argc, char const **argv) {
 					ChangeState(&Parser, ParserState_GrabbingRole);
 				} else if (Parser.WordOn == TrueLiteral || Parser.WordOn == FalseLiteral) {
 					Parser.CharOn++;
-					Fluents[NextFluent] = GrabFluent(&Parser);
+					Fluents[NextFluent] = GrabFluent(&Parser, Fluents, NextFluent);
 					NextFluent++;
 					Assert(NextFluent < MaxFluents);
 				} else if (Parser.WordOn == EventLiteral) {
