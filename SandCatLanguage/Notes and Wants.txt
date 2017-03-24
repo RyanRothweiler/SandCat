@@ -1,4 +1,23 @@
 ---
+GOALS
+
+This is what I need before I can start selling something.
+- I need playable games in a web browser as proof that this is worth buying.
+	- Games needed. 
+		- Threes
+		- A simple rogue like game
+	- Games maybe needed?
+		- Caverna worker placement mechchanic.
+		- Scythe action board mechanic.
+		- Puerto Rico role selection.
+		- The Witness
+- A workable syntax with a workable language spec. Subject to lots of change, and it will change, but something workable.
+- I must be able to prototype a few game ideas.
+
+---
+
+
+---
 Need some way to specify 'macros'. I'm being forced to retype lots of the same concepts. They could be packaged into reusable pieces.
 
 This...
@@ -28,23 +47,30 @@ SYNTAX RULES
 - Events must have a period at the end.
 - Whole program must end with a period.
 - Arithmetic requires spaces between operands and operators
+- No arithmetic allowed in conditionals
+- bind(EVENT KEY)
+- Must be spaces on both sides of grouping with '[ ]'
 ---
 
 
 ---
 TODO
-- Fluents with values.
-	- Fluents can have values.
-	- Events can modify fluents values.
-	- Add boolean values to fluents. Fluents should not
 - Randomness.
 - Output helpful errors when syntax of sc file is incorrect
+- Arithmetic which supports negative numbers
+- Add in roles again. Need a multiplayer game to test this
+- Remove all dependence on white space. (Or atleast make it a consistent dependence)
+- Remove the conditional reserved word, the conditionals should automatically be parsed without the word. 
+- Automatic reloading of the rules. Will need something to throw syntax errors first. Right now it will just crash.
+- Binding multiple events to a key
 
----
 
 
----
 DONE
+- Fluents with values.
+	- Events can modify fluents values.
+	- Add boolean values to fluents. Fluents should not
+	- Fluents can have values.
+- Finish conditionals. Need <= >= 
 - Comments.
-
 ---
