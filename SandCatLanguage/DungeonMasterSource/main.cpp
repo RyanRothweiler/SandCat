@@ -7,7 +7,7 @@
 #include "String.cpp"
 
 // Remove this is you don't want to compile any opengl stuff
-#define USING_OPENGL
+// #define USING_OPENGL
 
 #ifdef USING_OPENGL
 #include "Math.cpp"
@@ -206,8 +206,15 @@ FindEvent(string Name, event* Events, int32 EventsCount) {
 	return (NULL);
 }
 
-real64
+struct fluent_value_return {
+	real64 Value;
+	bool32 Valid;
+};
+
+fluent_value_return
 EvaluateFluentValue(char* FluentString, fluent* Fluents, int32 FluentsCount) {
+
+	fluent_value_return Value = {};
 
 	char InsideFluent[100] = {};
 	int32 InsideIndex = 0;
@@ -224,7 +231,9 @@ EvaluateFluentValue(char* FluentString, fluent* Fluents, int32 FluentsCount) {
 	bool32 IsNum = StringIsInt(InsideFluent);
 	if (IsNum) {
 		// Is just a value
-		return ((real64)StringToInt32(InsideFluent));
+		Value.Valid = true;
+		Value.Value = (real64)StringToInt32(InsideFluent);
+		return (Value);
 	} else {
 		// Is probably an equation
 
@@ -277,13 +286,14 @@ EvaluateFluentValue(char* FluentString, fluent* Fluents, int32 FluentsCount) {
 			if (FluentTesting != NULL) {
 				Accumulator = InfixAccumulate(Accumulator, Word, AccumState, Fluents, FluentsCount);
 			} else {
-				// This means we didn't find the fluent. We should not have called this method using a fluent that doesn't exist.
-				Assert(0);
-				return (0);
+				Value.Valid = false;
+				return (Value);
 			}
 		}
 
-		return (Accumulator);
+		Value.Value = Accumulator;
+		Value.Valid = true;
+		return (Value);
 	}
 }
 
@@ -317,7 +327,10 @@ GrabFluent(parser* Parser, fluent* Fluents, int32 FluentsCount, bool32 EvaluateA
 			FinalFluent.Name = Parser->WordOn;
 			if (EvaluateArithmetic) {
 				FinalFluent.HasValue = true;
-				FinalFluent.Value = EvaluateFluentValue(Parser->CharOn, Fluents, FluentsCount);
+
+				fluent_value_return Val = EvaluateFluentValue(Parser->CharOn, Fluents, FluentsCount);
+				Assert(Val.Valid);
+				FinalFluent.Value = Val.Value;
 			} else {
 				ResetParserWord(Parser);
 
@@ -356,8 +369,15 @@ GetConditionalBool(conditional* Cond, fluent* Fluents, int32 FluentsCount) {
 	// return (false);
 	// }
 
-	real64 FirstValue = EvaluateFluentValue(Cond->FirstFluent.CharArray, Fluents, FluentsCount);
-	real64 SecondValue = EvaluateFluentValue(Cond->SecondFluent.CharArray, Fluents, FluentsCount);
+	fluent_value_return FirstVal = EvaluateFluentValue(Cond->FirstFluent.CharArray, Fluents, FluentsCount);
+	fluent_value_return SecondVal = EvaluateFluentValue(Cond->SecondFluent.CharArray, Fluents, FluentsCount);
+
+	if (!FirstVal.Valid || !SecondVal.Valid) {
+		return (false);
+	}
+
+	real64 FirstValue = FirstVal.Value;
+	real64 SecondValue = SecondVal.Value;
 
 	if (Cond->Conditional == Comparison::GreaterThan && !(FirstValue > SecondValue)) {
 		return (false);
@@ -381,10 +401,6 @@ bool32
 EvaluateBoolean(event* Event, int32* NextConditional, int32* NextLogicOp, fluent* Fluents, int32 FluentsCount) {
 
 	bool32 AccumBool = true;
-
-	// Initialize accum to the first conditional value
-	// bool32 AccumBool = GetConditionalBool(&Event->Conditionals[*NextConditional], Fluents, FluentsCount);
-	// (*NextConditional)++;
 
 	// This state must be held separate from the logicO
 	logic_symbols CurrLogicOp = logic_symbols::Default;
@@ -543,7 +559,8 @@ LoadGameDefinition() {
 	parser Parser = {};
 	ChangeState(&Parser, ParserState_NoGoal);
 
-	Parser.CharOn = LoadProg("T:/Games/ShieldPush.sc");
+	// Parser.CharOn = LoadProg("T:/Games/ShieldPush/ShieldPush.sc");
+	Parser.CharOn = LoadProg("T:/Games/Xedoc.sc");
 
 	event_parse_state EventParseState = EventParseState_Name;
 
@@ -887,7 +904,9 @@ DoEvent(event* EventDoing, game_def* GameDef) {
 			// Change that fluent state if it exists
 			fluent* F = FindFluent(NewFluent.Name, GameDef->Fluents, GameDef->FluentsCount);
 			if (F != NULL) {
-				F->Value = EvaluateFluentValue(NewFluent.Arithmetic.CharArray, GameDef->Fluents, GameDef->FluentsCount);
+				fluent_value_return Val = EvaluateFluentValue(NewFluent.Arithmetic.CharArray, GameDef->Fluents, GameDef->FluentsCount);
+				Assert(Val.Valid);
+				F->Value = Val.Value;
 			} else {
 				GameDef->Fluents[GameDef->FluentsCount] = NewFluent;
 				GameDef->FluentsCount++;

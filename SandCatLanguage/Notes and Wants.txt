@@ -74,3 +74,14 @@ DONE
 - Finish conditionals. Need <= >= 
 - Comments.
 ---
+
+
+---
+Test Games and thoughts
+
+Xedoc.sc
+	- Needs object system. Need to say, this is a card, it has atk and def. Can create instance of the cards.
+
+ShieldPush.sc
+	- Needs conditional inheritance. 
+---
