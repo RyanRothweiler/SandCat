@@ -373,14 +373,17 @@ struct split_info
 // }
 
 bool32
+CharIsInt(char Char) {
+	return (Char == '0' || Char == '1' || Char == '2' || Char == '3' || Char == '4' || Char == '5' || Char == '6' || Char == '7' || Char == '8' || Char == '9');
+}
+
+bool32
 StringIsInt(string String) {
 	uint32 StringCount = CharArrayLength(String.CharArray);
 	for (uint32 CharIndex = 0; CharIndex < StringCount; CharIndex++)
 	{
 		char NextCharacter = String.CharArray[CharIndex];
-		if (NextCharacter != '0' && NextCharacter != '1' && NextCharacter != '2' && NextCharacter != '3' &&
-		        NextCharacter != '4' && NextCharacter != '5' && NextCharacter != '6' && NextCharacter != '7' &&
-		        NextCharacter != '8' && NextCharacter != '9') {
+		if (!CharIsInt(NextCharacter)) {
 			return (false);
 		}
 

@@ -1,8 +1,8 @@
 
-role(Player)
+//NOTE this is old, and won't work without updating the syntax
 
-true(HasGas)
-true(CarAtHome)
+HasGas.
+CarAtHome.
 
 event(GoToCostco) - false(HasGas), true(CarAtCostco), false(CarAtHome), false(CarAtBlockbuster), false(CarAtHome) : true(HasGas), false(CarAtCostco).
 event(GoToBlockbuster) - false(HasGas), true(CarAtBlockbuster), false(CarAtCostco), false(CarAtHome) : true(HasGas), false(CarAtBlockbuster).

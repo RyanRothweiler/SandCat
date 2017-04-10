@@ -1,5 +1,0 @@
-3.27.17
-
-- Too much of it is duplicated.
-- Some kind of inheritance is necessary to compress duplicated conditionals.
-- Some kind of methods are necessary to compress similary conditionals.

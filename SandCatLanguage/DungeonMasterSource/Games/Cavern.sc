@@ -2,12 +2,12 @@
 // 0 - Refill board
 // 1 - Place dwarves
 
-//Phase(0).
+Phase(0).
 
 // This declares the actions members and initial state
 entity(Action) [
-	Current = 0.
-	Accum = 2.
+	Current(0).
+	Accum(2).
 ]
 
 instance(Action GoldMine).
