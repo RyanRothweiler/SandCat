@@ -1,6 +1,5 @@
 
 ! WithinMap if {Pos} Pos^X < MapBounds^X and Pos^X > 0 and not MapBouts^X = 100.
-PlayerPos, MapBounds : [X(0), Y(0)].
 
 
 GridWidth(10).
@@ -10,6 +9,9 @@ PlayerB(GridWidth+1).
 PlayerC(GridWidth+1 / 2).
 PlayerD(2 * GridWidth).
 PlayerE(2* GridWidth).
+Chicken.
+
+PlayerPos, MapBounds : [X(0), Y(0)].
 
 ! action NAME is STATE_CHANGING when STATE_CONDITIONS.
 action(MoveUp)

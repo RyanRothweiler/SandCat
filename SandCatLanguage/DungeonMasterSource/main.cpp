@@ -145,8 +145,8 @@ AddToParser(parser* Parser) {
 	Parser->WordOnIndex++;
 }
 
-enum accum_state {
-	accum_add, accum_sub, accum_div, accum_mult, accum_none
+enum class math_op {
+	none, add, sub, div, mult
 };
 
 
@@ -233,43 +233,43 @@ struct infix_return {
 	bool32 Valid;
 };
 
-infix_return
-InfixAccumulate(real64 Accum, char* StringOperand, accum_state Operator,
-                fluent* Fluents, int32 FluentsCount,
-                entity* Entities, int32 EntitiesCount) {
+// infix_return
+// InfixAccumulate(real64 Accum, char* StringOperand, accum_state Operator,
+//                 fluent* Fluents, int32 FluentsCount,
+//                 entity* Entities, int32 EntitiesCount) {
 
-	infix_return Returning = {};
-	Returning.Valid = true;
+// 	infix_return Returning = {};
+// 	Returning.Valid = true;
 
-	real64 NewOperand = 0.0f;
-	if (StringIsInt(StringOperand)) {
-		// string is number
-		NewOperand = (real64)StringToInt32(StringOperand);
-	} else {
-		// string is a fluent, we should get the value from the fluent
+// 	real64 NewOperand = 0.0f;
+// 	if (StringIsInt(StringOperand)) {
+// 		// string is number
+// 		NewOperand = (real64)StringToInt32(StringOperand);
+// 	} else {
+// 		// string is a fluent, we should get the value from the fluent
 
-		fluent* Fluent = FindFluent(StringOperand, Fluents, FluentsCount, Entities, EntitiesCount);
-		if (Fluent == NULL) {
-			Returning.Valid = false;
-			return (Returning);
-		}
-		NewOperand = Fluent->Value;
-	}
+// 		fluent* Fluent = FindFluent(StringOperand, Fluents, FluentsCount, Entities, EntitiesCount);
+// 		if (Fluent == NULL) {
+// 			Returning.Valid = false;
+// 			return (Returning);
+// 		}
+// 		NewOperand = Fluent->Value;
+// 	}
 
-	if (Operator == accum_add) {
-		Returning.Value = Accum + NewOperand;
-	} else if (Operator == accum_sub) {
-		Returning.Value = Accum - NewOperand;
-	} else if (Operator == accum_mult) {
-		Returning.Value = Accum * NewOperand;
-	} else if (Operator == accum_div) {
-		Returning.Value = Accum / NewOperand;
-	} else {
-		Returning.Value = NewOperand;
-	}
+// 	if (Operator == accum_add) {
+// 		Returning.Value = Accum + NewOperand;
+// 	} else if (Operator == accum_sub) {
+// 		Returning.Value = Accum - NewOperand;
+// 	} else if (Operator == accum_mult) {
+// 		Returning.Value = Accum * NewOperand;
+// 	} else if (Operator == accum_div) {
+// 		Returning.Value = Accum / NewOperand;
+// 	} else {
+// 		Returning.Value = NewOperand;
+// 	}
 
-	return (Returning);
-}
+// 	return (Returning);
+// }
 
 event*
 FindEvent(string Name, event* Events, int32 EventsCount) {
@@ -288,97 +288,97 @@ struct fluent_value_return {
 	bool32 Valid;
 };
 
-fluent_value_return
-EvaluateFluentValue(char* FluentString, fluent* Fluents, int32 FluentsCount, entity* Entities, int32 EntitiesCount) {
+// fluent_value_return
+// EvaluateFluentValue(char* FluentString, fluent* Fluents, int32 FluentsCount, entity* Entities, int32 EntitiesCount) {
 
-	fluent_value_return Value = {};
+// 	fluent_value_return Value = {};
 
-	char InsideFluent[100] = {};
-	int32 InsideIndex = 0;
+// 	char InsideFluent[100] = {};
+// 	int32 InsideIndex = 0;
 
-	while (*FluentString != NULL && *FluentString != ')') {
-		// NOTE here is where we check to make sure what is in the fluent is infact a number
-		if (*FluentString != '(') {
-			InsideFluent[InsideIndex] = *FluentString;
-			InsideIndex++;
-		}
-		FluentString++;
-	}
+// 	while (*FluentString != NULL && *FluentString != ')') {
+// 		// NOTE here is where we check to make sure what is in the fluent is infact a number
+// 		if (*FluentString != '(') {
+// 			InsideFluent[InsideIndex] = *FluentString;
+// 			InsideIndex++;
+// 		}
+// 		FluentString++;
+// 	}
 
-	bool32 IsNum = StringIsInt(InsideFluent);
-	if (IsNum) {
-		// Is just a value
-		Value.Valid = true;
-		Value.Value = (real64)StringToInt32(InsideFluent);
-		return (Value);
-	} else {
-		// Is probably an equation
+// 	bool32 IsNum = StringIsInt(InsideFluent);
+// 	if (IsNum) {
+// 		// Is just a value
+// 		Value.Valid = true;
+// 		Value.Value = (real64)StringToInt32(InsideFluent);
+// 		return (Value);
+// 	} else {
+// 		// Is probably an equation
 
-		real64 Accumulator = 0;
-		accum_state AccumState = accum_none;
+// 		real64 Accumulator = 0;
+// 		accum_state AccumState = accum_none;
 
-		char Word[100] = {};
-		int32 WordIndex = 0;
+// 		char Word[100] = {};
+// 		int32 WordIndex = 0;
 
-		for (int32 Index = 0; Index < InsideIndex; Index++) {
+// 		for (int32 Index = 0; Index < InsideIndex; Index++) {
 
-			if (InsideFluent[Index] == ' ')  {
-				continue;
-			}
+// 			if (InsideFluent[Index] == ' ')  {
+// 				continue;
+// 			}
 
-#define DoInfix infix_return Ret = InfixAccumulate(Accumulator, Word, AccumState, Fluents, FluentsCount, Entities, EntitiesCount); if (!Ret.Valid) { Value.Valid = false; return (Value); } Accumulator = Ret.Value;
+// #define DoInfix infix_return Ret = InfixAccumulate(Accumulator, Word, AccumState, Fluents, FluentsCount, Entities, EntitiesCount); if (!Ret.Valid) { Value.Valid = false; return (Value); } Accumulator = Ret.Value;
 
-			if (InsideFluent[Index] == '+') {
-				DoInfix
-				AccumState = accum_add;
+// 			if (InsideFluent[Index] == '+') {
+// 				DoInfix
+// 				AccumState = accum_add;
 
-				ZeroMemory(Word, 100);
-				WordIndex = 0;
-			} else if (InsideFluent[Index] == '-') {
-				DoInfix
-				AccumState = accum_sub;
+// 				ZeroMemory(Word, 100);
+// 				WordIndex = 0;
+// 			} else if (InsideFluent[Index] == '-') {
+// 				DoInfix
+// 				AccumState = accum_sub;
 
-				ZeroMemory(Word, 100);
-				WordIndex = 0;
-			} else if (InsideFluent[Index] == '*') {
-				DoInfix
-				AccumState = accum_mult;
+// 				ZeroMemory(Word, 100);
+// 				WordIndex = 0;
+// 			} else if (InsideFluent[Index] == '*') {
+// 				DoInfix
+// 				AccumState = accum_mult;
 
-				ZeroMemory(Word, 100);
-				WordIndex = 0;
-			} else if (InsideFluent[Index] == '/') {
-				DoInfix
-				AccumState = accum_div;
+// 				ZeroMemory(Word, 100);
+// 				WordIndex = 0;
+// 			} else if (InsideFluent[Index] == '/') {
+// 				DoInfix
+// 				AccumState = accum_div;
 
-				ZeroMemory(Word, 100);
-				WordIndex = 0;
-			} else {
-				Word[WordIndex] = InsideFluent[Index];
-				WordIndex++;
-			}
-		}
+// 				ZeroMemory(Word, 100);
+// 				WordIndex = 0;
+// 			} else {
+// 				Word[WordIndex] = InsideFluent[Index];
+// 				WordIndex++;
+// 			}
+// 		}
 
-		DoInfix
+// 		DoInfix
 
-		// if (StringIsInt(Word)) {
-		// 	Accumulator = InfixAccumulate(Accumulator, Word, AccumState, Fluents, FluentsCount, Entities, EntitiesCount);
-		// } else {
-		// 	Accumulator = InfixAccumulate(Accumulator, Word, AccumState, Fluents, FluentsCount, Entities, EntitiesCount);
-		// 	// TODO this will cause a problem when we are assuing false to be the same as not existing
+// 		// if (StringIsInt(Word)) {
+// 		// 	Accumulator = InfixAccumulate(Accumulator, Word, AccumState, Fluents, FluentsCount, Entities, EntitiesCount);
+// 		// } else {
+// 		// 	Accumulator = InfixAccumulate(Accumulator, Word, AccumState, Fluents, FluentsCount, Entities, EntitiesCount);
+// 		// 	// TODO this will cause a problem when we are assuing false to be the same as not existing
 
-		// 	// fluent* FluentTesting = FindFluent(Word, Fluents, FluentsCount);
-		// 	// if (FluentTesting != NULL) {
-		// 	// } else {
-		// 	// 	Value.Valid = false;
-		// 	// 	return (Value);
-		// 	// }
-		// }
+// 		// 	// fluent* FluentTesting = FindFluent(Word, Fluents, FluentsCount);
+// 		// 	// if (FluentTesting != NULL) {
+// 		// 	// } else {
+// 		// 	// 	Value.Valid = false;
+// 		// 	// 	return (Value);
+// 		// 	// }
+// 		// }
 
-		Value.Value = Accumulator;
-		Value.Valid = true;
-		return (Value);
-	}
-}
+// 		Value.Value = Accumulator;
+// 		Value.Valid = true;
+// 		return (Value);
+// 	}
+// }
 
 // This gets the fluent from the parser
 fluent
@@ -411,9 +411,9 @@ GrabFluent(parser* Parser, fluent* Fluents, int32 FluentsCount, bool32 EvaluateA
 			if (EvaluateArithmetic) {
 				FinalFluent.HasValue = true;
 
-				fluent_value_return Val = EvaluateFluentValue(Parser->CharOn, Fluents, FluentsCount, Entities, EntitiesCount);
-				Assert(Val.Valid);
-				FinalFluent.Value = Val.Value;
+				// fluent_value_return Val = EvaluateFluentValue(Parser->CharOn, Fluents, FluentsCount, Entities, EntitiesCount);
+				// Assert(Val.Valid);
+				// FinalFluent.Value = Val.Value;
 			} else {
 				ResetParserWord(Parser);
 
@@ -452,29 +452,29 @@ GetConditionalBool(conditional* Cond, fluent* Fluents, int32 FluentsCount, entit
 	// return (false);
 	// }
 
-	fluent_value_return FirstVal = EvaluateFluentValue(Cond->FirstFluent.CharArray, Fluents, FluentsCount, Entities, EntitiesCount);
-	fluent_value_return SecondVal = EvaluateFluentValue(Cond->SecondFluent.CharArray, Fluents, FluentsCount, Entities, EntitiesCount);
+	// fluent_value_return FirstVal = EvaluateFluentValue(Cond->FirstFluent.CharArray, Fluents, FluentsCount, Entities, EntitiesCount);
+	// fluent_value_return SecondVal = EvaluateFluentValue(Cond->SecondFluent.CharArray, Fluents, FluentsCount, Entities, EntitiesCount);
 
-	if (!FirstVal.Valid || !SecondVal.Valid) {
-		return (false);
-	}
+	// if (!FirstVal.Valid || !SecondVal.Valid) {
+	// 	return (false);
+	// }
 
-	real64 FirstValue = FirstVal.Value;
-	real64 SecondValue = SecondVal.Value;
+	// real64 FirstValue = FirstVal.Value;
+	// real64 SecondValue = SecondVal.Value;
 
-	if (Cond->Conditional == Comparison::GreaterThan && !(FirstValue > SecondValue)) {
-		return (false);
-	} else if (Cond->Conditional == Comparison::LessThan && !(FirstValue < SecondValue)) {
-		return (false);
-	} else if (Cond->Conditional == Comparison::EqualTo && !(FirstValue == SecondValue)) {
-		return (false);
-	} else if (Cond->Conditional == Comparison::NotEqual && !(FirstValue != SecondValue)) {
-		return (false);
-	} else if (Cond->Conditional == Comparison::GreaterThanOrEqual && !(FirstValue >= SecondValue)) {
-		return (false);
-	} else if (Cond->Conditional == Comparison::LessThanOrEqual && !(FirstValue <= SecondValue)) {
-		return (false);
-	}
+	// if (Cond->Conditional == Comparison::GreaterThan && !(FirstValue > SecondValue)) {
+	// 	return (false);
+	// } else if (Cond->Conditional == Comparison::LessThan && !(FirstValue < SecondValue)) {
+	// 	return (false);
+	// } else if (Cond->Conditional == Comparison::EqualTo && !(FirstValue == SecondValue)) {
+	// 	return (false);
+	// } else if (Cond->Conditional == Comparison::NotEqual && !(FirstValue != SecondValue)) {
+	// 	return (false);
+	// } else if (Cond->Conditional == Comparison::GreaterThanOrEqual && !(FirstValue >= SecondValue)) {
+	// 	return (false);
+	// } else if (Cond->Conditional == Comparison::LessThanOrEqual && !(FirstValue <= SecondValue)) {
+	// 	return (false);
+	// }
 
 	return (true);
 }
@@ -783,7 +783,7 @@ CreateTokens() {
 		}
 
 		if (Parser.WordOnIndex != 0 && (ThisChar == ' ' || ThisChar == '.') && Parser.WordOn != CommentLiteral) {
-			ADDTOKEN(token_type::id);
+			CheckNumberOrID(&Parser, &Tokens);
 		}
 
 		if (ThisChar == '.') {
@@ -843,6 +843,29 @@ CreateTokens() {
 	return (Tokens);
 }
 
+real64
+GetTokenValue(token_info Token, fluent* Fluents, int32 FluentsCount) {
+	if (Token.Type == token_type::id) {
+		// find that fluent
+		fluent* Fluent = FindFluentInList(Token.Name, Fluents, FluentsCount);
+		if (Fluent == NULL) {
+			// Report error here. That fluent name does not exist.
+			Assert(0);
+		}
+		return (Fluent->Value);
+
+	} else if (Token.Type == token_type::number) {
+		return (StringToInt32(Token.Name));
+	} else {
+		Assert(0);
+		// Some kind of error, something unexpected.
+	}
+
+	// Shouldn't get down here
+	Assert(0);
+	return (0);
+}
+
 game_def
 LoadGameDefinition() {
 	game_def GameDefinition = {};
@@ -861,7 +884,78 @@ LoadGameDefinition() {
 	ZeroMemory(GameDefinition.Entities, sizeof(entity) * MaxCount);
 	ZeroMemory(GameDefinition.InstancedEntities, sizeof(entity) * MaxCount);
 
-	token_stack Tokens = CreateTokens();
+	// lexer and parser system.
+	{
+		// Create all the tokens
+		token_stack Tokens = CreateTokens();
+
+		// go throught the tokens. Filling the data structures with the stuff.
+		{
+			// a statement is everything before a period.
+			int32 StatementStart = 0;
+
+			// This moves along, grabbing statements
+			for (int32 Index = 0; Index < Tokens.TokensCount; Index++) {
+				token_info NextToken = Tokens.Tokens[Index];
+				if (NextToken.Type == token_type::period) {
+					int32 StatementEnd = Index - 1;
+
+					// first check for a fluent statement. These ones have values
+					if (Tokens.Tokens[StatementStart].Type == token_type::id &&
+					        Tokens.Tokens[StatementStart + 1].Type == token_type::openParen &&
+					        Tokens.Tokens[StatementEnd].Type == token_type::closeParen) {
+
+						fluent *FluentAdding = &GameDefinition.Fluents[GameDefinition.FluentsCount];
+						FluentAdding->Name = Tokens.Tokens[StatementStart].Name;
+						FluentAdding->HasValue = true;
+
+						math_op AccumState = math_op::none;
+						int32 AccumIndex = StatementStart + 2;
+						// FluentAdding->Value = GetTokenValue(Tokens.Tokens[AccumIndex], GameDefinition.Fluents, GameDefinition.FluentsCount);
+						while (Tokens.Tokens[AccumIndex].Type != token_type::closeParen) {
+							token_type NewTokenType = Tokens.Tokens[AccumIndex].Type;
+							if (NewTokenType == token_type::id || NewTokenType == token_type::number) {
+								real64 NewOperand = GetTokenValue(Tokens.Tokens[AccumIndex], GameDefinition.Fluents, GameDefinition.FluentsCount);
+								if (AccumState == math_op::add) {
+									FluentAdding->Value = FluentAdding->Value + NewOperand;
+								} else if (AccumState == math_op::sub) {
+									FluentAdding->Value = FluentAdding->Value - NewOperand;
+								} else if (AccumState == math_op::mult) {
+									FluentAdding->Value = FluentAdding->Value * NewOperand;
+								} else if (AccumState == math_op::div) {
+									FluentAdding->Value = FluentAdding->Value / NewOperand;
+								} else {
+									FluentAdding->Value = NewOperand;
+								}
+							} else if (NewTokenType == token_type::sub) {
+								AccumState = math_op::sub;
+							} else if (NewTokenType == token_type::add) {
+								AccumState = math_op::add;
+							} else if (NewTokenType == token_type::mult) {
+								AccumState = math_op::mult;
+							} else if (NewTokenType == token_type::div) {
+								AccumState = math_op::div;
+							}
+
+							AccumIndex++;
+						}
+
+						GameDefinition.FluentsCount++;
+						StatementStart = Index + 1;
+						continue;
+					} else if (Tokens.Tokens[StatementStart].Type == token_type::id &&
+					           Tokens.Tokens[StatementStart + 1].Type == token_type::period) {
+						fluent *FluentAdding = &GameDefinition.Fluents[GameDefinition.FluentsCount];
+						FluentAdding->Name = Tokens.Tokens[StatementStart].Name;
+						FluentAdding->HasValue = false;
+
+						GameDefinition.FluentsCount++;
+						StatementStart = Index + 1;
+					}
+				}
+			}
+		}
+	}
 
 	parser Parser = {};
 	ChangeState(&Parser, ParserState_NoGoal);
@@ -1124,24 +1218,24 @@ LoadGameDefinition() {
 				Parser.CharOn++;
 
 				while (*Parser.CharOn != ']') {
-					ResetParserWord(&Parser);
+					// ResetParserWord(&Parser);
 
-					// Get fluent name
-					MoveParserUntil(&Parser, '(', true);
-					EntityOn->Fluents[EntityOn->FluentsCount].Name = Parser.WordOn;
+					// // Get fluent name
+					// MoveParserUntil(&Parser, '(', true);
+					// EntityOn->Fluents[EntityOn->FluentsCount].Name = Parser.WordOn;
 
-					// Get Value
-					fluent_value_return Val = EvaluateFluentValue(Parser.CharOn, GameDefinition.Fluents, GameDefinition.FluentsCount,
-					                          GameDefinition.InstancedEntities, GameDefinition.InstancedEntitiesCount);
-					Assert(Val.Valid);
-					EntityOn->Fluents[EntityOn->FluentsCount].Value = Val.Value;
-					EntityOn->Fluents[EntityOn->FluentsCount].HasValue = true;
+					// // Get Value
+					// fluent_value_return Val = EvaluateFluentValue(Parser.CharOn, GameDefinition.Fluents, GameDefinition.FluentsCount,
+					//                           GameDefinition.InstancedEntities, GameDefinition.InstancedEntitiesCount);
+					// Assert(Val.Valid);
+					// EntityOn->Fluents[EntityOn->FluentsCount].Value = Val.Value;
+					// EntityOn->Fluents[EntityOn->FluentsCount].HasValue = true;
 
-					EntityOn->FluentsCount++;
+					// EntityOn->FluentsCount++;
 
-					MoveParserUntil(&Parser, '.', false);
-					Parser.CharOn++;
-					ConsumeWhiteSpace(&Parser);
+					// MoveParserUntil(&Parser, '.', false);
+					// Parser.CharOn++;
+					// ConsumeWhiteSpace(&Parser);
 				}
 			} else if (Parser.WordOn == InstanceLiteral) {
 				// Instantiate an entity
@@ -1174,51 +1268,51 @@ LoadGameDefinition() {
 				Parser.CharOn++;
 				ChangeState(&Parser, ParserState_IgnoringComment);
 			} else if (*(Parser.CharOn + 1) == '(') {
-				// We hit the end of a fluent, and it has a value.
+				// // We hit the end of a fluent, and it has a value.
 
-				// Consume the '('
-				Parser.CharOn++;
+				// // Consume the '('
+				// Parser.CharOn++;
 
-				GameDefinition.Fluents[GameDefinition.FluentsCount].Name = Parser.WordOn;
+				// GameDefinition.Fluents[GameDefinition.FluentsCount].Name = Parser.WordOn;
 
-				fluent_value_return Val = EvaluateFluentValue(Parser.CharOn, GameDefinition.Fluents, GameDefinition.FluentsCount,
-				                          GameDefinition.InstancedEntities, GameDefinition.InstancedEntitiesCount);
-				Assert(Val.Valid);
-				GameDefinition.Fluents[GameDefinition.FluentsCount].Value = Val.Value;
-				GameDefinition.Fluents[GameDefinition.FluentsCount].HasValue = true;
-				GameDefinition.FluentsCount++;
+				// fluent_value_return Val = EvaluateFluentValue(Parser.CharOn, GameDefinition.Fluents, GameDefinition.FluentsCount,
+				//                           GameDefinition.InstancedEntities, GameDefinition.InstancedEntitiesCount);
+				// Assert(Val.Valid);
+				// GameDefinition.Fluents[GameDefinition.FluentsCount].Value = Val.Value;
+				// GameDefinition.Fluents[GameDefinition.FluentsCount].HasValue = true;
+				// GameDefinition.FluentsCount++;
 
-				ResetParserWord(&Parser);
+				// ResetParserWord(&Parser);
 
-				MoveParserUntil(&Parser, '.', false);
+				// MoveParserUntil(&Parser, '.', false);
 			} else if (*(Parser.CharOn + 1) == '^') {
-				// We hit the scoping character. So we know what came before this must be an entity name
+				// // We hit the scoping character. So we know what came before this must be an entity name
 
-				Parser.CharOn++;
+				// Parser.CharOn++;
 
-				entity* InstanceEditing = {};
-				for (int32 Index = 0; Index < GameDefinition.InstancedEntitiesCount; Index++) {
-					if (GameDefinition.InstancedEntities[Index].Name == Parser.WordOn) {
-						InstanceEditing = &GameDefinition.InstancedEntities[Index];
-						break;
-					}
-				}
-				Assert(InstanceEditing != NULL);
-				ResetParserWord(&Parser);
+				// entity* InstanceEditing = {};
+				// for (int32 Index = 0; Index < GameDefinition.InstancedEntitiesCount; Index++) {
+				// 	if (GameDefinition.InstancedEntities[Index].Name == Parser.WordOn) {
+				// 		InstanceEditing = &GameDefinition.InstancedEntities[Index];
+				// 		break;
+				// 	}
+				// }
+				// Assert(InstanceEditing != NULL);
+				// ResetParserWord(&Parser);
 
-				Parser.CharOn++;
-				MoveParserUntil(&Parser, '(', true);
-				fluent* FluentEditing = FindFluentInList(Parser.WordOn, InstanceEditing->Fluents, InstanceEditing->FluentsCount);
-				Assert(FluentEditing != NULL);
+				// Parser.CharOn++;
+				// MoveParserUntil(&Parser, '(', true);
+				// fluent* FluentEditing = FindFluentInList(Parser.WordOn, InstanceEditing->Fluents, InstanceEditing->FluentsCount);
+				// Assert(FluentEditing != NULL);
 
-				fluent_value_return Val = EvaluateFluentValue(Parser.CharOn, GameDefinition.Fluents, GameDefinition.FluentsCount,
-				                          GameDefinition.InstancedEntities, GameDefinition.InstancedEntitiesCount);
-				Assert(Val.Valid);
-				FluentEditing->Value = Val.Value;
-				FluentEditing->HasValue = true;
+				// fluent_value_return Val = EvaluateFluentValue(Parser.CharOn, GameDefinition.Fluents, GameDefinition.FluentsCount,
+				//                           GameDefinition.InstancedEntities, GameDefinition.InstancedEntitiesCount);
+				// Assert(Val.Valid);
+				// FluentEditing->Value = Val.Value;
+				// FluentEditing->HasValue = true;
 
-				ResetParserWord(&Parser);
-				MoveParserUntil(&Parser, '.', false);
+				// ResetParserWord(&Parser);
+				// MoveParserUntil(&Parser, '.', false);
 			} else if (*(Parser.CharOn + 1) == '.') {
 				// We hit the end of the line so we know the parser holds a simple fluent
 
@@ -1361,10 +1455,10 @@ DoEvent(event * EventDoing, game_def * GameDef) {
 			fluent* F = FindFluent(NewFluent.Name, GameDef->Fluents, GameDef->FluentsCount,
 			                       GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
 			if (F != NULL) {
-				fluent_value_return Val = EvaluateFluentValue(NewFluent.Arithmetic.CharArray, GameDef->Fluents, GameDef->FluentsCount,
-				                          GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
-				Assert(Val.Valid);
-				F->Value = Val.Value;
+				// fluent_value_return Val = EvaluateFluentValue(NewFluent.Arithmetic.CharArray, GameDef->Fluents, GameDef->FluentsCount,
+				//                           GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
+				// Assert(Val.Valid);
+				// F->Value = Val.Value;
 			} else {
 				GameDef->Fluents[GameDef->FluentsCount] = NewFluent;
 				GameDef->FluentsCount++;

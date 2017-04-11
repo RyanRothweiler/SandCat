@@ -4,3 +4,4 @@
 0.0.2
 - Changed & to and, | to or, and ! to not
 - Added ability to bind multiple events to one key, with an ordered priority
+- Added
