@@ -9,3 +9,5 @@
 - Changed action syntax to DOES - IF - 
 
 0.0.3
+- Created SandCat_Runner and SandCat_Desert. The runner is the traditional 'compiler'. Desert is the longer term ui editor.
+- Reorganized code. Consolidating everything into one file for SandCat_Runner.

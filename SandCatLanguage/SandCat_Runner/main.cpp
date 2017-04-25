@@ -1,10 +1,13 @@
-// windows stuff
+// -----------------------------------------------------------------------------
+// Windows
+// -----------------------------------------------------------------------------
 #include <iostream>
 #include <windows.h>
-
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
-// My type stuff
+// Type Things
 // -----------------------------------------------------------------------------
 int8_t		 		typedef 	int8;
 int16_t		 		typedef 	int16;
@@ -23,64 +26,368 @@ double		 		typedef 	real64;
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
+// String Things
+// -----------------------------------------------------------------------------
+#define MAX_STRING_SIZE 100
+
+int32
+DigitCount(int64 Input)
+{
+	int32 Count = 0;
+	while (Input != 0) {
+		Input = Input / 10;
+		Count++;
+	}
+
+	return (Count);
+}
+
+void
+IntToCharArray(int64 Input, char *Output, uint32 Offset)
+{
+	char *OutputPointer = Output + DigitCount(Input) - 1 + Offset;
+
+	if (Input == 0) {
+		*Output = '0';
+	}
+
+	int32 Count = 1;
+	while (Input != 0) {
+		if (Count % 4 == 0) {
+			// *OutputPointer = ',';
+			// OutputPointer--;
+		} else {
+			uint8 LastDigit = Input % 10;
+			*OutputPointer = '0' + LastDigit;
+			OutputPointer--;
+
+			Input = Input / 10;
+		}
+
+		Count++;
+	}
+}
+
+void
+IntToCharArray(int64 Input, char *Output)
+{
+	IntToCharArray(Input, Output, 0);
+}
+
+int32
+CharArrayLength(char *String)
+{
+	// NOTE why add one?
+	// bool addOne = false;
+	int Count = 0;
+	while (*String++) {
+		// addOne = true;
+		Count++;
+	}
+	// if (addOne)
+	// {
+	// Count++;
+	// }
+	return (Count);
+}
+
+void
+ConcatCharArrays(char *SourceA, char *SourceB, char *Destination)
+{
+	int32 SourceALength = CharArrayLength(SourceA);
+	int32 SourceBLength = CharArrayLength(SourceB);
+
+	for (int32 Index = 0;
+	        Index < SourceALength;
+	        Index++) {
+		*Destination++ = *SourceA++;
+	}
+
+	for (int32 Index = 0;
+	        Index < SourceBLength;
+	        Index++) {
+		*Destination++ = *SourceB++;
+	}
+
+	*Destination++ = 0;
+}
 
 
-// my stuff
-#include "String.cpp"
+struct string {
+	char CharArray[MAX_STRING_SIZE] = {};
 
-// Remove this is you don't want to compile any opengl stuff
-// #define USING_OPENGL
+	string()
+	{
 
-#ifdef USING_OPENGL
-#include "Math.cpp"
-#include "color.cpp"
-#include "vector2.cpp"
-#include "Rect.cpp"
-#include "opengl.cpp"
+	}
 
-#include "EditorUI.h"
-#include "EditorUI.cpp"
-#include "stb_truetype.h"
-#endif
+	string (char Input)
+	{
+		CharArray[0] = Input;
+	}
+
+	string(char *Input)
+	{
+		uint32 StringCount = CharArrayLength(Input);
+		for (uint32 Index = 0;
+		        Index < StringCount;
+		        Index++) {
+			CharArray[Index] = Input[Index];
+		}
+		CharArray[StringCount] = '\0';
+	}
+
+	// TODO can we compress these?
+	string(int64 Input)
+	{
+		if (Input < 0) {
+			CharArray[0] = '-';
+			IntToCharArray(Input * -1, CharArray, 1);
+		} else {
+			IntToCharArray(Input, CharArray);
+		}
+	}
+
+	string(int32 Input)
+	{
+		if (Input < 0) {
+			CharArray[0] = '-';
+			IntToCharArray(Input * -1, CharArray, 1);
+		} else {
+			IntToCharArray(Input, CharArray);
+		}
+	}
+
+
+	string(uint32 Input)
+	{
+		if (Input < 0) {
+			CharArray[0] = '-';
+			IntToCharArray(Input * -1, CharArray, 1);
+		} else {
+			IntToCharArray(Input, CharArray);
+		}
+	}
+
+	string (real64 Input)
+	{
+		uint32 PreDecimalCount = DigitCount((int32)Input);
+
+		real64 MovedDecimal = 100 * Input;
+		char Dummy[MAX_STRING_SIZE] = {};
+		if (Input < 0) {
+			PreDecimalCount++;
+			IntToCharArray((int64)(-MovedDecimal), Dummy);
+		} else {
+			IntToCharArray((int64)MovedDecimal, Dummy);
+		}
+
+		uint32 ArrayIndex = 0;
+
+		if (Input < 0.0f) {
+			CharArray[0] = '-';
+			ArrayIndex++;
+		}
+
+		for (uint32 Index = 0; Index < MAX_STRING_SIZE - 1; Index++) {
+			if (ArrayIndex == PreDecimalCount) {
+				CharArray[ArrayIndex] = '.';
+				ArrayIndex++;
+			}
+
+			CharArray[ArrayIndex] = Dummy[Index];
+			ArrayIndex++;
+		}
+	}
+};
+
+const string EmptyString = string{};
+
+string
+IntToString(int64 Input)
+{
+	string NewString = Input;
+	return (NewString);
+}
+
+int32
+StringLength(string String)
+{
+	return (CharArrayLength(String.CharArray));
+}
+
+string
+operator + (string A, string B)
+{
+	string Output = {};
+	ConcatCharArrays(A.CharArray, B.CharArray, Output.CharArray);
+	return (Output);
+}
+
+bool
+operator == (string A, string B)
+{
+	int32 ALength = StringLength(A);
+	int32 BLength = StringLength(B);
+
+	if (ALength == BLength) {
+		for (int charIndex = 0;
+		        charIndex < ALength;
+		        charIndex++) {
+			if (A.CharArray[charIndex] != B.CharArray[charIndex]) {
+				return (false);
+			}
+		}
+
+		return (true);
+	}
+	return (false);
+}
+
+bool
+operator != (string A, string B)
+{
+	return (!(A == B));
+}
+
+void
+ConcatIntChar(int64 IntInput, char *CharInput,
+              char *CharOutput)
+{
+	char IntInputAsChar[256] = {};
+	IntToCharArray(IntInput, IntInputAsChar);
+	ConcatCharArrays(IntInputAsChar, CharInput, CharOutput);
+}
+
+
+string
+CopyString(string OrigString)
+{
+	string FinalString = {};
+
+	uint32 StringCount = StringLength(OrigString);
+	for (uint32 Index = 0;
+	        Index < StringCount;
+	        Index++) {
+		FinalString.CharArray[Index] = OrigString.CharArray[Index];
+	}
+
+	return (FinalString);
+}
+
+void
+ClearString(string *String)
+{
+	for (int CharIndex = 0;
+	        CharIndex < MAX_STRING_SIZE;
+	        CharIndex++) {
+		String->CharArray[CharIndex] = 0x00000000;
+	}
+}
+
+bool32
+CharIsInt(char Char)
+{
+	return (Char == '0' || Char == '1' || Char == '2' || Char == '3' || Char == '4' ||
+	        Char == '5' || Char == '6' || Char == '7' || Char == '8' || Char == '9');
+}
+
+bool32
+StringIsInt(string String)
+{
+	uint32 StringCount = CharArrayLength(String.CharArray);
+	for (uint32 CharIndex = 0; CharIndex < StringCount; CharIndex++) {
+		char NextCharacter = String.CharArray[CharIndex];
+		if (!CharIsInt(NextCharacter)) {
+			return (false);
+		}
+
+	}
+
+	return (true);
+}
+
+int32
+StringToInt32(string String)
+{
+	int32 FinalNumber = 0;
+
+	uint32 StringCount = CharArrayLength(String.CharArray);
+	for (uint32 CharIndex = 0; CharIndex < StringCount; CharIndex++) {
+		FinalNumber = FinalNumber * 10;
+
+		char NextCharacter = String.CharArray[CharIndex];
+		switch (NextCharacter) {
+		case ('0'): {
+			FinalNumber += 0;
+		}
+		break;
+
+		case ('1'): {
+			FinalNumber += 1;
+		}
+		break;
+
+		case ('2'): {
+			FinalNumber += 2;
+		}
+		break;
+
+		case ('3'): {
+			FinalNumber += 3;
+		}
+		break;
+
+		case ('4'): {
+			FinalNumber += 4;
+		}
+		break;
+
+		case ('5'): {
+			FinalNumber += 5;
+		}
+		break;
+
+		case ('6'): {
+			FinalNumber += 6;
+		}
+		break;
+
+		case ('7'): {
+			FinalNumber += 7;
+		}
+		break;
+
+		case ('8'): {
+			FinalNumber += 8;
+		}
+		break;
+
+		case ('9'): {
+			FinalNumber += 9;
+		}
+		break;
+
+		default: {
+			// String is not entirely a number
+			Assert(0);
+		}
+		break;
+		}
+	}
+
+	return (FinalNumber);
+}
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 char DotNotationChar = '\'';
 
-void Print(string Output) {
-	Output = Output + "\n";
-	printf(Output.CharArray);
-}
 
-struct prog_data {
-	char* Characters;
-	int32 CharactersCount;
-};
-
-prog_data
-LoadProg(char* FileName) {
-	HANDLE FileHandle = CreateFile(FileName, GENERIC_READ, FILE_SHARE_READ,
-	                               NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
-	int32 FileSizeBytes = GetFileSize(FileHandle, NULL);
-
-	// Make sure we got the file
-	Assert(FileSizeBytes != 0);
-
-	prog_data ProgData = {};
-	ProgData.Characters = (char*)malloc(FileSizeBytes);
-	ZeroMemory(ProgData.Characters, FileSizeBytes);
-
-	ProgData.CharactersCount = FileSizeBytes;
-
-	DWORD BytesRead;
-	if (!ReadFile(FileHandle, (void*)ProgData.Characters, FileSizeBytes, &BytesRead, NULL)) {
-		// Couldn't read the file. Something wrong happened
-		Assert(0);
-	}
-
-	CloseHandle(FileHandle);
-	return (ProgData);
-}
-
+// -----------------------------------------------------------------------------
+// Parser Things
+// -----------------------------------------------------------------------------
 struct parser {
 	char* CharOn;
 
@@ -88,42 +395,10 @@ struct parser {
 	int32 WordOnIndex = 0;
 };
 
-void
-ResetParserWord(parser* Parser) {
-	ZeroMemory(&Parser->WordOn, ARRAY_SIZE(Parser->WordOn, char));
-	Parser->WordOnIndex = 0;
-}
-
-struct event_bind {
-	string EventNames[100];
-	int32 NextEventName;
-
-	string KeyName;
-};
-
-void
-PrintHeader(string Str) {
-	Print("---- " + Str + " ----");
-}
-
-struct window_info
-{
-	// NOTE these are virtual, used to create a consistent look across multiple platforms
-	uint32 Width;
-	uint32 Height;
-
-	// NOTE these are ACTUAl width in pixels
-	uint32 PixelWidth;
-	uint32 PixelHeight;
-};
-
-static bool32 GlobalRunning = true;
-static real64 GlobalScrollPos = 0.0f;
-static real64 PrevGlobalScrollPos;
-
 // This moves parser, stopping at anything other than white space
 void
-ConsumeWhiteSpace(parser* Parser) {
+ConsumeWhiteSpace(parser* Parser)
+{
 	while (true) {
 		char ThisChar = *Parser->CharOn;
 		if (ThisChar != '\r' && ThisChar != '\n' && ThisChar != ' ' && ThisChar != '\t') {
@@ -132,6 +407,23 @@ ConsumeWhiteSpace(parser* Parser) {
 		Parser->CharOn++;
 	}
 }
+
+void
+ResetParserWord(parser* Parser)
+{
+	ZeroMemory(&Parser->WordOn, ARRAY_SIZE(Parser->WordOn, char));
+	Parser->WordOnIndex = 0;
+}
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+
+struct event_bind {
+	string EventNames[100];
+	int32 NextEventName;
+
+	string KeyName;
+};
+
 
 enum class token_type {
 	// general
@@ -187,7 +479,22 @@ struct fluent {
 };
 
 void
-PrintFluent(string InitialPrint, fluent* Fluent) {
+Print(string Output)
+{
+	Output = Output + "\n";
+	printf(Output.CharArray);
+}
+
+void
+PrintHeader(string Str)
+{
+	Print("---- " + Str + " ----");
+}
+
+
+void
+PrintFluent(string InitialPrint, fluent* Fluent)
+{
 	string ValueString = "";
 	if (Fluent->HasValue) {
 		ValueString = Fluent->Value;
@@ -253,7 +560,8 @@ struct game_def {
 };
 
 fluent*
-FindFluentInList(string Name, fluent* Fluents, int32 FluentsCount) {
+FindFluentInList(string Name, fluent* Fluents, int32 FluentsCount)
+{
 	for (int32 Index = 0; Index < FluentsCount; Index++) {
 		if (Name == Fluents[Index].Name) {
 			return (&Fluents[Index]);
@@ -266,7 +574,8 @@ FindFluentInList(string Name, fluent* Fluents, int32 FluentsCount) {
 
 
 entity*
-FindEntity(string Name, entity* Entities, int32 EntitiesCount) {
+FindEntity(string Name, entity* Entities, int32 EntitiesCount)
+{
 	for (int32 Index = 0; Index < EntitiesCount; Index++) {
 		if (Name == Entities[Index].Name) {
 			return (&Entities[Index]);
@@ -284,7 +593,8 @@ struct fluent_search_return {
 
 // This handles dot notation, searching through everything to find the right fluent.
 fluent_search_return
-FluentSearch(token_info* Tokens, int32 ListStart, fluent* Fluents, int32 FluentsCount, entity* Entities, int32 EntitiesCount) {
+FluentSearch(token_info* Tokens, int32 ListStart, fluent* Fluents, int32 FluentsCount, entity* Entities, int32 EntitiesCount)
+{
 
 	fluent_search_return Ret = {};
 
@@ -320,7 +630,8 @@ FluentSearch(token_info* Tokens, int32 ListStart, fluent* Fluents, int32 Fluents
 
 // This converts a string into an array of tokens. Used entirley for the display layer
 fluent_search_return
-FluentSearch(string TokenString, fluent* Fluents, int32 FluentsCount, entity* Entities, int32 EntitiesCount) {
+FluentSearch(string TokenString, fluent* Fluents, int32 FluentsCount, entity* Entities, int32 EntitiesCount)
+{
 	token_info Tokens[5];
 	int32 TokensCount = 0;
 
@@ -355,7 +666,8 @@ bool32
 EvaluateBoolean(token_info* ConditionalTokens, int32 ConditionalsCount,
                 int32* NextLogicOp,
                 fluent* Fluents, int32 FluentsCount,
-                entity* Entities, int32 EntitiesCount) {
+                entity* Entities, int32 EntitiesCount)
+{
 
 	bool32 AccumBool = true;
 
@@ -497,7 +809,8 @@ EvaluateBoolean(token_info* ConditionalTokens, int32 ConditionalsCount,
 }
 
 bool32
-EventValid(token_info* ConditionalTokens, int32 ConditionalTokensCount, game_def* GameDef) {
+EventValid(token_info* ConditionalTokens, int32 ConditionalTokensCount, game_def* GameDef)
+{
 	if (ConditionalTokensCount > 0) {
 		int32 NextLogic = 0;
 		return (EvaluateBoolean(ConditionalTokens, ConditionalTokensCount, &NextLogic,
@@ -510,7 +823,8 @@ EventValid(token_info* ConditionalTokens, int32 ConditionalTokensCount, game_def
 }
 
 void
-PrintOptions(game_def* Def) {
+PrintOptions(game_def* Def)
+{
 	// Print State
 	{
 		PrintHeader("STATE");
@@ -553,7 +867,8 @@ PrintOptions(game_def* Def) {
 }
 
 event*
-FindEvent(string Name, event* Events, int32 EventsCount) {
+FindEvent(string Name, event* Events, int32 EventsCount)
+{
 	for (int32 Index = 0; Index < EventsCount; Index++) {
 		if (Name == Events[Index].Name) {
 			return (&Events[Index]);
@@ -565,7 +880,8 @@ FindEvent(string Name, event* Events, int32 EventsCount) {
 }
 
 void
-AddToken(parser* Parser, token_stack* TokenStack, token_type Type, string Name) {
+AddToken(parser* Parser, token_stack* TokenStack, token_type Type, string Name)
+{
 
 	if (Type == token_type::id) {
 		int32 x = 0;
@@ -579,7 +895,8 @@ AddToken(parser* Parser, token_stack* TokenStack, token_type Type, string Name) 
 }
 
 void
-CheckNumberOrID(parser* Parser, token_stack* Tokens) {
+CheckNumberOrID(parser* Parser, token_stack* Tokens)
+{
 	if (Parser->WordOnIndex != 0) {
 		if (StringIsInt(Parser->WordOn)) {
 			AddToken(Parser, Tokens, token_type::number, Parser->WordOn);
@@ -590,15 +907,40 @@ CheckNumberOrID(parser* Parser, token_stack* Tokens) {
 }
 
 token_stack
-CreateTokens() {
+CreateTokens()
+{
 	token_stack Tokens = {};
 
 	parser Parser = {};
 	ResetParserWord(&Parser);
 
-	// Parser.CharOn = LoadProg("T:/Games/ShieldPush/ShieldPush.sc");
-	prog_data ProgData = LoadProg("T:/Games/Cavern2.sc");
-	Parser.CharOn = ProgData.Characters;
+	int32 CharactersCount = 0;
+	string ProgramLocation = "../Cavern2.sc";
+
+	// Load the program into the parser
+	{
+		HANDLE FileHandle = CreateFile(ProgramLocation.CharArray, GENERIC_READ, FILE_SHARE_READ,
+		                               NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+		int32 FileSizeBytes = GetFileSize(FileHandle, NULL);
+
+		// Make sure we got the file
+		Assert(FileSizeBytes != 0);
+
+		Parser.CharOn = (char*)malloc(FileSizeBytes);
+		ZeroMemory(Parser.CharOn, FileSizeBytes);
+
+		CharactersCount = FileSizeBytes;
+
+		DWORD BytesRead;
+		if (!ReadFile(FileHandle, (void*)Parser.CharOn, FileSizeBytes, &BytesRead, NULL)) {
+			// Couldn't read the file. Something wrong happened
+			Assert(0);
+		}
+
+		CloseHandle(FileHandle);
+	}
+	Assert(CharactersCount > 0);
 
 	bool32 InCommentMode = false;
 
@@ -619,7 +961,7 @@ CreateTokens() {
 	string OrLiteral = "or";
 	string NotLiteral = "not";
 
-	for (int32 Index = 0; Index < ProgData.CharactersCount; Index++) {
+	for (int32 Index = 0; Index < CharactersCount; Index++) {
 
 		char ThisChar = *Parser.CharOn;
 
@@ -735,7 +1077,8 @@ CreateTokens() {
 }
 
 real64
-GetTokenValue(token_info Token, fluent* Fluents, int32 FluentsCount) {
+GetTokenValue(token_info Token, fluent* Fluents, int32 FluentsCount)
+{
 	if (Token.Type == token_type::id) {
 		// find that fluent
 		fluent* Fluent = FindFluentInList(Token.Name, Fluents, FluentsCount);
@@ -760,7 +1103,8 @@ GetTokenValue(token_info Token, fluent* Fluents, int32 FluentsCount) {
 real64
 InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
                 fluent* Fluents, int32 FluentsCount,
-                entity* Entities, int32 EntitiesCount) {
+                entity* Entities, int32 EntitiesCount)
+{
 	token_type AccumState = token_type::none;
 
 	int32 Accum = 0.0f;
@@ -818,7 +1162,8 @@ InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
 
 fluent
 GrabFluent(token_info* Tokens, int32 StackStart, bool32 Evaluate,
-           fluent* Fluents, int32 FluentsCount, entity* Entities, int32 EntitiesCount) {
+           fluent* Fluents, int32 FluentsCount, entity* Entities, int32 EntitiesCount)
+{
 	fluent FluentAdding = {};
 	FluentAdding.HasValue = true;
 	FluentAdding.Name = Tokens[StackStart].Name;
@@ -839,7 +1184,8 @@ GrabFluent(token_info* Tokens, int32 StackStart, bool32 Evaluate,
 }
 
 game_def
-LoadGameDefinition() {
+LoadGameDefinition()
+{
 	game_def GameDefinition = {};
 
 	// TODO at some point make sure we don't exceede the maximum of any of these
@@ -1109,40 +1455,6 @@ LoadGameDefinition() {
 	return (GameDefinition);
 }
 
-LRESULT CALLBACK
-Win32MainWindowCallback(HWND Window,
-                        UINT Message,
-                        WPARAM WParam,
-                        LPARAM LParam)
-{
-	LRESULT Result = 0;
-
-	switch (Message)
-	{
-	case WM_CLOSE:
-	{
-		GlobalRunning = false;
-		Result = DefWindowProcA(Window, Message, WParam, LParam);
-	}
-	break;
-
-	case WM_DESTROY:
-	{
-		GlobalRunning = false;
-		Result = DefWindowProcA(Window, Message, WParam, LParam);
-	}
-	break;
-
-	default:
-	{
-		Result = DefWindowProcA(Window, Message, WParam, LParam);
-	}
-	break;
-	}
-
-	return (Result);
-}
-
 struct button {
 	string Name;
 	bool32 IsDown;
@@ -1166,17 +1478,14 @@ union controls {
 };
 
 void
-UpdateControls(controls * Controls, HWND Window) {
+UpdateControls(controls * Controls, HWND Window)
+{
 	MSG WindowMessage = {};
-	while (PeekMessage(&WindowMessage, Window,  0, 0, PM_REMOVE))
-	{
-		switch (WindowMessage.message)
-		{
+	while (PeekMessage(&WindowMessage, Window,  0, 0, PM_REMOVE)) {
+		switch (WindowMessage.message) {
 
-		case (WM_KEYDOWN):
-		{
-			switch (WindowMessage.wParam)
-			{
+		case (WM_KEYDOWN): {
+			switch (WindowMessage.wParam) {
 			case (VK_LEFT): Controls->Controls.LeftArrow.IsDown = true; break;
 			case (VK_RIGHT): Controls->Controls.RightArrow.IsDown = true; break;
 			case (VK_UP): Controls->Controls.UpArrow.IsDown = true; break;
@@ -1191,10 +1500,8 @@ UpdateControls(controls * Controls, HWND Window) {
 		}
 		break;
 
-		case (WM_KEYUP):
-		{
-			switch (WindowMessage.wParam)
-			{
+		case (WM_KEYUP): {
+			switch (WindowMessage.wParam) {
 			case (VK_LEFT): Controls->Controls.LeftArrow.IsDown = false; break;
 			case (VK_RIGHT): Controls->Controls.RightArrow.IsDown = false; break;
 			case (VK_UP): Controls->Controls.UpArrow.IsDown = false; break;
@@ -1209,8 +1516,7 @@ UpdateControls(controls * Controls, HWND Window) {
 		}
 		break;
 
-		default:
-		{
+		default: {
 			TranslateMessage(&WindowMessage);
 			DispatchMessage(&WindowMessage);
 		}
@@ -1221,7 +1527,8 @@ UpdateControls(controls * Controls, HWND Window) {
 }
 
 void
-TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef) {
+TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
+{
 	int32 TokenIndex = 0;
 	while (TokenIndex < TokensCount) {
 
@@ -1369,308 +1676,12 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef) {
 	}
 }
 
-#ifdef USING_OPENGL
-int CALLBACK
-WinMain(HINSTANCE Instance,
-        HINSTANCE PrevInstance,
-        LPSTR CommandLine,
-        int ShowCode)
+extern int32
+TestMethod()
 {
-	// NOTE this is the virtual pixel size. The actual pixel size of the window is different.
-	int32 WindowWidth = 1920 * 0.8f;
-	int32 WindowHeight = 1080 * 0.8f;
-
-	real32 WindowSizeAdjustment = 100.0f;
-
-	WNDCLASSA WindowClass = {};
-
-	WindowClass.style = CS_HREDRAW | CS_VREDRAW;
-	WindowClass.lpfnWndProc = Win32MainWindowCallback;
-	WindowClass.hInstance = Instance;
-	WindowClass.hCursor = LoadCursor(0, IDC_ARROW);
-	//    WindowClass.hIcon;
-	WindowClass.lpszClassName = "TowerWindowClass";
-	if (RegisterClassA(&WindowClass))
-	{
-		HWND Window =
-		    CreateWindowExA(
-		        0, // WS_EX_TOPMOST|WS_EX_LAYERED,
-		        WindowClass.lpszClassName,
-		        "SandCat",
-		        WS_VISIBLE,
-		        // WS_MAXIMIZE | WS_VISIBLE,
-		        0, 0,
-		        WindowWidth, WindowHeight,
-		        0,
-		        0,
-		        Instance,
-		        0);
-		if (Window)
-		{
-			// Init open gl
-			HDC DeviceContext = GetDC(Window);
-
-			PIXELFORMATDESCRIPTOR DesiredPixelFormat = {};
-			DesiredPixelFormat.nSize = sizeof(DesiredPixelFormat);
-			DesiredPixelFormat.nVersion = 1;
-			DesiredPixelFormat.dwFlags = PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER;
-			DesiredPixelFormat.cColorBits = 24;
-			DesiredPixelFormat.cAlphaBits = 8;
-			DesiredPixelFormat.cStencilBits = 8;
-			DesiredPixelFormat.iLayerType = PFD_MAIN_PLANE;
-
-			int SuggestedPixelFormatIndex = ChoosePixelFormat(DeviceContext, &DesiredPixelFormat);
-			PIXELFORMATDESCRIPTOR SuggestedPixelFormat = {};
-			DescribePixelFormat(DeviceContext, SuggestedPixelFormatIndex, sizeof(SuggestedPixelFormat), &SuggestedPixelFormat);
-			SetPixelFormat(DeviceContext, SuggestedPixelFormatIndex, &SuggestedPixelFormat);
-
-			HGLRC OpenGLRC = wglCreateContext(DeviceContext);
-			if (!wglMakeCurrent(DeviceContext, OpenGLRC))
-			{
-				Assert(0);
-				// TODO diagnostic
-			}
-
-			ReleaseDC(Window, DeviceContext);
-
-			RECT ScreenSize;
-			GetWindowRect(Window, &ScreenSize);
-			window_info WindowInfo = {};
-			WindowInfo.Width = ScreenSize.right - 15;
-			WindowInfo.Height = ScreenSize.bottom - 40;
-
-			// monitor is 105
-			// device is 538
-			// WindowInfo.Width = (uint32)(VirtualWidth / WindowSizeAdjustment);
-			// WindowInfo.Height = (uint32)(VirtualHeight / WindowSizeAdjustment);
-			// SetWindowPos(Window, HWND_TOP, 0, 0, WindowInfo.Width, WindowInfo.Height, NULL);
-
-			render_layer RenderObjects[3];
-
-			game_def GameDefinition = LoadGameDefinition();
-			controls Controls = {};
-			Controls.Controls.UpArrow.Name = "UpArrow";
-			Controls.Controls.DownArrow.Name = "DownArrow";
-			Controls.Controls.LeftArrow.Name = "LeftArrow";
-			Controls.Controls.RightArrow.Name = "RightArrow";
-			Controls.Controls.W.Name = "W";
-			Controls.Controls.A.Name = "A";
-			Controls.Controls.S.Name = "S";
-			Controls.Controls.D.Name = "D";
-			Controls.Controls.Q.Name = "Q";
-			Controls.Controls.E.Name = "E";
-
-			bool32 CanDoAction = true;
-
-			GlobalRunning = true;
-			while (GlobalRunning)
-			{
-				UpdateControls(&Controls, Window);
-
-				// Game stuff
-
-				// reset all the lists
-				{
-					for (uint32 LayerIndex = 0;  LayerIndex < RenderLayer_Count; LayerIndex++) {
-						RenderObjects[LayerIndex].EntitiesCount = 0;
-					}
-				}
-
-				//all rendering stuff needs to happen in here
-				{
-					// This is for ShieldPush2.sc
-					if (false) {
-						vector2 GridTopLeft = vector2{50.0f, 50.0f};
-						real64 GridCellSize = 50;
-						// int32 GridCellCount  = FluentSearch("F", GameDefinition.Fluents, GameDefinition.FluentsCount,
-						// GameDefinition.Entities, GameDefinition.EntitiesCount)->Value;
-
-						int32 GridCellCount = FluentSearch("GridMax'y", GameDefinition.Fluents, GameDefinition.FluentsCount,
-						                                   GameDefinition.InstancedEntities, GameDefinition.InstancedEntitiesCount).Fluent->Value;
-
-
-						// square grid outline
-						{
-							real32 Grey = 0.8f;
-							real64 SquareSide = GridCellSize * GridCellCount;
-							gl_square GridOutline = MakeGLSquare(GridTopLeft + vector2{SquareSide / 2.0f, SquareSide / 2.0f}, SquareSide + GridCellSize, color{Grey, Grey, Grey, 1.0f});
-							PushRenderSquare(&RenderObjects[0], GridOutline);
-						}
-
-						// if (FindFluent("V_BlockX", GameDefinition.Fluents, GameDefinition.FluentsCount,
-						// GameDefinition.Entities, GameDefinition.EntitiesCount) != NULL) {
-						{
-							vector2 BlockPos = {FluentSearch("BlockPos'x", GameDefinition.Fluents, GameDefinition.FluentsCount,
-							                                 GameDefinition.InstancedEntities, GameDefinition.InstancedEntitiesCount).Fluent->Value,
-							                    FluentSearch("BlockPos'y", GameDefinition.Fluents, GameDefinition.FluentsCount,
-							                                 GameDefinition.InstancedEntities, GameDefinition.InstancedEntitiesCount).Fluent->Value
-							                   };
-
-							vector2 ScreenPos = (BlockPos * vector2{GridCellSize, GridCellSize}) + GridTopLeft;
-							gl_square GridOutline = MakeGLSquare(ScreenPos, GridCellSize, COLOR_BLACK);
-							PushRenderSquare(&RenderObjects[0], GridOutline);
-						}
-						// }
-
-						// if (FindFluent("H_BlockX", GameDefinition.Fluents, GameDefinition.FluentsCount,
-						//                GameDefinition.Entities, GameDefinition.EntitiesCount) != NULL) {
-						// 	vector2 BlockPos = {FindFluent("H_BlockX", GameDefinition.Fluents, GameDefinition.FluentsCount,
-						// 	                               GameDefinition.Entities, GameDefinition.EntitiesCount)->Value,
-						// 	                    FindFluent("H_BlockY", GameDefinition.Fluents, GameDefinition.FluentsCount,
-						// 	                               GameDefinition.Entities, GameDefinition.EntitiesCount)->Value
-						// 	                   };
-
-						// 	vector2 ScreenPos = (BlockPos * vector2{GridCellSize, GridCellSize}) + GridTopLeft;
-						// 	gl_square GridOutline = MakeGLSquare(ScreenPos, GridCellSize, COLOR_BLACK);
-						// 	PushRenderSquare(&RenderObjects[0], GridOutline);
-						// }
-
-						// if (FindFluent("PlayerHoldingShield", GameDefinition.Fluents, GameDefinition.FluentsCount,
-						//                GameDefinition.Entities, GameDefinition.EntitiesCount) == NULL) {
-						// 	vector2 ShieldPos = {FindFluent("ShieldPosX", GameDefinition.Fluents, GameDefinition.FluentsCount,
-						// 	                                GameDefinition.Entities, GameDefinition.EntitiesCount)->Value,
-						// 	                     FindFluent("ShieldPosY", GameDefinition.Fluents, GameDefinition.FluentsCount,
-						// 	                                GameDefinition.Entities, GameDefinition.EntitiesCount)->Value
-						// 	                    };
-
-						// 	vector2 Center = (ShieldPos * vector2{GridCellSize, GridCellSize}) + GridTopLeft;
-
-						// 	rect ShieldRect = {};
-						// 	ShieldRect.TopLeft = Center - vector2{(GridCellSize / 2.0f) - 5.0f, (GridCellSize / 2.0f) + 5.0f};
-						// 	ShieldRect.BottomRight = Center + vector2{(GridCellSize / 2.0f) - 5.0f, (GridCellSize / 2.0f) + 5.0f};
-
-						// 	gl_square GridOutline = MakeGLRectangle(ShieldRect, COLOR_BLUE);
-						// 	PushRenderSquare(&RenderObjects[0], GridOutline);
-						// }
-
-						// if (FindFluent("UsePlayerPos", GameDefinition.Fluents, GameDefinition.FluentsCount,
-						//                GameDefinition.Entities, GameDefinition.EntitiesCount) != NULL) {
-
-
-						vector2 PlayerPos = {FluentSearch("PlayerPos'x", GameDefinition.Fluents, GameDefinition.FluentsCount,
-						                                  GameDefinition.InstancedEntities, GameDefinition.InstancedEntitiesCount).Fluent->Value,
-						                     FluentSearch("PlayerPos'y", GameDefinition.Fluents, GameDefinition.FluentsCount,
-						                                  GameDefinition.InstancedEntities, GameDefinition.InstancedEntitiesCount).Fluent->Value
-						                    };
-
-						vector2 PlayerScreenPos = (PlayerPos * vector2{GridCellSize, GridCellSize}) + GridTopLeft;
-						gl_square GridOutline = MakeGLSquare(PlayerScreenPos, GridCellSize, COLOR_RED);
-						PushRenderSquare(&RenderObjects[0], GridOutline);
-					}
-				}
-
-				// control bindings
-				{
-					if (CanDoAction) {
-
-						int32 Index = 0;
-						for (; Index < GameDefinition.BoundCount; Index++) {
-							bool32 BindingDone = false;
-							string KeyWanting = GameDefinition.BoundEvents[Index].KeyName;
-
-							for (int32 ContIndex = 0; ContIndex < ARRAY_SIZE(Controls.AllControls, button); ContIndex++) {
-								if (Controls.AllControls[ContIndex].IsDown && KeyWanting == Controls.AllControls[ContIndex].Name) {
-
-									for (int32 BEIndex = 0; BEIndex < GameDefinition.BoundEvents[Index].NextEventName; BEIndex++) {
-										string EventWanting = GameDefinition.BoundEvents[Index].EventNames[BEIndex];
-
-										// find the event to do
-										for (int32 EventIndex = 0; EventIndex < GameDefinition.EventsCount; EventIndex++) {
-											if (!BindingDone && GameDefinition.Events[EventIndex].Name == EventWanting) {
-
-												event* EventDoing = &GameDefinition.Events[EventIndex];
-
-												if (EventValid(EventDoing->ConditionalTokens, EventDoing->ConditionalsCount, &GameDefinition)) {
-													TokensChangeState(EventDoing->ConsquenceTokens, EventDoing->NextConsqFluent, &GameDefinition);
-													CanDoAction = false;
-													BindingDone = true;
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-					} else {
-						bool32 AllButtonsUp = true;
-						for (int32 Index = 0; Index < ARRAY_SIZE(Controls.AllControls, button); Index++) {
-							if (Controls.AllControls[Index].IsDown) {
-								AllButtonsUp = false;
-							}
-						}
-
-						if (AllButtonsUp) {
-							CanDoAction = true;
-						}
-					}
-
-					// 		// can only do another action once the frst input has been released
-					// 	}
-
-				}
-
-				// render stuff!
-				{
-					glMatrixMode(GL_MODELVIEW);
-					glLoadIdentity();
-
-					glOrtho(ScreenSize.left, WindowInfo.Width, WindowInfo.Height, ScreenSize.top, 1, -1);
-
-					glEnable(GL_ALPHA);
-					glClearColor(0.6f, 0.6f, 0.6f, 1.0f);
-					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-					glColorMask(1, 1, 1, 1);
-
-					for (int32 LayerIndex = 0;
-					        LayerIndex < RenderLayer_Count;
-					        LayerIndex++)
-					{
-						for (uint32 RenderIndex = 0;
-						        RenderIndex < (uint32)RenderObjects[LayerIndex].EntitiesCount;
-						        RenderIndex++)
-						{
-							render_entity* Entity = &RenderObjects[LayerIndex].Entities[RenderIndex];
-							switch (Entity->Type)
-							{
-							case RenderEntity_Texture:
-							{
-								RenderTexture(&Entity->Texture);
-								break;
-							}
-
-							case RenderEntity_Line:
-							{
-								RenderLine(&Entity->Line);
-								break;
-							}
-
-							case RenderEntity_Square:
-							{
-								RenderSquare(&Entity->Square);
-								break;
-							}
-
-							case RenderEntity_ColorPoints:
-							{
-								RenderColorPoints(&Entity->ColorPoints);
-								break;
-							}
-							}
-						}
-					}
-
-					glFlush();
-
-					HDC DC = GetDC(Window);
-					SwapBuffers(DC);
-					ReleaseDC(Window, DC);
-				}
-			}
-		}
-	}
+	return (69);
 }
 
-#else
 
 void
 main(int argc, char const **argv)
@@ -1681,8 +1692,7 @@ main(int argc, char const **argv)
 	{
 		PrintOptions(&GameDefinition);
 
-		GlobalRunning = true;
-		while (GlobalRunning) {
+		while (true) {
 			char Input[100];
 			scanf("%99s", &Input);
 			char Selection = Input[0];
@@ -1706,4 +1716,3 @@ main(int argc, char const **argv)
 		return;
 	}
 }
-#endif
