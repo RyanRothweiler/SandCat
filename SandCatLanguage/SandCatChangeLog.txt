@@ -4,4 +4,8 @@
 0.0.2
 - Changed & to and, | to or, and ! to not
 - Added ability to bind multiple events to one key, with an ordered priority
-- Added
+- Added new legitamete parser and lexer. Changing syntax is much easier. Parsing sc files is much more stable. 
+- Added basic dot notation.
+- Changed action syntax to DOES - IF - 
+
+0.0.3
