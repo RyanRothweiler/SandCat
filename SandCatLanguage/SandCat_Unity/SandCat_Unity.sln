@@ -1,7 +1,7 @@
+﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2008
-
-Project("{A99BBBFE-0F76-47BE-6370-CEDA37A07774}") = "SandCat_Unity", "Assembly-CSharp.csproj", "{E7A1BB08-1CBE-9982-DF85-6648F8BA5662}"
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SandCat_Unity", "Assembly-CSharp.csproj", "{E7A1BB08-1CBE-9982-DF85-6648F8BA5662}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

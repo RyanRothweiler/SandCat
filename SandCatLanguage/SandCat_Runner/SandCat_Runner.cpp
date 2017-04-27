@@ -23,6 +23,13 @@ double		 		typedef 	real64;
 
 #define ARRAY_SIZE(Array, Type) sizeof(Array) / sizeof(Type)
 #define Assert(Expression) if (!(Expression)) {*(int *)0 = 0;}
+
+#define ID_LINE __LINE__
+#define ID_FILE __FILE__
+#define ID_METHOD __func__
+#define COUNTER __COUNTER__
+
+#define RetAssert(Expression) if (!(Expression)) {return(__LINE__);}
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 
@@ -906,176 +913,6 @@ CheckNumberOrID(parser* Parser, token_stack* Tokens)
 	}
 }
 
-token_stack
-CreateTokens()
-{
-	token_stack Tokens = {};
-
-	parser Parser = {};
-	ResetParserWord(&Parser);
-
-	int32 CharactersCount = 0;
-	string ProgramLocation = "../Cavern2.sc";
-
-	// Load the program into the parser
-	{
-		HANDLE FileHandle = CreateFile(ProgramLocation.CharArray, GENERIC_READ, FILE_SHARE_READ,
-		                               NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
-		int32 FileSizeBytes = GetFileSize(FileHandle, NULL);
-
-		// Make sure we got the file
-		Assert(FileSizeBytes != 0);
-
-		Parser.CharOn = (char*)malloc(FileSizeBytes);
-		ZeroMemory(Parser.CharOn, FileSizeBytes);
-
-		CharactersCount = FileSizeBytes;
-
-		DWORD BytesRead;
-		if (!ReadFile(FileHandle, (void*)Parser.CharOn, FileSizeBytes, &BytesRead, NULL)) {
-			// Couldn't read the file. Something wrong happened
-			Assert(0);
-		}
-
-		CloseHandle(FileHandle);
-	}
-	Assert(CharactersCount > 0);
-
-	bool32 InCommentMode = false;
-
-	string ActionLiteral = "action";
-	string MethodLiteral = "method";
-	string UsingLiteral = "using";
-	string DoesLiteral = "does";
-	string IfLiteral = "if";
-	string CommentLiteral = "//";
-	string BindLiteral = "bind";
-	string EntityLiteral = "entity";
-	string InstanceLiteral = "instance";
-	string IsLiteral = "is";
-	string WhenLiteral = "when";
-	string GreaterThanOrEqualLiteral = ">=";
-	string LessThanOrEqualLiteral = "<=";
-	string AndLiteral = "and";
-	string OrLiteral = "or";
-	string NotLiteral = "not";
-
-	for (int32 Index = 0; Index < CharactersCount; Index++) {
-
-		char ThisChar = *Parser.CharOn;
-
-		if (ThisChar == NULL) {
-			break;
-		}
-
-		// ignore comments
-		if (InCommentMode) {
-			if (ThisChar == '\n') {
-				InCommentMode = false;
-			}
-			Parser.CharOn++;
-			continue;
-		}
-
-#define ADDTOKEN(token) AddToken(&Parser, &Tokens, token, Parser.WordOn);
-
-		//NOTE order of these ifs is very important
-		if (ThisChar == NULL) {
-			// end of program
-			break;
-		} else if (Parser.WordOn == NotLiteral) {
-			ADDTOKEN(token_type::nott);
-		} else if (Parser.WordOn == OrLiteral) {
-			ADDTOKEN(token_type::orr);
-		} else if (Parser.WordOn == DoesLiteral) {
-			ADDTOKEN(token_type::does);
-		} else if (Parser.WordOn == IfLiteral) {
-			ADDTOKEN(token_type::iff);
-		} else if (Parser.WordOn == BindLiteral) {
-			ADDTOKEN(token_type::bind);
-		} else if (Parser.WordOn == UsingLiteral) {
-			ADDTOKEN(token_type::usingg);
-		} else if (Parser.WordOn == MethodLiteral) {
-			ADDTOKEN(token_type::method);
-		} else if (Parser.WordOn == AndLiteral) {
-			ADDTOKEN(token_type::andd);
-		} else if (Parser.WordOn == ActionLiteral) {
-			ADDTOKEN(token_type::action);
-		} else if (Parser.WordOn == GreaterThanOrEqualLiteral) {
-			ADDTOKEN(token_type::greaterThanOrEqual);
-		} else if (Parser.WordOn == LessThanOrEqualLiteral) {
-			ADDTOKEN(token_type::lessThanOrEqual);
-		} else if (Parser.WordOnIndex != 0 && StringIsInt(Parser.WordOn) && !CharIsInt(ThisChar) && ThisChar == ')') {
-			ADDTOKEN(token_type::number);
-		}
-
-		if (Parser.WordOnIndex != 0 && (ThisChar == ' ' || ThisChar == '.') && Parser.WordOn != CommentLiteral) {
-			CheckNumberOrID(&Parser, &Tokens);
-		}
-
-		if (ThisChar == '.') {
-			ADDTOKEN(token_type::period);
-		} else if (ThisChar == ':') {
-			CheckNumberOrID(&Parser, &Tokens);
-			ADDTOKEN(token_type::colon);
-		} else if (ThisChar == ',') {
-			CheckNumberOrID(&Parser, &Tokens);
-			ADDTOKEN(token_type::comma);
-		} else if (ThisChar == '!') {
-			InCommentMode = true;
-		} else if (ThisChar == '=') {
-			ADDTOKEN(token_type::equalTo);
-		} else if (ThisChar == '<') {
-			ADDTOKEN(token_type::lessThan);
-		} else if (ThisChar == '>') {
-			ADDTOKEN(token_type::greaterThan);
-		} else if (ThisChar == '-') {
-			CheckNumberOrID(&Parser, &Tokens);
-			ADDTOKEN(token_type::sub);
-		} else if (ThisChar == '+') {
-			CheckNumberOrID(&Parser, &Tokens);
-			ADDTOKEN(token_type::add);
-		} else if (ThisChar == '/') {
-			CheckNumberOrID(&Parser, &Tokens);
-			ADDTOKEN(token_type::div);
-		} else if (ThisChar == '*') {
-			CheckNumberOrID(&Parser, &Tokens);
-			ADDTOKEN(token_type::mult);
-		} else if (ThisChar == ')') {
-			CheckNumberOrID(&Parser, &Tokens);
-			ADDTOKEN(token_type::closeParen);
-		} else if (ThisChar == '(') {
-			CheckNumberOrID(&Parser, &Tokens);
-			ADDTOKEN(token_type::openParen);
-		} else if (ThisChar == ']') {
-			CheckNumberOrID(&Parser, &Tokens);
-			ADDTOKEN(token_type::closeBracket);
-		} else if (ThisChar == '[') {
-			CheckNumberOrID(&Parser, &Tokens);
-			ADDTOKEN(token_type::openBracket);
-		} else if (ThisChar == '}') {
-			CheckNumberOrID(&Parser, &Tokens);
-			ADDTOKEN(token_type::closedCurly);
-		} else if (ThisChar == '{') {
-			CheckNumberOrID(&Parser, &Tokens);
-			ADDTOKEN(token_type::openCurly);
-		} else if (ThisChar == DotNotationChar) {
-			CheckNumberOrID(&Parser, &Tokens);
-			ADDTOKEN(token_type::dot);
-		} else if (ThisChar == '\r') {
-			CheckNumberOrID(&Parser, &Tokens);
-		} else if (*Parser.CharOn != ' ' && ThisChar != '\r' && ThisChar != '\t' && ThisChar != '\n') {
-			Parser.WordOn[Parser.WordOnIndex] = *Parser.CharOn;
-			Parser.WordOnIndex++;
-		}
-
-		Parser.CharOn++;
-	}
-
-	return (Tokens);
-}
-
 real64
 GetTokenValue(token_info Token, fluent* Fluents, int32 FluentsCount)
 {
@@ -1183,31 +1020,195 @@ GrabFluent(token_info* Tokens, int32 StackStart, bool32 Evaluate,
 	return (FluentAdding);
 }
 
-game_def
-LoadGameDefinition()
+int32
+LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefinition)
 {
-	game_def GameDefinition = {};
+	RetAssert(RulesLength != 0);
 
 	// TODO at some point make sure we don't exceede the maximum of any of these
 	int32 MaxCount = 100;
-	GameDefinition.Fluents = (fluent*)malloc(MaxCount * sizeof(fluent));
-	GameDefinition.Events = (event*)malloc(MaxCount * sizeof(event));
-	GameDefinition.BoundEvents = (event_bind*)malloc(MaxCount * sizeof(event_bind));
-	GameDefinition.Entities = (entity*)malloc(MaxCount * sizeof(entity));
-	GameDefinition.InstancedEntities = (entity*)malloc(MaxCount * sizeof(entity));
-	GameDefinition.Methods = (method*)malloc(MaxCount * sizeof(method));
+	GameDefinition->Fluents = (fluent*)malloc(MaxCount * sizeof(fluent));
+	GameDefinition->Events = (event*)malloc(MaxCount * sizeof(event));
+	GameDefinition->BoundEvents = (event_bind*)malloc(MaxCount * sizeof(event_bind));
+	GameDefinition->Entities = (entity*)malloc(MaxCount * sizeof(entity));
+	GameDefinition->InstancedEntities = (entity*)malloc(MaxCount * sizeof(entity));
+	GameDefinition->Methods = (method*)malloc(MaxCount * sizeof(method));
 
-	ZeroMemory(GameDefinition.Fluents, sizeof(fluent) * MaxCount);
-	ZeroMemory(GameDefinition.Events, sizeof(event) * MaxCount);
-	ZeroMemory(GameDefinition.BoundEvents, sizeof(event_bind) * MaxCount);
-	ZeroMemory(GameDefinition.Entities, sizeof(entity) * MaxCount);
-	ZeroMemory(GameDefinition.InstancedEntities, sizeof(entity) * MaxCount);
-	ZeroMemory(GameDefinition.Methods, sizeof(method) * MaxCount);
+	ZeroMemory(GameDefinition->Fluents, sizeof(fluent) * MaxCount);
+	ZeroMemory(GameDefinition->Events, sizeof(event) * MaxCount);
+	ZeroMemory(GameDefinition->BoundEvents, sizeof(event_bind) * MaxCount);
+	ZeroMemory(GameDefinition->Entities, sizeof(entity) * MaxCount);
+	ZeroMemory(GameDefinition->InstancedEntities, sizeof(entity) * MaxCount);
+	ZeroMemory(GameDefinition->Methods, sizeof(method) * MaxCount);
 
 	// lexer and parser system.
 	{
+		token_stack Tokens = {};
+
 		// Create all the tokens
-		token_stack Tokens = CreateTokens();
+		{
+			parser Parser = {};
+			ResetParserWord(&Parser);
+
+			int32 CharactersCount = RulesLength;
+			Parser.CharOn = RulesData;
+
+			// Load the program into the parser
+			{
+				// HANDLE FileHandle = CreateFile(ProgramLocation.CharArray, GENERIC_READ, FILE_SHARE_READ,
+				//                                NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+				// int32 FileSizeBytes = GetFileSize(FileHandle, NULL);
+
+				// // Make sure we got the file
+				// Assert(FileSizeBytes != 0);
+
+				// Parser.CharOn = (char*)malloc(FileSizeBytes);
+				// ZeroMemory(Parser.CharOn, FileSizeBytes);
+
+				// CharactersCount = FileSizeBytes;
+
+				// DWORD BytesRead;
+				// if (!ReadFile(FileHandle, (void*)Parser.CharOn, FileSizeBytes, &BytesRead, NULL)) {
+				// 	// Couldn't read the file. Something wrong happened
+				// 	Assert(0);
+				// }
+
+				// CloseHandle(FileHandle);
+			}
+			Assert(CharactersCount > 0);
+
+			bool32 InCommentMode = false;
+
+			string ActionLiteral = "action";
+			string MethodLiteral = "method";
+			string UsingLiteral = "using";
+			string DoesLiteral = "does";
+			string IfLiteral = "if";
+			string CommentLiteral = "//";
+			string BindLiteral = "bind";
+			string EntityLiteral = "entity";
+			string InstanceLiteral = "instance";
+			string IsLiteral = "is";
+			string WhenLiteral = "when";
+			string GreaterThanOrEqualLiteral = ">=";
+			string LessThanOrEqualLiteral = "<=";
+			string AndLiteral = "and";
+			string OrLiteral = "or";
+			string NotLiteral = "not";
+
+			for (int32 Index = 0; Index < CharactersCount; Index++) {
+
+				char ThisChar = *Parser.CharOn;
+
+				if (ThisChar == NULL) {
+					break;
+				}
+
+				// ignore comments
+				if (InCommentMode) {
+					if (ThisChar == '\n') {
+						InCommentMode = false;
+					}
+					Parser.CharOn++;
+					continue;
+				}
+
+#define ADDTOKEN(token) AddToken(&Parser, &Tokens, token, Parser.WordOn);
+
+				//NOTE order of these ifs is very important
+				if (ThisChar == NULL) {
+					// end of program
+					break;
+				} else if (Parser.WordOn == NotLiteral) {
+					ADDTOKEN(token_type::nott);
+				} else if (Parser.WordOn == OrLiteral) {
+					ADDTOKEN(token_type::orr);
+				} else if (Parser.WordOn == DoesLiteral) {
+					ADDTOKEN(token_type::does);
+				} else if (Parser.WordOn == IfLiteral) {
+					ADDTOKEN(token_type::iff);
+				} else if (Parser.WordOn == BindLiteral) {
+					ADDTOKEN(token_type::bind);
+				} else if (Parser.WordOn == UsingLiteral) {
+					ADDTOKEN(token_type::usingg);
+				} else if (Parser.WordOn == MethodLiteral) {
+					ADDTOKEN(token_type::method);
+				} else if (Parser.WordOn == AndLiteral) {
+					ADDTOKEN(token_type::andd);
+				} else if (Parser.WordOn == ActionLiteral) {
+					ADDTOKEN(token_type::action);
+				} else if (Parser.WordOn == GreaterThanOrEqualLiteral) {
+					ADDTOKEN(token_type::greaterThanOrEqual);
+				} else if (Parser.WordOn == LessThanOrEqualLiteral) {
+					ADDTOKEN(token_type::lessThanOrEqual);
+				} else if (Parser.WordOnIndex != 0 && StringIsInt(Parser.WordOn) && !CharIsInt(ThisChar) && ThisChar == ')') {
+					ADDTOKEN(token_type::number);
+				}
+
+				if (Parser.WordOnIndex != 0 && (ThisChar == ' ' || ThisChar == '.') && Parser.WordOn != CommentLiteral) {
+					CheckNumberOrID(&Parser, &Tokens);
+				}
+
+				if (ThisChar == '.') {
+					ADDTOKEN(token_type::period);
+				} else if (ThisChar == ':') {
+					CheckNumberOrID(&Parser, &Tokens);
+					ADDTOKEN(token_type::colon);
+				} else if (ThisChar == ',') {
+					CheckNumberOrID(&Parser, &Tokens);
+					ADDTOKEN(token_type::comma);
+				} else if (ThisChar == '!') {
+					InCommentMode = true;
+				} else if (ThisChar == '=') {
+					ADDTOKEN(token_type::equalTo);
+				} else if (ThisChar == '<') {
+					ADDTOKEN(token_type::lessThan);
+				} else if (ThisChar == '>') {
+					ADDTOKEN(token_type::greaterThan);
+				} else if (ThisChar == '-') {
+					CheckNumberOrID(&Parser, &Tokens);
+					ADDTOKEN(token_type::sub);
+				} else if (ThisChar == '+') {
+					CheckNumberOrID(&Parser, &Tokens);
+					ADDTOKEN(token_type::add);
+				} else if (ThisChar == '/') {
+					CheckNumberOrID(&Parser, &Tokens);
+					ADDTOKEN(token_type::div);
+				} else if (ThisChar == '*') {
+					CheckNumberOrID(&Parser, &Tokens);
+					ADDTOKEN(token_type::mult);
+				} else if (ThisChar == ')') {
+					CheckNumberOrID(&Parser, &Tokens);
+					ADDTOKEN(token_type::closeParen);
+				} else if (ThisChar == '(') {
+					CheckNumberOrID(&Parser, &Tokens);
+					ADDTOKEN(token_type::openParen);
+				} else if (ThisChar == ']') {
+					CheckNumberOrID(&Parser, &Tokens);
+					ADDTOKEN(token_type::closeBracket);
+				} else if (ThisChar == '[') {
+					CheckNumberOrID(&Parser, &Tokens);
+					ADDTOKEN(token_type::openBracket);
+				} else if (ThisChar == '}') {
+					CheckNumberOrID(&Parser, &Tokens);
+					ADDTOKEN(token_type::closedCurly);
+				} else if (ThisChar == '{') {
+					CheckNumberOrID(&Parser, &Tokens);
+					ADDTOKEN(token_type::openCurly);
+				} else if (ThisChar == DotNotationChar) {
+					CheckNumberOrID(&Parser, &Tokens);
+					ADDTOKEN(token_type::dot);
+				} else if (ThisChar == '\r') {
+					CheckNumberOrID(&Parser, &Tokens);
+				} else if (*Parser.CharOn != ' ' && ThisChar != '\r' && ThisChar != '\t' && ThisChar != '\n') {
+					Parser.WordOn[Parser.WordOnIndex] = *Parser.CharOn;
+					Parser.WordOnIndex++;
+				}
+
+				Parser.CharOn++;
+			}
+		}
 
 		// go throught the tokens. Filling the data structures with the stuff.
 		{
@@ -1236,12 +1237,12 @@ LoadGameDefinition()
 					        Tokens.Tokens[StatementEnd].Type == token_type::closeParen) {
 						// Fluent with value statement
 
-						GameDefinition.Fluents[GameDefinition.FluentsCount] =
+						GameDefinition->Fluents[GameDefinition->FluentsCount] =
 						    GrabFluent(Tokens.Tokens, StatementStart, true,
-						               GameDefinition.Fluents, GameDefinition.FluentsCount,
-						               GameDefinition.InstancedEntities, GameDefinition.InstancedEntitiesCount);
+						               GameDefinition->Fluents, GameDefinition->FluentsCount,
+						               GameDefinition->InstancedEntities, GameDefinition->InstancedEntitiesCount);
 
-						GameDefinition.FluentsCount++;
+						GameDefinition->FluentsCount++;
 						RESET
 					} else if (Tokens.Tokens[StatementStart].Type == token_type::id &&
 					           Tokens.Tokens[StatementStart + 1].Type == token_type::dot &&
@@ -1251,7 +1252,7 @@ LoadGameDefinition()
 						string EntityName = Tokens.Tokens[StatementStart].Name;
 						string FluentName = Tokens.Tokens[StatementStart + 2].Name;
 
-						entity* Entity = FindEntity(EntityName, GameDefinition.InstancedEntities, GameDefinition.InstancedEntitiesCount);
+						entity* Entity = FindEntity(EntityName, GameDefinition->InstancedEntities, GameDefinition->InstancedEntitiesCount);
 						if (Entity == NULL) {
 							// That entity name does not exist. Report error.
 							Assert(0);
@@ -1261,11 +1262,11 @@ LoadGameDefinition()
 						if (Fluent != NULL) {
 							// modify the existing one
 							Fluent->Value = GrabFluent(Tokens.Tokens, StatementStart + 2, true, Entity->Fluents, Entity->FluentsCount,
-							                           GameDefinition.InstancedEntities, GameDefinition.InstancedEntitiesCount).Value;
+							                           GameDefinition->InstancedEntities, GameDefinition->InstancedEntitiesCount).Value;
 						} else {
 							// add a new one
 							Entity->Fluents[Entity->FluentsCount] = GrabFluent(Tokens.Tokens, StatementStart + 2, true, Entity->Fluents, Entity->FluentsCount,
-							                                        GameDefinition.InstancedEntities, GameDefinition.InstancedEntitiesCount);
+							                                        GameDefinition->InstancedEntities, GameDefinition->InstancedEntitiesCount);
 							Entity->FluentsCount++;
 						}
 
@@ -1275,18 +1276,18 @@ LoadGameDefinition()
 					           Tokens.Tokens[StatementStart + 1].Type == token_type::period) {
 						// Fluent without value
 
-						fluent *FluentAdding = &GameDefinition.Fluents[GameDefinition.FluentsCount];
+						fluent *FluentAdding = &GameDefinition->Fluents[GameDefinition->FluentsCount];
 						FluentAdding->Name = Tokens.Tokens[StatementStart].Name;
 						FluentAdding->HasValue = false;
 
-						GameDefinition.FluentsCount++;
+						GameDefinition->FluentsCount++;
 
 						RESET
 					} else if (HasDoes && Tokens.Tokens[StatementStart].Type == token_type::action) {
 						// Action / event
 
-						event* Event = &GameDefinition.Events[GameDefinition.EventsCount];
-						GameDefinition.EventsCount++;
+						event* Event = &GameDefinition->Events[GameDefinition->EventsCount];
+						GameDefinition->EventsCount++;
 
 						Event->Name = Tokens.Tokens[StatementStart + 2].Name;
 
@@ -1319,10 +1320,10 @@ LoadGameDefinition()
 					} else if (Tokens.Tokens[StatementStart].Type == token_type::method) {
 						// Method
 
-						GameDefinition.Methods[GameDefinition.MethodsCount] = {};
+						GameDefinition->Methods[GameDefinition->MethodsCount] = {};
 
-						method* NextMethod = &GameDefinition.Methods[GameDefinition.MethodsCount];
-						GameDefinition.MethodsCount++;
+						method* NextMethod = &GameDefinition->Methods[GameDefinition->MethodsCount];
+						GameDefinition->MethodsCount++;
 						NextMethod->Name = Tokens.Tokens[StatementStart + 1].Name;
 
 						int32 UsingOffset = 3;
@@ -1365,8 +1366,8 @@ LoadGameDefinition()
 						// Key binding
 
 						int32 TI = StatementStart + 2;
-						event_bind* Binding = &GameDefinition.BoundEvents[GameDefinition.BoundCount];
-						GameDefinition.BoundCount++;
+						event_bind* Binding = &GameDefinition->BoundEvents[GameDefinition->BoundCount];
+						GameDefinition->BoundCount++;
 
 						// Get key
 						Binding->KeyName = Tokens.Tokens[TI].Name;
@@ -1385,8 +1386,8 @@ LoadGameDefinition()
 						// Entity
 
 						// These hold which entities we're now instancing
-						int32 EntityListStart = GameDefinition.InstancedEntitiesCount;
-						int32 EntitiyListEnd = GameDefinition.InstancedEntitiesCount;
+						int32 EntityListStart = GameDefinition->InstancedEntitiesCount;
+						int32 EntitiyListEnd = GameDefinition->InstancedEntitiesCount;
 
 						int32 TI = StatementStart;
 						while (Tokens.Tokens[TI].Type != token_type::colon) {
@@ -1394,8 +1395,8 @@ LoadGameDefinition()
 								// Add a new instanced entity
 								EntitiyListEnd++;
 
-								GameDefinition.InstancedEntities[GameDefinition.InstancedEntitiesCount].Name = Tokens.Tokens[TI].Name;
-								GameDefinition.InstancedEntitiesCount++;
+								GameDefinition->InstancedEntities[GameDefinition->InstancedEntitiesCount].Name = Tokens.Tokens[TI].Name;
+								GameDefinition->InstancedEntitiesCount++;
 
 							} else if (Tokens.Tokens[TI].Type == token_type::comma) {
 								// just ignore the comma, but it's still valid
@@ -1422,13 +1423,13 @@ LoadGameDefinition()
 						while (true) {
 
 							// Get the next fluent, and set all the instanced entities
-							fluent NextFluent = GrabFluent(Tokens.Tokens, TI, true, GameDefinition.Fluents, GameDefinition.FluentsCount,
-							                               GameDefinition.InstancedEntities, GameDefinition.InstancedEntitiesCount);
+							fluent NextFluent = GrabFluent(Tokens.Tokens, TI, true, GameDefinition->Fluents, GameDefinition->FluentsCount,
+							                               GameDefinition->InstancedEntities, GameDefinition->InstancedEntitiesCount);
 
 							for (int32 Index = EntityListStart; Index < EntitiyListEnd; Index++) {
-								GameDefinition.InstancedEntities[Index].TypeName = TypeName;
-								GameDefinition.InstancedEntities[Index].Fluents[GameDefinition.InstancedEntities[Index].FluentsCount] = NextFluent;
-								GameDefinition.InstancedEntities[Index].FluentsCount++;
+								GameDefinition->InstancedEntities[Index].TypeName = TypeName;
+								GameDefinition->InstancedEntities[Index].Fluents[GameDefinition->InstancedEntities[Index].FluentsCount] = NextFluent;
+								GameDefinition->InstancedEntities[Index].FluentsCount++;
 							}
 
 							// Move TI until we hit the next fluent
@@ -1452,7 +1453,7 @@ LoadGameDefinition()
 		}
 	}
 
-	return (GameDefinition);
+	return (0);
 }
 
 struct button {
@@ -1659,7 +1660,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 
 			// Move token index past the curly
 			while (Tokens[TokenIndex].Type != token_type::closedCurly) {
-				TokenIndex++;
+				// TokenIndex++;
 			}
 			TokenIndex++;
 
@@ -1676,18 +1677,49 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 	}
 }
 
+// Index is the error value.
+char* ReturnValues[] = {
+	"Success",
+	"Failure"
+};
+
+game_def GlobalRulesDef;
+
 extern "C"
 {
 #define EXPORT __declspec(dllexport)
 
-	int EXPORT TestMethod()
+	// Returns 0 if success, else returns the line number of the error
+	int32 EXPORT LoadGame(char* Rules, int32 RuleLen)
 	{
-		return (69);
+		GlobalRulesDef = {};
+		return (LoadGameDefinition(Rules, RuleLen, &GlobalRulesDef));
 	}
 
-	int EXPORT LoadProg(char* ProgName)
+	int32 EXPORT GetMethodsCount()
 	{
-		return (StringLength(ProgName));
+		return (GlobalRulesDef.MethodsCount);
+	}
+
+	// Returns 1 if it exists, 0 if fluent does not exist.
+	int32 EXPORT DoesFluentExist(char* Fluent)
+	{
+		fluent* F = FindFluentInList(Fluent, GlobalRulesDef.Fluents, GlobalRulesDef.FluentsCount);
+		if (F == NULL) {
+			return (0);
+		} else {
+			return (1);
+		}
+	}
+
+	// Returns 0 if the fluent doesn't exist
+	float EXPORT GetFluentValue(char* Fluent)
+	{
+		fluent* F = FindFluentInList(Fluent, GlobalRulesDef.Fluents, GlobalRulesDef.FluentsCount);
+		if (F == NULL) {
+			return (0);
+		}
+		return (F->Value);
 	}
 }
 
@@ -1695,33 +1727,33 @@ extern "C"
 void
 main(int argc, char const **argv)
 {
-	game_def GameDefinition = LoadGameDefinition();
+	// game_def GameDefinition = LoadGameDefinition();
 
-	// This is the playing part
-	{
-		PrintOptions(&GameDefinition);
+	// // This is the playing part
+	// {
+	// 	PrintOptions(&GameDefinition);
 
-		while (true) {
-			char Input[100];
-			scanf("%99s", &Input);
-			char Selection = Input[0];
-			system("cls");
+	// 	while (true) {
+	// 		char Input[100];
+	// 		scanf("%99s", &Input);
+	// 		char Selection = Input[0];
+	// 		system("cls");
 
-			string SelStr = Selection;
-			int32 SelInt = StringToInt32(SelStr);
-			if (SelInt < GameDefinition.EventsCount) {
-				// DO EVENT
-				if (EventValid(GameDefinition.Events[SelInt].ConditionalTokens, GameDefinition.Events[SelInt].ConditionalsCount, &GameDefinition)) {
-					TokensChangeState(GameDefinition.Events[SelInt].ConsquenceTokens, GameDefinition.Events[SelInt].NextConsqFluent, &GameDefinition);
-				}
-			} else {
-				Print("Not a valid action");
-			}
+	// 		string SelStr = Selection;
+	// 		int32 SelInt = StringToInt32(SelStr);
+	// 		if (SelInt < GameDefinition.EventsCount) {
+	// 			// DO EVENT
+	// 			if (EventValid(GameDefinition.Events[SelInt].ConditionalTokens, GameDefinition.Events[SelInt].ConditionalsCount, &GameDefinition)) {
+	// 				TokensChangeState(GameDefinition.Events[SelInt].ConsquenceTokens, GameDefinition.Events[SelInt].NextConsqFluent, &GameDefinition);
+	// 			}
+	// 		} else {
+	// 			Print("Not a valid action");
+	// 		}
 
-			PrintOptions(&GameDefinition);
-		}
+	// 		PrintOptions(&GameDefinition);
+	// 	}
 
-		Print("Closing");
-		return;
-	}
+	// 	Print("Closing");
+	// 	return;
+	// }
 }
