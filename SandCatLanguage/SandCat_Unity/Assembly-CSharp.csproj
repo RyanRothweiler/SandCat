@@ -46,8 +46,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\SandCat_Runner\SandCat_UnityRunner.cs" />
-     <None Include="Assets\SandCatRules\Cavern2.txt" />
+     <Compile Include="Assets\Games\Cavern2\ActionSpace.cs" />
+     <Compile Include="Assets\Games\Cavern2\Cavern2.cs" />
+     <Compile Include="Assets\SandCat_Runner\FluentTextDisplay.cs" />
+     <Compile Include="Assets\SandCat_Runner\SandCat.cs" />
+     <None Include="Assets\Games\Cavern2\Cavern2.txt" />
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Program Files/UnityVersions/Unity_5.6.0f/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>

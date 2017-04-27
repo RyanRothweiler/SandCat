@@ -589,7 +589,7 @@ FindEntity(string Name, entity* Entities, int32 EntitiesCount)
 		}
 	}
 
-	Assert(0);
+	// Assert(0);
 	return (NULL);
 }
 
@@ -1712,48 +1712,108 @@ extern "C"
 		}
 	}
 
-	// Returns 0 if the fluent doesn't exist
+	// Returns 123456 if the fluent doesn't exist. Though 0 doesn't necessarily mean an error
+	// Though 123456 doesn't necessarily mean an error, thus probably check that the entity exists before using this.
 	float EXPORT GetFluentValue(char* Fluent)
 	{
 		fluent* F = FindFluentInList(Fluent, GlobalRulesDef.Fluents, GlobalRulesDef.FluentsCount);
 		if (F == NULL) {
-			return (0);
+			return (123456);
 		}
 		return (F->Value);
+	}
+
+	int32 EXPORT DoesEntityExist(char* EntityName)
+	{
+		if (FindEntity(EntityName, GlobalRulesDef.InstancedEntities, GlobalRulesDef.InstancedEntitiesCount) == NULL) {
+			return (0);
+		}
+		return (1);
+	}
+
+	// Returns 123456 if the entity or fluent doesn't exist.
+	// Though 123456 doesn't necessarily mean an error, thus probably check that the entity exists before using this.
+	float EXPORT GetEntityFluent(char* EntityName, char* FluentName)
+	{
+		entity* Entity = FindEntity(EntityName, GlobalRulesDef.InstancedEntities, GlobalRulesDef.InstancedEntitiesCount);
+
+		if (Entity == NULL) {
+			return (123456);
+		}
+
+		fluent* Fluent = FindFluentInList(FluentName, Entity->Fluents, Entity->FluentsCount);
+		if (Fluent == NULL) {
+			return (123456);
+		}
+
+		return (Fluent->Value);
+	}
+
+
+	// Returns 1 if action exists, 0 if action doesn't
+	int32 EXPORT DoesActionExist(char* ActionName)
+	{
+		for (int32 Index = 0; Index < GlobalRulesDef.EventsCount; Index++) {
+			if (ActionName == GlobalRulesDef.Events[Index].Name) {
+				return (1);
+			}
+		}
+		return (0);
+	}
+
+	// Returns 123456 if the action doesn't exist. Returns 1 if the action is valid, and 0 if it's not valid.
+	int32 EXPORT ActionIsValid(char* ActionName)
+	{
+		event* EventChecking = {};
+		for (int32 Index = 0; Index < GlobalRulesDef.EventsCount; Index++) {
+			if (ActionName == GlobalRulesDef.Events[Index].Name) {
+				EventChecking = &GlobalRulesDef.Events[Index];
+				break;
+			}
+		}
+
+		if (EventChecking == NULL) {
+			return (123456);
+		}
+
+		
+		return (0);
 	}
 }
 
 
+#if 0
 void
 main(int argc, char const **argv)
 {
-	// game_def GameDefinition = LoadGameDefinition();
+	game_def GameDefinition = LoadGameDefinition();
 
-	// // This is the playing part
-	// {
-	// 	PrintOptions(&GameDefinition);
+	// This is the playing part
+	{
+		PrintOptions(&GameDefinition);
 
-	// 	while (true) {
-	// 		char Input[100];
-	// 		scanf("%99s", &Input);
-	// 		char Selection = Input[0];
-	// 		system("cls");
+		while (true) {
+			char Input[100];
+			scanf("%99s", &Input);
+			char Selection = Input[0];
+			system("cls");
 
-	// 		string SelStr = Selection;
-	// 		int32 SelInt = StringToInt32(SelStr);
-	// 		if (SelInt < GameDefinition.EventsCount) {
-	// 			// DO EVENT
-	// 			if (EventValid(GameDefinition.Events[SelInt].ConditionalTokens, GameDefinition.Events[SelInt].ConditionalsCount, &GameDefinition)) {
-	// 				TokensChangeState(GameDefinition.Events[SelInt].ConsquenceTokens, GameDefinition.Events[SelInt].NextConsqFluent, &GameDefinition);
-	// 			}
-	// 		} else {
-	// 			Print("Not a valid action");
-	// 		}
+			string SelStr = Selection;
+			int32 SelInt = StringToInt32(SelStr);
+			if (SelInt < GameDefinition.EventsCount) {
+				// DO EVENT
+				if (EventValid(GameDefinition.Events[SelInt].ConditionalTokens, GameDefinition.Events[SelInt].ConditionalsCount, &GameDefinition)) {
+					TokensChangeState(GameDefinition.Events[SelInt].ConsquenceTokens, GameDefinition.Events[SelInt].NextConsqFluent, &GameDefinition);
+				}
+			} else {
+				Print("Not a valid action");
+			}
 
-	// 		PrintOptions(&GameDefinition);
-	// 	}
+			PrintOptions(&GameDefinition);
+		}
 
-	// 	Print("Closing");
-	// 	return;
-	// }
+		Print("Closing");
+		return;
+	}
 }
+#endif

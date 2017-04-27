@@ -1,4 +1,4 @@
 sceneSetups:
-- path: Assets/Scenes/PlayingScene.unity
+- path: Assets/Games/Cavern2/Cavern2.unity
   isLoaded: 1
   isActive: 1
