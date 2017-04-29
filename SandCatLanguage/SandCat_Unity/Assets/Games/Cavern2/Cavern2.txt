@@ -7,8 +7,8 @@ GoldMine'Addition(1).
 
 
 ! Player info
-PlayerCoal(10).
-PlayerWheat(5).
+PlayerCoal(0).
+PlayerWheat(0).
 PlayerGold(0).
 
 PlayerDwarvesHome(2).
@@ -23,7 +23,9 @@ method RefillSpace
 	if		ThingOne'Current + ThingOne'Addition < ThingOne'Maximum.
 
 method RefillBoard
-	does RefillSpace{CoalMine}, RefillSpace{WheatField}, RefillSpace{GoldMine}, CoalMine'SpaceTaken(0), WheatField'SpaceTaken(0), GoldMine'SpaceTaken(0), NewDwarfTaken(0), PlayerDwarvesTotal(PlayerDwarvesTotal + DwarvesToAdd), PlayerDwarvesHome(PlayerDwarvesTotal).
+	does RefillSpace{CoalMine}, RefillSpace{WheatField}, RefillSpace{GoldMine}, CoalMine'SpaceTaken(0), WheatField'SpaceTaken(0), GoldMine'SpaceTaken(0), NewDwarfTaken(0), PlayerDwarvesTotal(PlayerDwarvesTotal + DwarvesToAdd), PlayerDwarvesHome(PlayerDwarvesTotal),
+	DwarvesToAdd(0).
+
 
 method UseSpace
 	using	Space, PlayerResource
@@ -55,8 +57,8 @@ action(PlaceDwarf_GoldMine)
 
 NewDwarfTaken(0).
 action(GetNewDwarf)
-	does 	PlayerDwarvesTotal(PlayerDwarvesTotal + 1), PlayerWheat(PlayerWheat - 5), NewDwarfTaken(1)
-	if 		PlayerWheat > 4 and NewDwarfTaken = 0.
+	does 	DwarvesToAdd(DwarvesToAdd + 1), PlayerWheat(PlayerWheat - 5), NewDwarfTaken(1), PlayerDwarvesHome(PlayerDwarvesHome - 1)
+	if 		PlayerWheat > 4 and NewDwarfTaken = 0
 
-	does 	UseSpace{GoldMine, PlayerGold}, RefillBoard{}
-	if 		GoldMine'SpaceTaken = 0 and PlayerDwarvesHome = 1.
+	does 	RefillBoard{}
+	if 		PlayerDwarvesHome = 0.
