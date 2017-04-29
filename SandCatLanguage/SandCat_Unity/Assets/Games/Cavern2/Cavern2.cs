@@ -21,7 +21,7 @@ public class Cavern2 : MonoBehaviour
 			for (int index = 0; index < dwarvesHomeDisplay.Length; index++) {
 				dwarvesHomeDisplay[index].SetActive(false);
 			}
-			int dwarvesHomeCount = (int)SandCat.instance.FluentGetValue("PlayerDwarvesHome");
+			int dwarvesHomeCount = (int)SandCat.instance.GetFluentValue("PlayerDwarvesHome");
 			for (int index = 0; index < dwarvesHomeCount; index++) {
 				dwarvesHomeDisplay[index].SetActive(true);
 			}

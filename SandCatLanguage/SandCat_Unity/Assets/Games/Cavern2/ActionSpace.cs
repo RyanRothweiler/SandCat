@@ -11,7 +11,7 @@ public class ActionSpace : MonoBehaviour
 	public Text nameDisplay;
 	public Text currentDisplay;
 	public Text additionDisplay;
-	public Text workerDisplay;
+	public GameObject workerDisplay;
 
 	// Use this for initialization
 	void Start ()
@@ -26,6 +26,10 @@ public class ActionSpace : MonoBehaviour
 		currentDisplay.text = SandCat.instance.GetEntityFluentValue(entityName, "Current").ToString();
 		additionDisplay.text = SandCat.instance.GetEntityFluentValue(entityName, "Addition").ToString();
 
-		// workerDisplay.text = SandCat.instance.GetEntityFluentValue(entityName, "Current");
+		if (SandCat.instance.GetEntityFluentValue(entityName, "SpaceTaken") == 1) {
+			workerDisplay.SetActive(true);
+		} else {
+			workerDisplay.SetActive(false);
+		}
 	}
 }

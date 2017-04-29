@@ -519,15 +519,26 @@ struct entity {
 	int32 FluentsCount;
 };
 
+struct does_if {
+	token_info DoesTokens[100];
+	int32 DoesTokensCount;
+
+	token_info IfTokens[100];
+	int32 IfTokensCount;
+};
+
 struct event {
 	string Name;
 
-	// NOTE these next two are used as queues. Zero is the front.
-	token_info ConditionalTokens[100];
-	int32 ConditionalsCount;
+	does_if DoesIf[100];
+	int32 DoesIfCount;
 
-	token_info ConsquenceTokens[100];
-	int32 NextConsqFluent;
+	// // NOTE these next two are used as queues. Zero is the front.
+	// token_info ConditionalTokens[100];
+	// int32 ConditionalsCount;
+
+	// token_info ConsquenceTokens[100];
+	// int32 NextConsqFluent;
 };
 
 struct method {
@@ -816,11 +827,11 @@ EvaluateBoolean(token_info* ConditionalTokens, int32 ConditionalsCount,
 }
 
 bool32
-EventValid(token_info* ConditionalTokens, int32 ConditionalTokensCount, game_def* GameDef)
+IfTokensValid(token_info* IfTokens, int32 TokensCount, game_def* GameDef)
 {
-	if (ConditionalTokensCount > 0) {
+	if (TokensCount > 0) {
 		int32 NextLogic = 0;
-		return (EvaluateBoolean(ConditionalTokens, ConditionalTokensCount, &NextLogic,
+		return (EvaluateBoolean(IfTokens, TokensCount, &NextLogic,
 		                        GameDef->Fluents, GameDef->FluentsCount,
 		                        GameDef->InstancedEntities, GameDef->InstancedEntitiesCount));
 	} else {
@@ -860,10 +871,8 @@ PrintOptions(game_def* Def)
 	{
 		PrintHeader("POSSIBLE ACTIONS");
 		for (int32 Index = 0; Index < Def->EventsCount; Index++) {
-			if (EventValid(Def->Events[Index].ConditionalTokens, Def->Events[Index].ConditionalsCount, Def)) {
-				string StrIndex = Index;
-				Print(StrIndex + ") " + Def->Events[Index].Name);
-			}
+			string StrIndex = Index;
+			Print(StrIndex + ") " + Def->Events[Index].Name);
 		}
 		// Print("----------------------- ");
 	}
@@ -1052,30 +1061,6 @@ LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefinition)
 
 			int32 CharactersCount = RulesLength;
 			Parser.CharOn = RulesData;
-
-			// Load the program into the parser
-			{
-				// HANDLE FileHandle = CreateFile(ProgramLocation.CharArray, GENERIC_READ, FILE_SHARE_READ,
-				//                                NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
-				// int32 FileSizeBytes = GetFileSize(FileHandle, NULL);
-
-				// // Make sure we got the file
-				// Assert(FileSizeBytes != 0);
-
-				// Parser.CharOn = (char*)malloc(FileSizeBytes);
-				// ZeroMemory(Parser.CharOn, FileSizeBytes);
-
-				// CharactersCount = FileSizeBytes;
-
-				// DWORD BytesRead;
-				// if (!ReadFile(FileHandle, (void*)Parser.CharOn, FileSizeBytes, &BytesRead, NULL)) {
-				// 	// Couldn't read the file. Something wrong happened
-				// 	Assert(0);
-				// }
-
-				// CloseHandle(FileHandle);
-			}
 			Assert(CharactersCount > 0);
 
 			bool32 InCommentMode = false;
@@ -1291,27 +1276,37 @@ LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefinition)
 
 						Event->Name = Tokens.Tokens[StatementStart + 2].Name;
 
+						// Get all the does-ifs
 						int32 TI = StatementStart + 5;
-						// Grab the state to change
-						{
-							while (Tokens.Tokens[TI].Type != token_type::iff && Tokens.Tokens[TI].Type != token_type::period) {
-								Event->ConsquenceTokens[Event->NextConsqFluent] = Tokens.Tokens[TI];
-								Event->NextConsqFluent++;
-								TI++;
-							}
-						}
+						while (Tokens.Tokens[TI].Type != token_type::period) {
+							does_if* DoesIf = &Event->DoesIf[Event->DoesIfCount];
+							Event->DoesIfCount++;
 
-						// only get the conditionals if they exist
-						if (Tokens.Tokens[TI].Type != token_type::period) {
-							// Move past the colon
-							TI++;
-
-							// Grab the conditionals
+							// Grab the state to change
 							{
-								while (Tokens.Tokens[TI].Type != token_type::period) {
-									Event->ConditionalTokens[Event->ConditionalsCount] = Tokens.Tokens[TI];
-									Event->ConditionalsCount++;
+								if (Tokens.Tokens[TI].Type == token_type::does) {
 									TI++;
+								}
+
+								while (Tokens.Tokens[TI].Type != token_type::iff && Tokens.Tokens[TI].Type != token_type::period) {
+									DoesIf->DoesTokens[DoesIf->DoesTokensCount] = Tokens.Tokens[TI];
+									DoesIf->DoesTokensCount++;
+									TI++;
+								}
+							}
+
+							// only get the conditionals if they exist
+							if (Tokens.Tokens[TI].Type != token_type::period) {
+								// Move past the colon
+								TI++;
+
+								// Grab the conditionals
+								{
+									while (Tokens.Tokens[TI].Type != token_type::period && Tokens.Tokens[TI].Type != token_type::does) {
+										DoesIf->IfTokens[DoesIf->IfTokensCount] = Tokens.Tokens[TI];
+										DoesIf->IfTokensCount++;
+										TI++;
+									}
 								}
 							}
 						}
@@ -1532,7 +1527,6 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 {
 	int32 TokenIndex = 0;
 	while (TokenIndex < TokensCount) {
-
 		if (Tokens[TokenIndex].Type == token_type::id &&
 		        Tokens[TokenIndex + 1].Type == token_type::dot &&
 		        Tokens[TokenIndex + 2].Type == token_type::id) {
@@ -1660,7 +1654,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 
 			// Move token index past the curly
 			while (Tokens[TokenIndex].Type != token_type::closedCurly) {
-				// TokenIndex++;
+				TokenIndex++;
 			}
 			TokenIndex++;
 
@@ -1677,32 +1671,44 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 	}
 }
 
+// This goes through each does-if, checks if it's valid, and does it if it s.
+void
+DoEvent(event* Event, game_def* Rules)
+{
+	for (int32 Index = 0; Index < Event->DoesIfCount; Index++) {
+		does_if* DoesIf = &Event->DoesIf[Index];
+		if (IfTokensValid(DoesIf->IfTokens, DoesIf->IfTokensCount, Rules)) {
+			TokensChangeState(DoesIf->DoesTokens, DoesIf->DoesTokensCount, Rules);
+		}
+	}
+}
+
 // Index is the error value.
 char* ReturnValues[] = {
 	"Success",
 	"Failure"
 };
 
-game_def GlobalRulesDef;
 
 extern "C"
 {
 #define EXPORT __declspec(dllexport)
+	game_def GlobalRulesDef;
 
 	// Returns 0 if success, else returns the line number of the error
-	int32 EXPORT LoadGame(char* Rules, int32 RuleLen)
+	int32 EXPORT SC_LoadGame(char* Rules, int32 RuleLen)
 	{
 		GlobalRulesDef = {};
 		return (LoadGameDefinition(Rules, RuleLen, &GlobalRulesDef));
 	}
 
-	int32 EXPORT GetMethodsCount()
+	int32 EXPORT SC_GetMethodsCount()
 	{
 		return (GlobalRulesDef.MethodsCount);
 	}
 
 	// Returns 1 if it exists, 0 if fluent does not exist.
-	int32 EXPORT DoesFluentExist(char* Fluent)
+	int32 EXPORT SC_DoesFluentExist(char* Fluent)
 	{
 		fluent* F = FindFluentInList(Fluent, GlobalRulesDef.Fluents, GlobalRulesDef.FluentsCount);
 		if (F == NULL) {
@@ -1714,7 +1720,7 @@ extern "C"
 
 	// Returns 123456 if the fluent doesn't exist. Though 0 doesn't necessarily mean an error
 	// Though 123456 doesn't necessarily mean an error, thus probably check that the entity exists before using this.
-	float EXPORT GetFluentValue(char* Fluent)
+	float EXPORT SC_GetFluentValue(char* Fluent)
 	{
 		fluent* F = FindFluentInList(Fluent, GlobalRulesDef.Fluents, GlobalRulesDef.FluentsCount);
 		if (F == NULL) {
@@ -1723,7 +1729,7 @@ extern "C"
 		return (F->Value);
 	}
 
-	int32 EXPORT DoesEntityExist(char* EntityName)
+	int32 EXPORT SC_DoesEntityExist(char* EntityName)
 	{
 		if (FindEntity(EntityName, GlobalRulesDef.InstancedEntities, GlobalRulesDef.InstancedEntitiesCount) == NULL) {
 			return (0);
@@ -1733,7 +1739,7 @@ extern "C"
 
 	// Returns 123456 if the entity or fluent doesn't exist.
 	// Though 123456 doesn't necessarily mean an error, thus probably check that the entity exists before using this.
-	float EXPORT GetEntityFluent(char* EntityName, char* FluentName)
+	float EXPORT SC_GetEntityFluent(char* EntityName, char* FluentName)
 	{
 		entity* Entity = FindEntity(EntityName, GlobalRulesDef.InstancedEntities, GlobalRulesDef.InstancedEntitiesCount);
 
@@ -1751,7 +1757,7 @@ extern "C"
 
 
 	// Returns 1 if action exists, 0 if action doesn't
-	int32 EXPORT DoesActionExist(char* ActionName)
+	int32 EXPORT SC_DoesActionExist(char* ActionName)
 	{
 		for (int32 Index = 0; Index < GlobalRulesDef.EventsCount; Index++) {
 			if (ActionName == GlobalRulesDef.Events[Index].Name) {
@@ -1762,7 +1768,33 @@ extern "C"
 	}
 
 	// Returns 123456 if the action doesn't exist. Returns 1 if the action is valid, and 0 if it's not valid.
-	int32 EXPORT ActionIsValid(char* ActionName)
+	int32 EXPORT SC_ActionIsValid(char* ActionName)
+	{
+		// TODO this return if the action is ENTIRELY invalid. Might be necessary?
+		return (0);
+
+
+		// event* EventChecking = {};
+		// for (int32 Index = 0; Index < GlobalRulesDef.EventsCount; Index++) {
+		// 	if (ActionName == GlobalRulesDef.Events[Index].Name) {
+		// 		EventChecking = &GlobalRulesDef.Events[Index];
+		// 		break;
+		// 	}
+		// }
+
+		// if (EventChecking == NULL) {
+		// 	return (123456);
+		// }
+
+		// if (EventValid(EventChecking, &GlobalRulesDef)) {
+		// 	return (1);
+		// }
+
+		// return (0);
+	}
+
+	// Does an action. Assumes the action exists, checks to make sure the action is valid.
+	void EXPORT SC_DoAction(char* ActionName)
 	{
 		event* EventChecking = {};
 		for (int32 Index = 0; Index < GlobalRulesDef.EventsCount; Index++) {
@@ -1773,20 +1805,47 @@ extern "C"
 		}
 
 		if (EventChecking == NULL) {
-			return (123456);
+			// Action doesn't exist. Report some kind of error here.
+			return;
+		} else {
+			DoEvent(EventChecking, &GlobalRulesDef);
 		}
-
-		
-		return (0);
 	}
 }
 
 
-#if 0
+#if 1
 void
 main(int argc, char const **argv)
 {
-	game_def GameDefinition = LoadGameDefinition();
+	char* Prog = {};
+	int32 CharactersCount = 0;
+	// Load the program into the parser
+	{
+		HANDLE FileHandle = CreateFile("Cavern2.txt", GENERIC_READ, FILE_SHARE_READ,
+		                               NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+		int32 FileSizeBytes = GetFileSize(FileHandle, NULL);
+
+		// Make sure we got the file
+		Assert(FileSizeBytes != 0);
+
+		Prog = (char*)malloc(FileSizeBytes);
+		ZeroMemory(Prog, FileSizeBytes);
+
+		CharactersCount = FileSizeBytes;
+
+		DWORD BytesRead;
+		if (!ReadFile(FileHandle, (void*)Prog, FileSizeBytes, &BytesRead, NULL)) {
+			// Couldn't read the file. Something wrong happened
+			Assert(0);
+		}
+
+		CloseHandle(FileHandle);
+	}
+
+	game_def GameDefinition = {};
+	LoadGameDefinition(Prog, CharactersCount, &GameDefinition);
 
 	// This is the playing part
 	{
@@ -1801,10 +1860,7 @@ main(int argc, char const **argv)
 			string SelStr = Selection;
 			int32 SelInt = StringToInt32(SelStr);
 			if (SelInt < GameDefinition.EventsCount) {
-				// DO EVENT
-				if (EventValid(GameDefinition.Events[SelInt].ConditionalTokens, GameDefinition.Events[SelInt].ConditionalsCount, &GameDefinition)) {
-					TokensChangeState(GameDefinition.Events[SelInt].ConsquenceTokens, GameDefinition.Events[SelInt].NextConsqFluent, &GameDefinition);
-				}
+				DoEvent(&GameDefinition.Events[SelInt], &GameDefinition);
 			} else {
 				Print("Not a valid action");
 			}

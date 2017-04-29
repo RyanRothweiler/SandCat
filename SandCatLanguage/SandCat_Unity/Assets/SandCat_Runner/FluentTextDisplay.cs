@@ -21,6 +21,6 @@ public class FluentTextDisplay : MonoBehaviour
 	// Update is called once per frame
 	void Update ()
 	{
-		display.text = SandCat.instance.FluentGetValue(fluentName).ToString();
+		display.text = SandCat.instance.GetFluentValue(fluentName).ToString();
 	}
 }
