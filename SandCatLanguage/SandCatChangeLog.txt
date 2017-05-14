@@ -13,3 +13,5 @@
 - Reorganized code. Consolidating everything into one file for SandCat_Runner.
 - Started SandCat_Unity
 - Now actions can have more than one does-if statements.
+- Methods can have more than one does-if statements.
+- Added a language feature for random number generation.  

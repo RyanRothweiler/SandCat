@@ -1,4 +1,4 @@
 sceneSetups:
-- path: Assets/Games/Cavern2/Cavern2.unity
+- path: Assets/Games/Topsoil/Topsoil.unity
   isLoaded: 1
   isActive: 1

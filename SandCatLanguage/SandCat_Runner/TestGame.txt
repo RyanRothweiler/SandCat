@@ -1,0 +1,22 @@
+CatCount(random 0 to 100).
+
+
+method FirstMethodA
+	does SecondMethod{}, SecondMethod{}, SecondMethod{}, SecondMethod{}.
+
+method FirstMethodB
+	does SecondMethod{}
+	does SecondMethod{}.
+
+method FirstMethodC
+	does SecondMethod{} if CatCount < 50
+	does SecondMethod{}.
+
+
+method SecondMethod
+	does CatCount(CatCount + 1).
+
+action(RollTwoDice) does TestVal(random 1 to 6 + random 1 to 6).
+action(TestA) does FirstMethodA{}.
+action(TestB) does FirstMethodB{}.
+action(TestC) does FirstMethodC{}.
