@@ -15,3 +15,5 @@
 - Now actions can have more than one does-if statements.
 - Methods can have more than one does-if statements.
 - Added a language feature for random number generation.  
+
+0.0.4
