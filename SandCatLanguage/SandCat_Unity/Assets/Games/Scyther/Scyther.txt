@@ -1,0 +1,20 @@
+PlayerOil(0).
+PlayerFood(0).
+PlayerSteel(0).
+PlayerWood(0).
+
+GridSize(6).
+
+HomeX(random 0 to 6).
+HomeY(random 0 to 6).
+
+WorkerA, WorkerB, WorkerC, WorkerD, WorkerE, WorkerF : [XPos(HomeX), YPos(HomeY), Alive(0)].
+
+WorkerA'Alive(1).
+WorkerB'Alive(1).
+
+action MoveWorkerUp
+	using Worker
+	does Worker'YPos(Worker'YPos - 1) if [Worker'YPos - 1 > 0] and [Worker'Alive = 1].
+
+action MoveWorkerAUp does MoveWorkerUp{WorkerA}.
