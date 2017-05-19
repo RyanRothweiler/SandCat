@@ -1,0 +1,63 @@
+# Single state values
+GridMax = 20.
+
+# Objets 
+Player, Chicken = {X, Y, Atk, Def, Health = 10}.
+
+# If unspecified, state is initialized to 0. 
+Platform.
+
+# These copys just duplicate what is in the brackets
+# Copying with iterating through lists
+copy Thing = Player, Chicken 
+{
+	|Thing|'Atk = 5.
+	|Thing|'Def = 5.
+}.
+
+# Copying with iterating through numbers
+copy X = 1..20
+{
+	Mouse|X| = {X, Y}.
+}
+
+# Can arrange into data structures. These are all just pointers. 
+Animals = [Mouse1, Mouse2, Mouse3, Player, Chicken].
+AnimalGrid = [	[Mouse1, 	Mouse2, 	Mouse3, 	Mouse4, 	Mouse5],
+				[Mouse6, 	Mouse7, 	Paltform, 	Mouse9, 	Mouse10],
+				[Mouse11, 	Mouse12, 	Mouse13, 	Mouse14, 	Mouse15],
+				[Mouse16, 	Mouse17, 	Mouse18, 	Mouse19, 	Mouse20] 	].
+
+# Can index into arrays
+# Assigns a value to the thing which is already in the array
+AnimalGrid[1, 1]'Mouse'X = 1.
+
+# Puts something new into the array.
+AnimalGrid[1, 2] = Chicken.
+
+# Can add into the array at any position.
+Animals[100] = Player.
+
+# Dot notation
+PlayerPos'X = 10.
+PlayerPos'Y = 10.
+
+# Game Actions. These are things the game can do to change state.
+MoveUpIfAlive = Event
+	using Thing
+	does Thing'X = Thing'X - 1 if Thing'Health > 0 and Thing'X - 1 > 0.
+
+
+BoardMoveDown = Event
+copy x = 5..1
+{
+	copy y = 5..1
+	{
+		does AnimalGrid[|x|, |y|] = AnimalGrid[|x|, |y| - 1] if not AnimalGrid[|x|, |y|] is Rock.
+	}
+}
+.
+
+# Player Actions. These are the things that the player can do to change state.
+MovePlayerUp = PlayerAction 
+	does MoveUpIfAlive(Player).

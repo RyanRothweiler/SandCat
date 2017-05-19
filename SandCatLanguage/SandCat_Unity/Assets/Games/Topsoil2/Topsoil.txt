@@ -1,0 +1,166 @@
+! This defines each gridcell 
+! plant 0 - no plant 1..3 - plant id
+! 0..2 - color id
+
+CellA, CellB, CellC, CellD, CellE, CellF, CellG, CellH, CellI, CellJ, CellK, CellL, CellM, CellN, CellO, CellP : [Plant(0), Color(0), X(0), Y(0), MarkToHarvest(0)].
+
+CellA'Color(random 1 to 3).
+CellB'Color(random 1 to 3).
+CellC'Color(random 1 to 3).
+CellD'Color(random 1 to 3).
+CellE'Color(random 1 to 3).
+CellF'Color(random 1 to 3).
+CellG'Color(random 1 to 3).
+CellH'Color(random 1 to 3).
+CellI'Color(random 1 to 3).
+CellJ'Color(random 1 to 3).
+CellK'Color(random 1 to 3).
+CellL'Color(random 1 to 3).
+CellM'Color(random 1 to 3).
+CellN'Color(random 1 to 3).
+CellO'Color(random 1 to 3).
+CellP'Color(random 1 to 3).
+
+
+!!!!
+CellA'X(0).		CellB'X(1).		CellC'X(2).		CellD'X(3).
+CellA'Y(0).		CellB'Y(0).		CellC'Y(0).		CellD'Y(0).
+!!!!
+CellE'X(0).		CellF'X(1).		CellG'X(2).		CellH'X(3).
+CellE'Y(1).		CellF'Y(1).		CellG'Y(1).		CellH'Y(1).
+!!!!
+CellI'X(0).		CellJ'X(1).		CellK'X(2).		CellL'X(3).
+CellI'Y(2).		CellJ'Y(2).		CellK'Y(2).		CellL'Y(2).
+!!!!
+CellM'X(0).		CellN'X(1).		CellO'X(2).		CellP'X(3).
+CellM'Y(3).		CellN'Y(3).		CellO'Y(3).		CellP'Y(3).
+!!!!
+
+
+! Holds the queue of plants for the player
+! 0..2 - plant id, 
+! 10 harvest action
+StepOne(random 1 to 3).
+StepTwo(random 1 to 3).
+StepThree(random 1 to 3).
+StepFour(10).
+StepFive(100).
+
+Score(0).
+DidHarvest(0).
+
+method AdvanceStep
+	does StepOne(StepTwo), StepTwo(StepThree), StepThree(StepFour), StepFour(StepFive), DidAction(0), RefillActions{}.
+
+method RefillActions
+	does StepOne(random 1 to 3), StepTwo(random 1 to 3), StepThree(random 1 to 3), StepFour(10)
+	if StepOne = 100.
+
+method PlacePlant
+	using Cell
+	does DidAction(1), CheckHarvest{Cell} if StepOne = 10 and not Cell'Plant = 0
+	does DidAction(1), Cell'Plant(StepOne) if not StepOne = 10 and Cell'Plant = 0
+	does AdvanceStep{} if DidAction = 1.
+
+method CheckHarvest
+	using Origin
+	does Origin'MarkToHarvest(1) 
+	does CheckToMark{Origin'Plant, Origin'Color}
+	does CheckToMark{Origin'Plant, Origin'Color}
+	does CheckToMark{Origin'Plant, Origin'Color}
+	does CheckToMark{Origin'Plant, Origin'Color}
+	does ClearMarks{}.
+
+method CheckToMark
+	using TypeWanting, ColorWanting
+	does MarkIfAdjToMarkAndSameType{CellA, TypeWanting, ColorWanting}
+	does MarkIfAdjToMarkAndSameType{CellB, TypeWanting, ColorWanting}
+	does MarkIfAdjToMarkAndSameType{CellC, TypeWanting, ColorWanting}
+	does MarkIfAdjToMarkAndSameType{CellD, TypeWanting, ColorWanting}
+	does MarkIfAdjToMarkAndSameType{CellE, TypeWanting, ColorWanting}
+	does MarkIfAdjToMarkAndSameType{CellF, TypeWanting, ColorWanting}
+	does MarkIfAdjToMarkAndSameType{CellG, TypeWanting, ColorWanting}
+	does MarkIfAdjToMarkAndSameType{CellH, TypeWanting, ColorWanting}
+	does MarkIfAdjToMarkAndSameType{CellI, TypeWanting, ColorWanting}
+	does MarkIfAdjToMarkAndSameType{CellJ, TypeWanting, ColorWanting}
+	does MarkIfAdjToMarkAndSameType{CellK, TypeWanting, ColorWanting}
+	does MarkIfAdjToMarkAndSameType{CellL, TypeWanting, ColorWanting}
+	does MarkIfAdjToMarkAndSameType{CellM, TypeWanting, ColorWanting}
+	does MarkIfAdjToMarkAndSameType{CellN, TypeWanting, ColorWanting}
+	does MarkIfAdjToMarkAndSameType{CellO, TypeWanting, ColorWanting}
+	does MarkIfAdjToMarkAndSameType{CellP, TypeWanting, ColorWanting}.
+
+
+method MarkIfAdjToMarkAndSameType
+	using Cell, TypeWanting, ColorWanting
+	does MarkIfAdj{Cell, CellA, TypeWanting, ColorWanting}
+	does MarkIfAdj{Cell, CellB, TypeWanting, ColorWanting}
+	does MarkIfAdj{Cell, CellC, TypeWanting, ColorWanting}
+	does MarkIfAdj{Cell, CellD, TypeWanting, ColorWanting}
+	does MarkIfAdj{Cell, CellE, TypeWanting, ColorWanting}
+	does MarkIfAdj{Cell, CellF, TypeWanting, ColorWanting}
+	does MarkIfAdj{Cell, CellG, TypeWanting, ColorWanting}
+	does MarkIfAdj{Cell, CellH, TypeWanting, ColorWanting}
+	does MarkIfAdj{Cell, CellI, TypeWanting, ColorWanting}
+	does MarkIfAdj{Cell, CellJ, TypeWanting, ColorWanting}
+	does MarkIfAdj{Cell, CellK, TypeWanting, ColorWanting}
+	does MarkIfAdj{Cell, CellL, TypeWanting, ColorWanting}
+	does MarkIfAdj{Cell, CellM, TypeWanting, ColorWanting}
+	does MarkIfAdj{Cell, CellN, TypeWanting, ColorWanting}
+	does MarkIfAdj{Cell, CellO, TypeWanting, ColorWanting}.
+
+method MarkIfAdj
+	using CellChanging, AdjChecking, TypeWanting, ColorWanting
+	does CellChanging'MarkToHarvest(1) if [CellChanging'Color = ColorWanting] and [CellChanging'Plant = TypeWanting] and [AdjChecking'MarkToHarvest = 1] and [CellChanging'X - 1 = AdjChecking'X and CellChanging'Y = AdjChecking'Y]
+	does CellChanging'MarkToHarvest(1) if [CellChanging'Color = ColorWanting] and [CellChanging'Plant = TypeWanting] and [AdjChecking'MarkToHarvest = 1] and [CellChanging'X + 1 = AdjChecking'X and CellChanging'Y = AdjChecking'Y]
+	does CellChanging'MarkToHarvest(1) if [CellChanging'Color = ColorWanting] and [CellChanging'Plant = TypeWanting] and [AdjChecking'MarkToHarvest = 1] and [CellChanging'X = AdjChecking'X and CellChanging'Y + 1 = AdjChecking'Y]
+	does CellChanging'MarkToHarvest(1) if [CellChanging'Color = ColorWanting] and [CellChanging'Plant = TypeWanting] and [AdjChecking'MarkToHarvest = 1] and [CellChanging'X = AdjChecking'X and CellChanging'Y - 1 = AdjChecking'Y].
+
+method ClearMarks
+	does ClearMark{CellA}
+	does ClearMark{CellB}
+	does ClearMark{CellC}
+	does ClearMark{CellD}
+	does ClearMark{CellE}
+	does ClearMark{CellF}
+	does ClearMark{CellG}
+	does ClearMark{CellH}
+	does ClearMark{CellI}
+	does ClearMark{CellJ}
+	does ClearMark{CellK}
+	does ClearMark{CellL}
+	does ClearMark{CellM}
+	does ClearMark{CellN}
+	does ClearMark{CellO}
+	does ClearMark{CellP}.
+
+method ClearMark
+	using CellClearing
+	does CycleColor{CellClearing} if CellClearing'MarkToHarvest = 1
+	does Score(Score + 1), CellClearing'Plant(0), CellClearing'MarkToHarvest(0) if CellClearing'MarkToHarvest = 1.
+
+method CycleColor
+	using Cell
+	does Cell'Color(Cell'Color + 1)
+	does Cell'Color(1) if Cell'Color = 4.
+
+
+
+
+
+action(PlantCellA) does PlacePlant{CellA}.
+action(PlantCellB) does PlacePlant{CellB}.
+action(PlantCellC) does PlacePlant{CellC}.
+action(PlantCellD) does PlacePlant{CellD}.
+action(PlantCellE) does PlacePlant{CellE}.
+action(PlantCellF) does PlacePlant{CellF}.
+action(PlantCellG) does PlacePlant{CellG}.
+action(PlantCellH) does PlacePlant{CellH}.
+action(PlantCellI) does PlacePlant{CellI}.
+action(PlantCellJ) does PlacePlant{CellJ}.
+action(PlantCellK) does PlacePlant{CellK}.
+action(PlantCellL) does PlacePlant{CellL}.
+action(PlantCellM) does PlacePlant{CellM}.
+action(PlantCellN) does PlacePlant{CellN}.
+action(PlantCellO) does PlacePlant{CellO}.
+action(PlantCellP) does PlacePlant{CellP}.

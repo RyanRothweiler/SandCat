@@ -1,22 +1,15 @@
-CatCount(random 0 to 100).
+# New syntax
 
+# General patter of 
+# ID is VALUE
 
-method FirstMethodA
-	does SecondMethod{}, SecondMethod{}, SecondMethod{}, SecondMethod{}.
+# Single state values
+ChickenHealth is 0.
+PlayerHealth is 0.
 
-method FirstMethodB
-	does SecondMethod{}
-	does SecondMethod{}.
+# Objects
+PlayerPos, ChickenPos is {Feet is 0, Health is 0}.
 
-method FirstMethodC
-	does SecondMethod{} if CatCount < 50
-	does SecondMethod{}.
-
-
-method SecondMethod
-	does CatCount(CatCount + 1).
-
-action(RollTwoDice) does TestVal(random 1 to 6 + random 1 to 6).
-action(TestA) does FirstMethodA{}.
-action(TestB) does FirstMethodB{}.
-action(TestC) does FirstMethodC{}.
+# Player Actions
+MoveUp is PlayerAction 
+	does 

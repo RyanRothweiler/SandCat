@@ -1485,6 +1485,7 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 					}
 				}
 
+				// Find a pattern for the tokens that we have
 				if (NextToken.Type == token_type::period) {
 					int32 StatementEnd = Index - 1;
 
