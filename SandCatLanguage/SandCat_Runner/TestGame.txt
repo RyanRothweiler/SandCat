@@ -1,15 +1,14 @@
-# New syntax
+# This is a comment
+PlayerHealth.
+PlayerHappiness = 10 / 2.
 
-# General patter of 
-# ID is VALUE
+Bat, Slime = {HP = 0, Attack = 5}.
+Monkey, Cat = {HP = 0, Intelligence = 5, Dexterity = 15}.
 
-# Single state values
-ChickenHealth is 0.
-PlayerHealth is 0.
+Heal = Event using Thing
+	does Thing'HP = 100.
 
-# Objects
-PlayerPos, ChickenPos is {Feet is 0, Health is 0}.
-
-# Player Actions
-MoveUp is PlayerAction 
-	does 
+GivePlayerHealth = PlayerAction
+	does PlayerHealth = PlayerHealth + 1 if PlayerHealth < 10
+	does Bat'Attack = Slime'Attack * 3
+	does Heal(Bat), Heal(Slime), Heal(Monkey).

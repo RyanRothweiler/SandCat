@@ -471,13 +471,13 @@ struct event_bind {
 
 enum class token_type {
 	// general
-	none, entity, period, id, number, comma, colon, action, bind,
+	none, entity, period, id, number, comma, colon, playerAction, bind,
 
 	// random
 	random, to,
 
-	// method
-	method, usingg,
+	// event
+	event, usingg,
 
 	// action
 	does, iff,
@@ -515,7 +515,6 @@ struct fluent {
 	string Name;
 	bool32 IsTrue;
 
-	bool32 HasValue;
 	real64 Value;
 
 	/* If the fluent has arithmetic as a fluent value, then it is stored here.
@@ -569,10 +568,7 @@ void
 PrintFluent(string InitialPrint, fluent* Fluent)
 {
 	string ValueString = "";
-	if (Fluent->HasValue) {
-		ValueString = Fluent->Value;
-	}
-
+	ValueString = Fluent->Value;
 	Print(InitialPrint + Fluent->Name + " " + " " + ValueString);
 }
 
@@ -1060,7 +1056,10 @@ InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
 	int32 Accum = 0.0f;
 
 	int32 AccumIndex = TokenIndexStart;
-	while (Tokens[AccumIndex].Type != token_type::closeParen && Tokens[AccumIndex].Type != token_type::none) {
+	while (Tokens[AccumIndex].Type != token_type::period &&
+	        Tokens[AccumIndex].Type != token_type::none &&
+	        Tokens[AccumIndex].Type != token_type::closedCurly &&
+	        Tokens[AccumIndex].Type != token_type::comma) {
 		token_type NewTokenType = Tokens[AccumIndex].Type;
 		if (NewTokenType == token_type::id || NewTokenType == token_type::number) {
 
@@ -1137,7 +1136,7 @@ InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
 bool
 IsStartingToken(token_type Type)
 {
-	if (Type == token_type::method || Type == token_type::action || Type == token_type::bind || Type == token_type::entity) {
+	if (Type == token_type::event || Type == token_type::playerAction || Type == token_type::bind || Type == token_type::entity) {
 		return (true);
 	}
 	return (false);
@@ -1153,7 +1152,6 @@ GrabFluent(token_info* Tokens, int32 StackStart, bool32 Evaluate,
            fluent* Fluents, int32 FluentsCount, entity* Entities, int32 EntitiesCount)
 {
 	fluent FluentAdding = {};
-	FluentAdding.HasValue = true;
 	FluentAdding.Name = Tokens[StackStart].Name;
 
 	int32 AccumIndex = StackStart + 2;
@@ -1168,7 +1166,7 @@ GrabFluent(token_info* Tokens, int32 StackStart, bool32 Evaluate,
 
 		FluentAdding.Value = InfixRet.Value;
 	} else {
-		while (Tokens[AccumIndex].Type != token_type::closeParen) {
+		while (Tokens[AccumIndex].Type != token_type::period) {
 			FluentAdding.Arithmetic[FluentAdding.ArithCount] = Tokens[AccumIndex];
 			FluentAdding.ArithCount++;
 			AccumIndex++;
@@ -1291,12 +1289,11 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 
 			bool32 InCommentMode = false;
 
-			string ActionLiteral = "action";
-			string MethodLiteral = "method";
+			string ActionLiteral = "PlayerAction";
+			string MethodLiteral = "Event";
 			string UsingLiteral = "using";
 			string DoesLiteral = "does";
 			string IfLiteral = "if";
-			string CommentLiteral = "//";
 			string BindLiteral = "bind";
 			string EntityLiteral = "entity";
 			string InstanceLiteral = "instance";
@@ -1357,11 +1354,11 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 				} else if (Parser.WordOn == UsingLiteral) {
 					ADDTOKEN(token_type::usingg);
 				} else if (Parser.WordOn == MethodLiteral) {
-					ADDTOKEN(token_type::method);
+					ADDTOKEN(token_type::event);
 				} else if (Parser.WordOn == AndLiteral) {
 					ADDTOKEN(token_type::andd);
 				} else if (Parser.WordOn == ActionLiteral) {
-					ADDTOKEN(token_type::action);
+					ADDTOKEN(token_type::playerAction);
 				} else if (Parser.WordOn == GreaterThanOrEqualLiteral) {
 					ADDTOKEN(token_type::greaterThanOrEqual);
 				} else if (Parser.WordOn == LessThanOrEqualLiteral) {
@@ -1370,7 +1367,7 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 					ADDTOKEN(token_type::number);
 				}
 
-				if (Parser.WordOnIndex != 0 && (ThisChar == ' ' || ThisChar == '.') && Parser.WordOn != CommentLiteral) {
+				if (Parser.WordOnIndex != 0 && (ThisChar == ' ' || ThisChar == '.')) {
 					CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
 				}
 
@@ -1382,7 +1379,7 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 				} else if (ThisChar == ',') {
 					CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
 					ADDTOKEN(token_type::comma);
-				} else if (ThisChar == '!') {
+				} else if (ThisChar == '#') {
 					InCommentMode = true;
 				} else if (ThisChar == '=') {
 					ADDTOKEN(token_type::equalTo);
@@ -1476,7 +1473,7 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 					}
 
 					// Making sure methods have a using or does
-					if (Tokens.Tokens[StatementStart].Type == token_type::method &&
+					if (Tokens.Tokens[StatementStart].Type == token_type::event &&
 					        Tokens.Tokens[StatementStart + 1].Type == token_type::id &&
 					        Tokens.Tokens[StatementStart + 2].Type != token_type::usingg &&
 					        Tokens.Tokens[StatementStart + 2].Type != token_type::does) {
@@ -1490,8 +1487,10 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 					int32 StatementEnd = Index - 1;
 
 					if (Tokens.Tokens[StatementStart].Type == token_type::id &&
-					        Tokens.Tokens[StatementStart + 1].Type == token_type::openParen &&
-					        Tokens.Tokens[StatementEnd].Type == token_type::closeParen) {
+					        Tokens.Tokens[StatementStart + 1].Type == token_type::equalTo &&
+					        Tokens.Tokens[StatementStart + 2].Type != token_type::playerAction &&
+					        Tokens.Tokens[StatementStart + 2].Type != token_type::event &&
+					        Tokens.Tokens[StatementEnd + 1].Type == token_type::period) {
 						// Fluent with value statement
 
 						grab_fluent_return Ret =
@@ -1546,19 +1545,21 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 
 						fluent *FluentAdding = &GameDefinition->Fluents[GameDefinition->FluentsCount];
 						FluentAdding->Name = Tokens.Tokens[StatementStart].Name;
-						FluentAdding->HasValue = false;
+						FluentAdding->Value = 0.0f;
 
 						GameDefinition->FluentsCount++;
 
 						RESET
-					} else if (HasDoes && Tokens.Tokens[StatementStart].Type == token_type::action) {
+					} else if (Tokens.Tokens[StatementStart].Type == token_type::id &&
+					           Tokens.Tokens[StatementStart + 1].Type == token_type::equalTo &&
+					           Tokens.Tokens[StatementStart + 2].Type == token_type::playerAction) {
 						// Action / event
 
 						event* Event = &GameDefinition->Events[GameDefinition->EventsCount];
 						GameDefinition->EventsCount++;
-						Event->Name = Tokens.Tokens[StatementStart + 2].Name;
+						Event->Name = Tokens.Tokens[StatementStart].Name;
 
-						int32 TI = StatementStart + 5;
+						int32 TI = StatementStart + 3;
 
 						// Get all the does-ifs
 						while (Tokens.Tokens[TI].Type != token_type::period) {
@@ -1575,16 +1576,18 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 						}
 
 						RESET
-					} else if (Tokens.Tokens[StatementStart].Type == token_type::method) {
+					} else if (Tokens.Tokens[StatementStart].Type == token_type::id &&
+					           Tokens.Tokens[StatementStart + 1].Type == token_type::equalTo &&
+					           Tokens.Tokens[StatementStart + 2].Type == token_type::event) {
 						// Method
 
 						GameDefinition->Methods[GameDefinition->MethodsCount] = {};
 
 						method* NextMethod = &GameDefinition->Methods[GameDefinition->MethodsCount];
 						GameDefinition->MethodsCount++;
-						NextMethod->Name = Tokens.Tokens[StatementStart + 1].Name;
+						NextMethod->Name = Tokens.Tokens[StatementStart].Name;
 
-						int32 UsingOffset = 3;
+						int32 UsingOffset = 4;
 
 						// grab the using strings
 						if (Tokens.Tokens[StatementStart + UsingOffset - 1].Type == token_type::usingg) {
@@ -1640,7 +1643,8 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 						}
 
 						RESET
-					} else if (HasColon && Tokens.Tokens[StatementEnd].Type == token_type::closeBracket) {
+					} else if (Tokens.Tokens[StatementStart].Type == token_type::id &&
+					           Tokens.Tokens[StatementEnd].Type == token_type::closedCurly) {
 						// Entity
 
 						// These hold which entities we're now instancing
@@ -1648,7 +1652,7 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 						int32 EntitiyListEnd = GameDefinition->InstancedEntitiesCount;
 
 						int32 TI = StatementStart;
-						while (Tokens.Tokens[TI].Type != token_type::colon) {
+						while (Tokens.Tokens[TI].Type != token_type::equalTo) {
 							if (Tokens.Tokens[TI].Type == token_type::id) {
 								// Add a new instanced entity
 								EntitiyListEnd++;
@@ -1697,12 +1701,14 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 							}
 
 							// Move TI until we hit the next fluent
-							while (Tokens.Tokens[TI].Type != token_type::comma && Tokens.Tokens[TI].Type != token_type::period) {
+							while (Tokens.Tokens[TI].Type != token_type::comma &&
+							        Tokens.Tokens[TI].Type != token_type::closedCurly &&
+							        Tokens.Tokens[TI].Type != token_type::period) {
 								TI++;
 							}
 
 							// If we at the end of the entity, then break out
-							if (Tokens.Tokens[TI].Type == token_type::period) {
+							if (Tokens.Tokens[TI].Type == token_type::closedCurly) {
 								break;
 							} else {
 								// move past the comma
@@ -1827,7 +1833,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 
 			continue;
 		} else if (Tokens[TokenIndex].Type == token_type::id &&
-		           Tokens[TokenIndex + 1].Type == token_type::openParen) {
+		           Tokens[TokenIndex + 1].Type == token_type::equalTo) {
 			// this is a regular one
 
 			// Change that fluent state if it exists
@@ -1863,7 +1869,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 
 			continue;
 		} else if (Tokens[TokenIndex].Type == token_type::id &&
-		           Tokens[TokenIndex + 1].Type == token_type::openCurly) {
+		           Tokens[TokenIndex + 1].Type == token_type::openParen) {
 			// This is a method
 
 			// Find the method to do
@@ -1891,9 +1897,11 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 
 			// Fill the real params
 			{
-				while (Tokens[TokenIndex].Type != token_type::closedCurly && Tokens[TokenIndex].Type != token_type::none) {
+				while (Tokens[TokenIndex].Type != token_type::closeParen &&
+				        Tokens[TokenIndex].Type != token_type::none &&
+				        Tokens[TokenIndex].Type != token_type::comma) {
 					param* P = &ParamReals[ParamRealsCount];
-					while (Tokens[TokenIndex].Type != token_type::comma && Tokens[TokenIndex].Type != token_type::closedCurly) {
+					while (Tokens[TokenIndex].Type != token_type::comma && Tokens[TokenIndex].Type != token_type::closeParen) {
 						P->Tokens[P->TokenCount] = Tokens[TokenIndex];
 						P->TokenCount++;
 						TokenIndex++;
@@ -1940,7 +1948,9 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 			// Method is done executing
 
 			// Move token index past the curly
-			while (Tokens[TokenIndex].Type != token_type::closedCurly && Tokens[TokenIndex].Type != token_type::none) {
+			while (Tokens[TokenIndex].Type != token_type::closeParen &&
+			        Tokens[TokenIndex].Type != token_type::comma &&
+			        Tokens[TokenIndex].Type != token_type::none) {
 				TokenIndex++;
 			}
 			TokenIndex++;
@@ -1953,7 +1963,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 			continue;
 		} else {
 			// This method changes state when given tokens. We could not find a pattern of those tokens which made sense.
-			return (BuildErrorString(Tokens[TokenIndex].LineNumber, "Invalid token type in an if statement."));
+			return (BuildErrorString(Tokens[TokenIndex].LineNumber, "Invalid token type in a does statement."));
 		}
 	}
 

@@ -42,7 +42,7 @@ Animals[100] = Player.
 PlayerPos'X = 10.
 PlayerPos'Y = 10.
 
-# Game Actions. These are things the game can do to change state.
+# Event. These are things the game can do to change state.
 MoveUpIfAlive = Event
 	using Thing
 	does Thing'X = Thing'X - 1 if Thing'Health > 0 and Thing'X - 1 > 0.
@@ -53,10 +53,15 @@ copy x = 5..1
 {
 	copy y = 5..1
 	{
-		does AnimalGrid[|x|, |y|] = AnimalGrid[|x|, |y| - 1] if not AnimalGrid[|x|, |y|] is Rock.
+		does AnimalGrid[|x|, |y|] = AnimalGrid[|x|, |y| - 1] if not AnimalGrid[|x|, |y|] is Rock
 	}
 }
 .
+
+# ForEaches?
+# How to determine the order?
+BoardMoveUp = Event
+	ForEach
 
 # Player Actions. These are the things that the player can do to change state.
 MovePlayerUp = PlayerAction 
