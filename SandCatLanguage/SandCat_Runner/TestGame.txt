@@ -1,9 +1,13 @@
 # This is a comment
+Mantaray = [0, 10, 5, 8].
+Womantaray = [Bat, Slime].
+
 PlayerHealth.
 PlayerHappiness = 10 / 2.
 
 Bat, Slime = {HP = 0, Attack = 5}.
 Monkey, Cat = {HP = 0, Intelligence = 5, Dexterity = 15}.
+
 
 Heal = Event using Thing
 	does Thing'HP = 100.

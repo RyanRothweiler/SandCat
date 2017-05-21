@@ -9,7 +9,7 @@ Platform.
 
 # These copys just duplicate what is in the brackets
 # Copying with iterating through lists
-copy Thing = Player, Chicken 
+copy Thing = [Player, Chicken] 
 {
 	|Thing|'Atk = 5.
 	|Thing|'Def = 5.

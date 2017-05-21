@@ -461,6 +461,25 @@ ResetParserWord(parser* Parser)
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 
+struct arena {
+	void *Head;
+	void *Next;
+	int32 SizeBytes;
+};
+
+void* ArenaAllocate(arena* Arena, int32 Size)
+{
+	void* Mem = Arena->Next;
+
+	// Don't allocate more than we can
+	if ((uint8*)Arena->Next + Size > (uint8*)Arena->Head + Arena->SizeBytes) {
+		Assert(0);
+	}
+
+	Arena->Next = (uint8*)Arena->Next + Size;
+	return (Mem);
+}
+
 struct event_bind {
 	string EventNames[100];
 	int32 NextEventName;
@@ -489,7 +508,7 @@ enum class token_type {
 	lessThan, equalTo, greaterThan, lessThanOrEqual, greaterThanOrEqual,
 
 	// grouping
-	openParen, closeParen, openBracket, closeBracket, openCurly, closedCurly,
+	openParen, closeParen, openSquare, closeSquare, openCurly, closedCurly,
 
 	// This is the traditional oop dot notation operator
 	dot,
@@ -510,15 +529,28 @@ struct token_stack {
 	int32 TokensCount;
 };
 
+struct array_index {
+	int32 Value;
+
+	// If true, then value is used, if false then HasValue is used.
+	bool32 HasValue;
+
+	string ID;
+};
+
+struct array {
+	string Name;
+	array_index Array[100];
+	int32 ArrayCount;
+};
+
 // This type has been streatched, should reall break it down into smaller pieces.
 struct fluent {
 	string Name;
-	bool32 IsTrue;
-
 	real64 Value;
 
 	/* If the fluent has arithmetic as a fluent value, then it is stored here.
-		This is is only used when the fluent is part of an event events.
+		This is is only used when the fluent is part of an event.
 		The initial fluents are evaluated when they're parsed.
 		Event fluents are evaluated when they're triggered, so they need to be saved and 'parsed' when they're triggered.
 	*/
@@ -610,6 +642,9 @@ struct method {
 struct game_def {
 	fluent* Fluents;
 	int32 FluentsCount;
+
+	array* Arrays;
+	int32 ArraysCount;
 
 	event* Events;
 	int32 EventsCount;
@@ -778,7 +813,7 @@ EvaluateBoolean(token_info* ConditionalTokens, int32 ConditionalsCount,
 			CurrLogicOp = NextToken->Type;
 		} else if (NextToken->Type == token_type::nott) {
 			NegateNext = true;
-		} else if (NextToken->Type == token_type::openBracket) {
+		} else if (NextToken->Type == token_type::openSquare) {
 			bool_error_return Ret = EvaluateBoolean(ConditionalTokens, ConditionalsCount, NextLogicOp, Fluents, FluentsCount, Entities, EntitiesCount);
 
 			if (Ret.Error.IsError) { return (Ret); }
@@ -911,7 +946,7 @@ EvaluateBoolean(token_info* ConditionalTokens, int32 ConditionalsCount,
 			} else if (CurrLogicOp == token_type::none) {
 				AccumBool = NextVal;
 			}
-		} else if (NextToken->Type == token_type::closeBracket) {
+		} else if (NextToken->Type == token_type::closeSquare) {
 			BoolRet.Value = AccumBool;
 			return (BoolRet);
 		} else {
@@ -965,6 +1000,29 @@ PrintOptions(game_def* Def)
 				PrintFluent("\t", &Entity->Fluents[FIndex]);
 			}
 		}
+
+		// print arrays
+		for (int32 Index = 0; Index < Def->ArraysCount; Index++) {
+			array* Array = &Def->Arrays[Index];
+
+			printf(Array->Name.CharArray);
+			printf("[");
+			for (int32 AIndex = 0; AIndex < Array->ArrayCount; AIndex++) {
+				if (AIndex != 0) {
+					printf(", ");
+				}
+
+				array_index* I = &Array->Array[AIndex];
+				if (I->HasValue) {
+					string Val = I->Value;
+					printf(Val.CharArray);
+				} else {
+					printf(I->ID.CharArray);
+				}
+			}
+			printf("] \n");
+		}
+
 		Print("\n");
 	}
 
@@ -1154,6 +1212,7 @@ GrabFluent(token_info* Tokens, int32 StackStart, bool32 Evaluate,
 	fluent FluentAdding = {};
 	FluentAdding.Name = Tokens[StackStart].Name;
 
+	// This skips over the ID = part, and gets to the statement itself
 	int32 AccumIndex = StackStart + 2;
 
 	if (Evaluate) {
@@ -1255,6 +1314,7 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 		GameDefinition->Entities = (entity*)malloc(MaxCount * sizeof(entity));
 		GameDefinition->InstancedEntities = (entity*)malloc(MaxCount * sizeof(entity));
 		GameDefinition->Methods = (method*)malloc(MaxCount * sizeof(method));
+		GameDefinition->Arrays = (array*)malloc(MaxCount * sizeof(array));
 
 	}
 
@@ -1264,6 +1324,7 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 	ZeroMemory(GameDefinition->Entities, sizeof(entity) * MaxCount);
 	ZeroMemory(GameDefinition->InstancedEntities, sizeof(entity) * MaxCount);
 	ZeroMemory(GameDefinition->Methods, sizeof(method) * MaxCount);
+	ZeroMemory(GameDefinition->Arrays, sizeof(array) * MaxCount);
 
 	GameDefinition->FluentsCount = 0;
 	GameDefinition->EventsCount = 0;
@@ -1271,6 +1332,7 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 	GameDefinition->InstancedEntitiesCount = 0;
 	GameDefinition->EntitiesCount = 0;
 	GameDefinition->MethodsCount = 0;
+	GameDefinition->ArraysCount = 0;
 
 
 	// lexer and parser system.
@@ -1407,10 +1469,10 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 					ADDTOKEN(token_type::openParen);
 				} else if (ThisChar == ']') {
 					CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
-					ADDTOKEN(token_type::closeBracket);
+					ADDTOKEN(token_type::closeSquare);
 				} else if (ThisChar == '[') {
 					CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
-					ADDTOKEN(token_type::openBracket);
+					ADDTOKEN(token_type::openSquare);
 				} else if (ThisChar == '}') {
 					CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
 					ADDTOKEN(token_type::closedCurly);
@@ -1490,6 +1552,7 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 					        Tokens.Tokens[StatementStart + 1].Type == token_type::equalTo &&
 					        Tokens.Tokens[StatementStart + 2].Type != token_type::playerAction &&
 					        Tokens.Tokens[StatementStart + 2].Type != token_type::event &&
+					        Tokens.Tokens[StatementStart + 2].Type != token_type::openSquare &&
 					        Tokens.Tokens[StatementEnd + 1].Type == token_type::period) {
 						// Fluent with value statement
 
@@ -1504,6 +1567,45 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 
 						GameDefinition->Fluents[GameDefinition->FluentsCount] = Ret.FluentIfValid;
 						GameDefinition->FluentsCount++;
+
+						RESET
+					} else if (Tokens.Tokens[StatementStart].Type == token_type::id &&
+					           Tokens.Tokens[StatementStart + 1].Type == token_type::equalTo &&
+					           Tokens.Tokens[StatementStart + 2].Type == token_type::openSquare) {
+						// array
+
+						array* NextArray = &GameDefinition->Arrays[GameDefinition->ArraysCount];
+						GameDefinition->ArraysCount++;
+						Assert(GameDefinition->ArraysCount < 100);
+
+						NextArray->Name = Tokens.Tokens[StatementStart].Name;
+
+						int32 TI = StatementStart + 3;
+						while (Tokens.Tokens[TI].Type != token_type::period && Tokens.Tokens[TI].Type != token_type::closeSquare) {
+
+							array_index* AIndex = &NextArray->Array[NextArray->ArrayCount];
+							NextArray->ArrayCount++;
+
+							token_info* NextToken = &Tokens.Tokens[TI];
+							if (NextToken->Type == token_type::number) {
+								AIndex->HasValue = true;
+								AIndex->Value = StringToInt32(NextToken->Name);
+							} else if (NextToken->Type == token_type::id) {
+								AIndex->HasValue = false;
+								AIndex->ID = NextToken->Name;
+							} else {
+								return (BuildErrorString(NextToken->LineNumber, "Invalid token type in an array."));
+							}
+
+							// Move to next fluent
+							while (Tokens.Tokens[TI].Type != token_type::period &&
+							        Tokens.Tokens[TI].Type != token_type::closeSquare &&
+							        Tokens.Tokens[TI].Type != token_type::comma) {
+								TI++;
+							}
+
+							TI++;
+						}
 
 						RESET
 					} else if (Tokens.Tokens[StatementStart].Type == token_type::id &&
