@@ -1642,6 +1642,26 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 
 						RESET
 					} else if (Tokens.Tokens[StatementStart].Type == token_type::id &&
+					           Tokens.Tokens[StatementStart + 1].Type == token_type::openSquare &&
+					           Tokens.Tokens[StatementStart + 2].Type == token_type::number &&
+					           Tokens.Tokens[StatementStart + 3].Type == token_type::closeSquare) {
+						// array assignment by index without an arithmetic
+
+						array* ArrayEditing = {};
+						for (int32 Index = 0; Index < GameDefinition->ArraysCount; Index++) {
+							if (GameDefinition->Arrays[Index].Name == Tokens.Tokens[StatementStart].Name) {
+								ArrayEditing = &GameDefinition->Arrays[Index];
+								break;
+							}
+						}
+
+						if (ArrayEditing == NULL) {
+							return (BuildErrorString(Tokens.Tokens[StatementStart].LineNumber, "Array of name " + Tokens.Tokens[StatementStart].Name + " does not exist."));
+						}
+
+						
+
+					} else if (Tokens.Tokens[StatementStart].Type == token_type::id &&
 					           Tokens.Tokens[StatementStart + 1].Type == token_type::period) {
 						// Fluent without value
 

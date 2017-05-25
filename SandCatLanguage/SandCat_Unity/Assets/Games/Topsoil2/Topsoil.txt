@@ -1,25 +1,26 @@
-! This defines each gridcell 
-! plant 0 - no plant 1..3 - plant id
-! 0..2 - color id
+copy X = 1..4 {	
+	copy X = 1..4 {	
+		Cell|X||Y| : [Plant(0), Color(random 1 to 3), X(0), Y(0), MarkToHarvest(0)].
+	}
+}
 
-CellA, CellB, CellC, CellD, CellE, CellF, CellG, CellH, CellI, CellJ, CellK, CellL, CellM, CellN, CellO, CellP : [Plant(0), Color(0), X(0), Y(0), MarkToHarvest(0)].
+X = 10.
+Y = 10 can (VALUE < 10 and VALUE > 0).
 
-CellA'Color(random 1 to 3).
-CellB'Color(random 1 to 3).
-CellC'Color(random 1 to 3).
-CellD'Color(random 1 to 3).
-CellE'Color(random 1 to 3).
-CellF'Color(random 1 to 3).
-CellG'Color(random 1 to 3).
-CellH'Color(random 1 to 3).
-CellI'Color(random 1 to 3).
-CellJ'Color(random 1 to 3).
-CellK'Color(random 1 to 3).
-CellL'Color(random 1 to 3).
-CellM'Color(random 1 to 3).
-CellN'Color(random 1 to 3).
-CellO'Color(random 1 to 3).
-CellP'Color(random 1 to 3).
+	 
+CellGrid = [ [ Cell|1..4|, ], [] ]
+
+CellGrid = 
+[
+copy X = 1..4{
+	[
+	copy Y = 1..4{
+		Cell|X||Y|,
+	}
+	],
+}
+].
+
 
 
 !!!!

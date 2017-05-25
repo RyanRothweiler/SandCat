@@ -1,11 +1,11 @@
-# Single state values
+# Basic cingle state values
 GridMax = 20.
-
-# Objets 
-Player, Chicken = {X, Y, Atk, Def, Health = 10}.
 
 # If unspecified, state is initialized to 0. 
 Platform.
+
+# Objetcs 
+Player, Chicken = {X, Y, Atk, Def, Health = 10}.
 
 # These copys just duplicate what is in the brackets
 # Copying with iterating through lists
@@ -21,7 +21,69 @@ copy X = 1..20
 	Mouse|X| = {X, Y}.
 }
 
-# Can arrange into data structures. These are all just pointers. 
+# Automatic state validation?
+# When to turn it off or on? Some rules are meant to be broken. 
+# Can do state validation in state decleration or in state transformation. Maybe both?
+Bike = 100 can (VALUE < 10 and VALUE > Mouse).
+# Maybe these should be called rules? So the designer can use them when they want to. This is just moving where the validation is done. Possibly allow any of the three.
+CanMove = Rule using Thing
+	true if (Thing'X > 0 and Thing'Y < 10).
+
+MoveThingUp = Event
+	using Thing
+	does Thing'X = Thing'X + 1.
+
+MoveUp = PlayerAction
+	does MoveUp(Player) if CanMove(Player).
+
+
+# Arrays. All arrays hold only pointers to other objects, or just values.
+# Declare 10 by 10, and each cell holds an object with X, Y, 
+Grid = [10x10].
+
+# Things we want to do with arrays
+##
+1. Add object at index.
+2. Get object by index.
+3. Iterate through the array, get, set, and chnage arbitrarily. 
+4. Insert objects. 
+5. Remove objects.
+
+Arrays have their own specific commands. How else to do this?
+Maybe do some set theory stuff here? Would a designer ever want to add two arrays together? I don't want a designer to need to understand set theory to use this. I like the idea of making this probably too verbose.
+
+Foreach loop is possible. But there are probably only a few very common list commands. 
+Need both. Have commands available, but also a foreach feature if the designer REALLY wants it.
+##
+
+# Filling the array. (Is it possible to use these ranges in more places? Maybe in array state transformations also?)
+Grid[1..10, 1..10] = {X, Y, HP}.
+Grid[1..5, 1..5] = {Weather = 0, Alive = 1}.
+Grid[1,2] = 0.
+
+
+# Remove the thing at index 0.
+Grid RemoveAt 0.
+Grid RemoveAll X.
+Grid RemoveFirst X.
+Grid RemoveLast X.
+Grid RemoveAny X.
+
+Grid foreach
+	does
+
+# Any of these can contain if statements
+Grid RemoveAt 0 if INDEX < 0.
+Grid RemoveAll 
+
+#
+Grid Insert At 0.
+
+# Arrays hold only pointers. This array all points to one Cat.
+Cat = {Legs = 4, Tail = 1}.
+AllPointers = [5].
+AllPointers all Cat
+
 Animals = [Mouse1, Mouse2, Mouse3, Player, Chicken].
 AnimalGrid = [	[Mouse1, 	Mouse2, 	Mouse3, 	Mouse4, 	Mouse5],
 				[Mouse6, 	Mouse7, 	Paltform, 	Mouse9, 	Mouse10],
@@ -66,3 +128,79 @@ BoardMoveUp = Event
 # Player Actions. These are the things that the player can do to change state.
 MovePlayerUp = PlayerAction 
 	does MoveUpIfAlive(Player).
+
+
+
+# Validation with state
+Health = 0.
+Health mustbe Health > 0 and Health < 10.
+
+AddHealth = PlayerAction 
+	does Health = Health + 1.
+
+# As opposed to
+Health = 0.
+
+AddHealth = PlayerAction 
+	does Health = Health + 1 
+	if Health + 1 < 10.
+
+# Possibly state values should have validation?
+# Might be a nice way to create more human rules. But also not necessary, and can get very messy very quickly.
+Health 
+	does Health = 100
+	if Health < 10.
+
+
+
+
+
+## Arrays
+- All array indecies are automatically populated with x and/or y values which hold the index of the object.
+- All array indecies are automatically populated with an I values, which holds the index as if the array were one dimensional.
+- Array length can be queried with ID'Length, or ID'Width 
+- Only 1d and 2d arrays are supported. 
+##
+# Create empty array
+ArrayID = [10].
+TwoDArrayID = [10x10].
+Mantaray = [10].
+
+# Fill with something existing. 
+Cat = 10.
+Mantaray[0] = Cat.
+Mantaray[1] = Cat.
+
+# Fill with something new
+Mantaray[10] = {Atk = 10, Def = 1}.
+Mantaray[0]'Atk = 100.
+
+# Fill the entire array
+Mantaray[0..10] = {Atk, Def}.
+
+# Fill only one quadrant
+TwoDArrayID[0..5, 5..10] = {Spd, HP}.
+
+## Arrays
+- All array indecies are automatically populated with x and/or y values which hold the index of the object.
+- All array indecies are automatically populated with an I values, which holds the index as if the array were one dimensional.
+- Array length can be queried with ID'XMax, or ID'YMax, or ID'Max (which holds the length of the array as if it were one dimensional). 
+- Only 1d and 2d arrays are supported. 
+##
+
+# Iteration done through recursion
+MoveGridDown = GameAction
+	using Cell
+	does TwoDArray[Cell'X, Cell'Y + 1] = Cell if TwoDArray[Cell'X, Cell'Y + 1].IsEmpty = 1
+	does MoveGridDown(Cell'I - 1) if Cell'I > 0.
+
+PlayerAbilityMoveWorld = PlayerAction
+	does MoveGridDown(TwoDArray[TwoDarray'Max]), PlayerMana = PlayerMana - 10 if PlayerMana > 10.
+
+
+## Something SQL like. Combination of terms. 
+
+# Whats needed
+Start, End, 
+
+##
