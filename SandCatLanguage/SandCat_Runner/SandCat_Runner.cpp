@@ -963,6 +963,12 @@ IfTokensValid(token_info* IfTokens, int32 TokensCount, game_def* GameDef)
 	}
 }
 
+string
+BuildArrayFluentID(string ArrayName, int32 index)
+{
+	return ("ARRAY_" + ArrayName + "_" + index);
+}
+
 void
 PrintOptions(game_def* Def)
 {
@@ -1078,6 +1084,35 @@ Accumulate(int32 Accum, token_type Operation, int32 NewOperand)
 	return (Accum);
 }
 
+struct fluent_in_array_return {
+	fluent* Fluent;
+	error Error;
+};
+
+fluent_in_array_return
+GetFluentInArray(string EntityName, string FluentName, int32 ArrayIndex, int32 LineNum,
+                 entity* Entities, int32 EntitiesCount)
+{
+	fluent_in_array_return Ret = {};
+	string NameWanting = BuildArrayFluentID(EntityName, ArrayIndex);
+	entity* EntityEditing = FindEntity(NameWanting, Entities, EntitiesCount);
+	if (EntityEditing == NULL) {
+		Ret.Error.IsError = true;
+		Ret.Error.Desc = BuildErrorString(LineNum, "Could not find entity of name " + NameWanting);
+		return (Ret);
+	}
+
+	fluent* FluentEditing = FindFluentInList(FluentName, EntityEditing->Fluents, EntityEditing->FluentsCount);
+	if (FluentEditing == NULL) {
+		Ret.Error.IsError = true;
+		Ret.Error.Desc = BuildErrorString(LineNum, "Could not find fluent of name " + FluentName);
+		return (Ret);
+	}
+
+	Ret.Fluent = FluentEditing;
+	return (Ret);
+}
+
 real64_error_return
 InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
                 fluent* Fluents, int32 FluentsCount,
@@ -1099,6 +1134,8 @@ InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
 
 			real64 NewOperand = 0.0f;
 			if (Tokens[AccumIndex + 1].Type == token_type::dot) {
+				// Dot notation
+
 				entity* Event = FindEntity(Tokens[AccumIndex].Name, Entities, EntitiesCount);
 				if (Event == NULL) {
 					// Error here. Could not find that entity name.
@@ -1114,7 +1151,24 @@ InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
 
 				NewOperand = Fluent->Value;
 				AccumIndex += 2;
+			} else if (Tokens[AccumIndex + 1].Type == token_type::openSquare) {
+				// Fluent in an array
+
+				string EntityName = Tokens[AccumIndex].Name;
+				string FluentName = Tokens[AccumIndex + 5].Name;
+				int32 ArrayIndex = StringToInt32(Tokens[AccumIndex + 2].Name);
+				int32 TokenLineNum = Tokens[AccumIndex].LineNumber;
+				fluent_in_array_return Ret = GetFluentInArray(EntityName, FluentName, ArrayIndex, TokenLineNum, Entities, EntitiesCount);
+				if (Ret.Error.IsError) {
+					InRet.Error = Ret.Error;
+					return (InRet);
+				}
+
+				NewOperand = Ret.Fluent->Value;
+				AccumIndex += 5;
 			} else {
+				// Straight regular fluent
+
 				if (Tokens[AccumIndex].Type == token_type::id) {
 					// find that fluent
 					fluent* Fluent = FindFluentInList(Tokens[AccumIndex].Name, Fluents, FluentsCount);
@@ -1134,6 +1188,7 @@ InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
 			}
 
 			Accum = Accumulate(Accum, AccumState, NewOperand);
+
 		} else if (NewTokenType == token_type::sub ||
 		           NewTokenType == token_type::add ||
 		           NewTokenType == token_type::mult ||
@@ -1598,12 +1653,11 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 						Basically the entity is duplicated, given a mangled name, and placed into the array.
 						*/
 						entity BaseEntity = {};
-						BaseEntity.Name = "ARRAY_" + NextArray->Name + "_";
 						GrabEntityFluents(&BaseEntity, Tokens.Tokens, StatementStart + 4, GameDefinition);
 
 						for (int32 Index  = 0; Index < ArrayLength; Index++) {
 							GameDefinition->InstancedEntities[GameDefinition->InstancedEntitiesCount] = BaseEntity;
-							GameDefinition->InstancedEntities[GameDefinition->InstancedEntitiesCount].Name = BaseEntity.Name + Index;
+							GameDefinition->InstancedEntities[GameDefinition->InstancedEntitiesCount].Name = BuildArrayFluentID(NextArray->Name, Index);
 
 							NextArray->Array[NextArray->ArrayCount] = GameDefinition->InstancedEntities[GameDefinition->InstancedEntitiesCount].Name;
 
@@ -1685,6 +1739,8 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 					           Tokens.Tokens[StatementStart + 3].Type == token_type::closeSquare) {
 						// array assignment by index without an arithmetic
 
+						int32 IndexEditing = StringToInt32(Tokens.Tokens[StatementStart + 2].Name);
+
 						array* ArrayEditing = {};
 						for (int32 Index = 0; Index < GameDefinition->ArraysCount; Index++) {
 							if (GameDefinition->Arrays[Index].Name == Tokens.Tokens[StatementStart].Name) {
@@ -1696,6 +1752,39 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 						if (ArrayEditing == NULL) {
 							return (BuildErrorString(Tokens.Tokens[StatementStart].LineNumber, "Array of name " + Tokens.Tokens[StatementStart].Name + " does not exist."));
 						}
+
+						if (Tokens.Tokens[StatementStart + 4].Type == token_type::dot) {
+
+							string EntityName = Tokens.Tokens[StatementStart].Name;
+							string FluentName = Tokens.Tokens[StatementStart + 5].Name;
+							int32 ArrayIndex = IndexEditing;
+							int32 TokenLineNum = Tokens.Tokens[StatementStart].LineNumber;
+							fluent_in_array_return Ret = GetFluentInArray(EntityName, FluentName, ArrayIndex, TokenLineNum, GameDefinition->InstancedEntities, GameDefinition->InstancedEntitiesCount);
+							if (Ret.Error.IsError) {
+								return (Ret.Error.Desc);
+							}
+							fluent* FluentEditing = Ret.Fluent;
+
+							real64_error_return InfixRet = InfixAccumulate(
+							                                   Tokens.Tokens, StatementStart + 7,
+							                                   GameDefinition->Fluents, GameDefinition->FluentsCount,
+							                                   GameDefinition->InstancedEntities, GameDefinition->InstancedEntitiesCount);
+
+							if (InfixRet.Error.IsError) {
+								return (InfixRet.Error.Desc);
+							}
+
+							FluentEditing->Value = InfixRet.Value;
+
+						} else if (Tokens.Tokens[StatementStart + 4].Type == token_type::equalTo) {
+							// We're putting a new fluent into the array
+							ArrayEditing->Array[IndexEditing] = Tokens.Tokens[StatementStart + 5].Name;
+						} else {
+							return (BuildErrorString(Tokens.Tokens[StatementStart].LineNumber, "Unexpected token after array."));
+						}
+
+
+						RESET
 					} else if (Tokens.Tokens[StatementStart].Type == token_type::id &&
 					           Tokens.Tokens[StatementStart + 1].Type == token_type::period) {
 						// Fluent without value

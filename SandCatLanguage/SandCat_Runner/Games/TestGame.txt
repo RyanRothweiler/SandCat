@@ -12,7 +12,11 @@ Monkey, Cat = {HP = 0, Intelligence = 5, Dexterity = 15}.
 Womantaray[0] = Monkey.
 #Cat = Mantaray[0].
 
-Mantaray[0]'Atk = 10.
+Mantaray[0]'Atk = 5.
+Mantaray[1]'Atk = Mantaray[0]'Atk * 3.
+# Mantaray[1]'Atk = 10 + 2.
+# Mantaray[2]'Atk = 10 + Slime'Attack.
+# Mantaray[3 + 2]'Atk = 100.
 
 Heal = Event using Thing
 	does Thing'HP = 100.
