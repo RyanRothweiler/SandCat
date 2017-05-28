@@ -1093,6 +1093,9 @@ fluent_in_array_return
 GetFluentInArray(string EntityName, string FluentName, int32 ArrayIndex, int32 LineNum,
                  entity* Entities, int32 EntitiesCount)
 {
+
+	// ArrayIndex--;
+
 	fluent_in_array_return Ret = {};
 	string NameWanting = BuildArrayFluentID(EntityName, ArrayIndex);
 	entity* EntityEditing = FindEntity(NameWanting, Entities, EntitiesCount);
@@ -1128,6 +1131,7 @@ InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
 	while (Tokens[AccumIndex].Type != token_type::period &&
 	        Tokens[AccumIndex].Type != token_type::none &&
 	        Tokens[AccumIndex].Type != token_type::closedCurly &&
+	        Tokens[AccumIndex].Type != token_type::closeSquare &&
 	        Tokens[AccumIndex].Type != token_type::comma) {
 		token_type NewTokenType = Tokens[AccumIndex].Type;
 		if (NewTokenType == token_type::id || NewTokenType == token_type::number) {
@@ -1154,18 +1158,48 @@ InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
 			} else if (Tokens[AccumIndex + 1].Type == token_type::openSquare) {
 				// Fluent in an array
 
+				real64_error_return InfixRet  = {};
+
+
+				// Get the number of tokens until the closing square
+				int32 CountUntilClose = 0;
+				while (Tokens[AccumIndex + CountUntilClose - 1].Type != token_type::closeSquare) {
+					CountUntilClose++;
+				}
+
 				string EntityName = Tokens[AccumIndex].Name;
-				string FluentName = Tokens[AccumIndex + 5].Name;
-				int32 ArrayIndex = StringToInt32(Tokens[AccumIndex + 2].Name);
+				string FluentName = Tokens[AccumIndex + CountUntilClose + 1].Name;
 				int32 TokenLineNum = Tokens[AccumIndex].LineNumber;
+
+				InfixRet = InfixAccumulate(Tokens, AccumIndex + 2, Fluents, FluentsCount, Entities, EntitiesCount);
+				if (InfixRet.Error.IsError) { return (InfixRet); }
+				int32 ArrayIndex = InfixRet.Value;
+
 				fluent_in_array_return Ret = GetFluentInArray(EntityName, FluentName, ArrayIndex, TokenLineNum, Entities, EntitiesCount);
+
 				if (Ret.Error.IsError) {
 					InRet.Error = Ret.Error;
 					return (InRet);
 				}
+				fluent* FluentEditing = Ret.Fluent;
 
-				NewOperand = Ret.Fluent->Value;
-				AccumIndex += 5;
+				NewOperand = FluentEditing->Value;
+				AccumIndex += 1 + CountUntilClose;
+
+				if (false) {
+					string EntityName = Tokens[AccumIndex].Name;
+					string FluentName = Tokens[AccumIndex + 5].Name;
+					int32 ArrayIndex = StringToInt32(Tokens[AccumIndex + 2].Name);
+					int32 TokenLineNum = Tokens[AccumIndex].LineNumber;
+					fluent_in_array_return Ret = GetFluentInArray(EntityName, FluentName, ArrayIndex, TokenLineNum, Entities, EntitiesCount);
+					if (Ret.Error.IsError) {
+						InRet.Error = Ret.Error;
+						return (InRet);
+					}
+
+					NewOperand = Ret.Fluent->Value;
+					AccumIndex += 5;
+				}
 			} else {
 				// Straight regular fluent
 
@@ -1734,9 +1768,7 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 
 						RESET
 					} else if (Tokens.Tokens[StatementStart].Type == token_type::id &&
-					           Tokens.Tokens[StatementStart + 1].Type == token_type::openSquare &&
-					           Tokens.Tokens[StatementStart + 2].Type == token_type::number &&
-					           Tokens.Tokens[StatementStart + 3].Type == token_type::closeSquare) {
+					           Tokens.Tokens[StatementStart + 1].Type == token_type::openSquare) {
 						// array assignment by index without an arithmetic
 
 						int32 IndexEditing = StringToInt32(Tokens.Tokens[StatementStart + 2].Name);
@@ -1753,32 +1785,47 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 							return (BuildErrorString(Tokens.Tokens[StatementStart].LineNumber, "Array of name " + Tokens.Tokens[StatementStart].Name + " does not exist."));
 						}
 
-						if (Tokens.Tokens[StatementStart + 4].Type == token_type::dot) {
+						// Get the number of tokens until the closing square
+						int32 CountUntilClose = 0;
+						while (Tokens.Tokens[StatementStart + CountUntilClose - 1].Type != token_type::closeSquare) {
+							CountUntilClose++;
+						}
+
+						if (Tokens.Tokens[StatementStart + CountUntilClose].Type == token_type::dot) {
+							real64_error_return InfixRet  = {};
 
 							string EntityName = Tokens.Tokens[StatementStart].Name;
-							string FluentName = Tokens.Tokens[StatementStart + 5].Name;
-							int32 ArrayIndex = IndexEditing;
+							string FluentName = Tokens.Tokens[StatementStart + CountUntilClose + 1].Name;
 							int32 TokenLineNum = Tokens.Tokens[StatementStart].LineNumber;
+
+							InfixRet = InfixAccumulate(Tokens.Tokens, StatementStart + 2,
+							                           GameDefinition->Fluents, GameDefinition->FluentsCount,
+							                           GameDefinition->InstancedEntities, GameDefinition->InstancedEntitiesCount);
+							if (InfixRet.Error.IsError) {
+								return (InfixRet.Error.Desc);
+							}
+							int32 ArrayIndex = InfixRet.Value;
+
 							fluent_in_array_return Ret = GetFluentInArray(EntityName, FluentName, ArrayIndex, TokenLineNum, GameDefinition->InstancedEntities, GameDefinition->InstancedEntitiesCount);
+
 							if (Ret.Error.IsError) {
 								return (Ret.Error.Desc);
 							}
 							fluent* FluentEditing = Ret.Fluent;
 
-							real64_error_return InfixRet = InfixAccumulate(
-							                                   Tokens.Tokens, StatementStart + 7,
-							                                   GameDefinition->Fluents, GameDefinition->FluentsCount,
-							                                   GameDefinition->InstancedEntities, GameDefinition->InstancedEntitiesCount);
-
+							InfixRet = InfixAccumulate(
+							               Tokens.Tokens, StatementStart + CountUntilClose + 3,
+							               GameDefinition->Fluents, GameDefinition->FluentsCount,
+							               GameDefinition->InstancedEntities, GameDefinition->InstancedEntitiesCount);
 							if (InfixRet.Error.IsError) {
 								return (InfixRet.Error.Desc);
 							}
 
 							FluentEditing->Value = InfixRet.Value;
 
-						} else if (Tokens.Tokens[StatementStart + 4].Type == token_type::equalTo) {
+						} else if (Tokens.Tokens[StatementStart + CountUntilClose].Type == token_type::equalTo) {
 							// We're putting a new fluent into the array
-							ArrayEditing->Array[IndexEditing] = Tokens.Tokens[StatementStart + 5].Name;
+							ArrayEditing->Array[IndexEditing] = Tokens.Tokens[StatementStart + CountUntilClose + 5].Name;
 						} else {
 							return (BuildErrorString(Tokens.Tokens[StatementStart].LineNumber, "Unexpected token after array."));
 						}
