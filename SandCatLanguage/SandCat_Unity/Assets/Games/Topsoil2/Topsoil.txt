@@ -1,27 +1,4 @@
-copy X = 1..4 {	
-	copy X = 1..4 {	
-		Cell|X||Y| : [Plant(0), Color(random 1 to 3), X(0), Y(0), MarkToHarvest(0)].
-	}
-}
-
-X = 10.
-Y = 10 can (VALUE < 10 and VALUE > 0).
-
-	 
-CellGrid = [ [ Cell|1..4|, ], [] ]
-
-CellGrid = 
-[
-copy X = 1..4{
-	[
-	copy Y = 1..4{
-		Cell|X||Y|,
-	}
-	],
-}
-].
-
-
+Cell|X||Y| : [Plant(0), Color(random 1 to 3), X(0), Y(0), MarkToHarvest(0)].
 
 !!!!
 CellA'X(0).		CellB'X(1).		CellC'X(2).		CellD'X(3).

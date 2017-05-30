@@ -1,28 +1,14 @@
-
-
-Womantaray = [Bat, Slime].
 Mantaray = [5]{Atk = 2, Def = 2}.
+StepCounter = [10]{X = 0, Y = 0}.
 
-PlayerHealth.
-PlayerHappiness = 10 / 2.
+GlobalCount = 0.
+GlobalIndex = 3.
 
-Bat, Slime = {HP = 0, Attack = 5}.
-Monkey, Cat = {HP = 0, Intelligence = 5, Dexterity = 15}.
+Mantaray[GlobalCount]'Atk = 100.
 
+StepAdd = Event
+	does StepCounter[GlobalIndex] = GlobalCount, GlobalCount = GlobalCount * 2, GlobalIndex - GlobalIndex - 1, StepAdd() 
+	if GlobalIndex - 1 > 0.
 
-#Womantaray[0] = Monkey.
-#Cat = Mantaray[0].
-
-
-#Mantaray[1]'Atk = 10 + 2.
-#Mantaray[2]'Atk = 10 + Slime'Attack.
-Mantaray[3]'Atk = Mantaray[1 + 2 * 2 - 2]'Atk * 3.
-#Mantaray[1 * 2 + 1]'Atk = 100.
-
-Heal = Event using Thing
-	does Thing'HP = 100.
-
-GivePlayerHealth = PlayerAction
-	does PlayerHealth = PlayerHealth + 1 if PlayerHealth < 10
-	does Bat'Attack = Slime'Attack * 3
-	does Heal(Bat), Heal(Slime), Heal(Monkey).
+BeginStep = PlayerAction
+	does StepAdd(), GlobalCount = 0, GlobalIndex = 10.
