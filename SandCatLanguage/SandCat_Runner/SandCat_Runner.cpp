@@ -587,30 +587,6 @@ struct fluent {
 	int32 ArithCount;
 };
 
-struct error {
-	string Desc;
-	bool32 IsError;
-};
-
-error
-CreateError(string Desc)
-{
-	error Ret = {};
-	Ret.IsError = true;
-	Ret.Desc = Desc;
-	return (Ret);
-}
-
-struct bool_error_return {
-	error Error;
-	bool32 Value;
-};
-
-struct real64_error_return {
-	error Error;
-	real64 Value;
-};
-
 void
 Print(string Output)
 {
@@ -725,8 +701,6 @@ FindEntity(string Name, entity* Entities, int32 EntitiesCount)
 struct fluent_search_return {
 	int32 TokensConsumed;
 	fluent* Fluent;
-
-	error Error;
 };
 
 // This handles dot notation, searching through everything to find the right fluent.
@@ -744,14 +718,12 @@ FluentSearch(token_info* Tokens, int32 ListStart, fluent* Fluents, int32 Fluents
 		entity* Entity = FindEntity(Tokens[ListStart].Name, Entities, EntitiesCount);
 		if (Entity == NULL) {
 			// Could not find that entity
-			Ret.Error = CreateError(BuildErrorString(Tokens[ListStart].LineNumber, EntityNotFoundPrefix + Tokens[ListStart].Name));
-			return (Ret);
+			ThrowError(Tokens[ListStart].LineNumber, EntityNotFoundPrefix + Tokens[ListStart].Name);
 		}
 		fluent* Fluent = FindFluentInList(Tokens[ListStart + 2].Name, Entity->Fluents, Entity->FluentsCount);
 		if (Fluent == NULL) {
 			// Could not find that fluent in that entity
-			Ret.Error = CreateError(BuildErrorString(Tokens[ListStart].LineNumber, "Fluent " + Tokens[ListStart + 2].Name + " not found in entity " + Tokens[ListStart].Name));
-			return (Ret);
+			ThrowError(Tokens[ListStart].LineNumber, "Fluent " + Tokens[ListStart + 2].Name + " not found in entity " + Tokens[ListStart].Name);
 		}
 		Ret.Fluent = Fluent;
 	} else {
@@ -760,8 +732,7 @@ FluentSearch(token_info* Tokens, int32 ListStart, fluent* Fluents, int32 Fluents
 		fluent* Fluent = FindFluentInList(Tokens[ListStart].Name, Fluents, FluentsCount);
 		if (Fluent == NULL) {
 			// Could not find that fluent
-			Ret.Error = CreateError(BuildErrorString(Tokens[ListStart].LineNumber, FluentNotFoundPrefix + Tokens[ListStart].Name));
-			return (Ret);
+			ThrowError(Tokens[ListStart].LineNumber, FluentNotFoundPrefix + Tokens[ListStart].Name);
 		}
 		Ret.Fluent = Fluent;
 	}
@@ -803,14 +774,12 @@ FluentSearch(string TokenString, fluent* Fluents, int32 FluentsCount, entity* En
 	return (FluentSearch(&Tokens[0], 0, Fluents, FluentsCount, Entities, EntitiesCount));
 }
 
-bool_error_return
+bool32
 EvaluateBoolean(token_info* ConditionalTokens, int32 ConditionalsCount,
                 int32* NextLogicOp,
                 fluent* Fluents, int32 FluentsCount,
                 entity* Entities, int32 EntitiesCount)
 {
-	bool_error_return BoolRet = {};
-
 	bool32 AccumBool = true;
 
 	// This state must be held separate from the logicO
@@ -827,11 +796,7 @@ EvaluateBoolean(token_info* ConditionalTokens, int32 ConditionalsCount,
 		} else if (NextToken->Type == token_type::nott) {
 			NegateNext = true;
 		} else if (NextToken->Type == token_type::openSquare) {
-			bool_error_return Ret = EvaluateBoolean(ConditionalTokens, ConditionalsCount, NextLogicOp, Fluents, FluentsCount, Entities, EntitiesCount);
-
-			if (Ret.Error.IsError) { return (Ret); }
-
-			bool32 NextVal = Ret.Value;
+			bool32 NextVal = EvaluateBoolean(ConditionalTokens, ConditionalsCount, NextLogicOp, Fluents, FluentsCount, Entities, EntitiesCount);
 
 			if (NegateNext) {
 				NegateNext = false;
@@ -863,11 +828,6 @@ EvaluateBoolean(token_info* ConditionalTokens, int32 ConditionalsCount,
 			} else {
 				fluent_search_return Ret = FluentSearch(ConditionalTokens, *NextLogicOp,
 				                                        Fluents, FluentsCount, Entities, EntitiesCount);
-				if (Ret.Error.IsError) {
-					BoolRet.Error = Ret.Error;
-					return (BoolRet);
-				}
-
 				(*NextLogicOp) += Ret.TokensConsumed;
 				FirstVal = Ret.Fluent->Value;
 			}
@@ -888,11 +848,6 @@ EvaluateBoolean(token_info* ConditionalTokens, int32 ConditionalsCount,
 				} else {
 					fluent_search_return Ret = FluentSearch(ConditionalTokens, *NextLogicOp,
 					                                        Fluents, FluentsCount, Entities, EntitiesCount);
-					if (Ret.Error.IsError) {
-						BoolRet.Error = Ret.Error;
-						return (BoolRet);
-					}
-
 					(*NextLogicOp) += Ret.TokensConsumed;
 					Accum = Ret.Fluent->Value;
 				}
@@ -921,11 +876,6 @@ EvaluateBoolean(token_info* ConditionalTokens, int32 ConditionalsCount,
 			} else {
 				fluent_search_return Ret = FluentSearch(ConditionalTokens, *NextLogicOp,
 				                                        Fluents, FluentsCount, Entities, EntitiesCount);
-				if (Ret.Error.IsError) {
-					BoolRet.Error = Ret.Error;
-					return (BoolRet);
-				}
-
 				(*NextLogicOp) += Ret.TokensConsumed;
 				SecondVal = Ret.Fluent->Value;
 			}
@@ -942,8 +892,7 @@ EvaluateBoolean(token_info* ConditionalTokens, int32 ConditionalsCount,
 				NextVal = FirstVal == SecondVal;
 			} else {
 				// That was not a valid logic operation. Throw an error.
-				BoolRet.Error = CreateError(BuildErrorString(ConditionalTokens[*NextLogicOp].LineNumber, "A non-comparison token found where a comparison one should be."));
-				return (BoolRet);
+				ThrowError(ConditionalTokens[*NextLogicOp].LineNumber, "A non-comparison token found where a comparison one should be.");
 			}
 
 			if (NegateNext) {
@@ -960,20 +909,17 @@ EvaluateBoolean(token_info* ConditionalTokens, int32 ConditionalsCount,
 				AccumBool = NextVal;
 			}
 		} else if (NextToken->Type == token_type::closeSquare) {
-			BoolRet.Value = AccumBool;
-			return (BoolRet);
+			return (AccumBool);
 		} else {
 			// There was a problem. Something didn't stack correctly
-			BoolRet.Error = CreateError(BuildErrorString(NextToken->LineNumber, "There was a problem. Something unexpected happened."));
-			return (BoolRet);
+			ThrowError(NextToken->LineNumber, "There was a problem. Something unexpected happened.");
 		}
 	}
 
-	BoolRet.Value = AccumBool;
-	return (BoolRet);
+	return (AccumBool);
 }
 
-bool_error_return
+bool32
 IfTokensValid(token_info* IfTokens, int32 TokensCount, game_def* GameDef)
 {
 	if (TokensCount > 0) {
@@ -983,9 +929,7 @@ IfTokensValid(token_info* IfTokens, int32 TokensCount, game_def* GameDef)
 		                        GameDef->InstancedEntities, GameDef->InstancedEntitiesCount));
 	} else {
 		// If there are no conditionals then event is always valid
-		bool_error_return Ret = {};
-		Ret.Value = true;
-		return (Ret);
+		return (true);
 	}
 }
 
@@ -1185,13 +1129,7 @@ InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
 					string FluentName = Tokens[AccumIndex + 5].Name;
 					int32 ArrayIndex = StringToInt32(Tokens[AccumIndex + 2].Name);
 					int32 TokenLineNum = Tokens[AccumIndex].LineNumber;
-					fluent_in_array_return Ret = GetFluentInArray(EntityName, FluentName, ArrayIndex, TokenLineNum, Entities, EntitiesCount);
-					if (Ret.Error.IsError) {
-						InRet.Error = Ret.Error;
-						return (InRet);
-					}
-
-					NewOperand = Ret.Fluent->Value;
+					NewOperand = GetFluentInArray(EntityName, FluentName, ArrayIndex, TokenLineNum, Entities, EntitiesCount)->Value;
 					AccumIndex += 5;
 				}
 			} else {
@@ -1209,8 +1147,7 @@ InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
 				} else if (Tokens[AccumIndex].Type == token_type::number) {
 					NewOperand = StringToInt32(Tokens[AccumIndex].Name);
 				} else {
-					InRet.Error = CreateError(BuildErrorString(Tokens[AccumIndex].LineNumber, "Cannot get the value of a token which is neither a number or id."));
-					return (InRet);
+					ThrowError(Tokens[AccumIndex].LineNumber, "Cannot get the value of a token which is neither a number or id.");
 				}
 			}
 
@@ -1225,8 +1162,7 @@ InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
 			if (Tokens[AccumIndex + 1].Type != token_type::number ||
 			        Tokens[AccumIndex + 2].Type != token_type::to ||
 			        Tokens[AccumIndex + 3].Type != token_type::number) {
-				InRet.Error = CreateError(BuildErrorString(Tokens[AccumIndex].LineNumber, "Incorrect random syntax. Random must follow form of random min to max."));
-				return (InRet);
+				ThrowError(Tokens[AccumIndex].LineNumber, "Incorrect random syntax. Random must follow form of random min to max.");
 			}
 
 			int32 Min = StringToInt32(Tokens[AccumIndex + 1].Name);
@@ -1237,15 +1173,13 @@ InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
 			AccumIndex += 3;
 		} else {
 			// Something wrong
-			InRet.Error = CreateError(BuildErrorString(Tokens[AccumIndex].LineNumber, "Unexpected token type."));
-			return (InRet);
+			ThrowError(Tokens[AccumIndex].LineNumber, "Unexpected token type.");
 		}
 
 		AccumIndex++;
 	}
 
-	InRet.Value = Accum;
-	return (InRet);
+	return (Accum);
 }
 
 // returns if the given token is a token which appears at the beginning of a statment.
@@ -1269,14 +1203,7 @@ GrabFluent(token_info* Tokens, int32 StackStart, bool32 Evaluate,
 	int32 AccumIndex = StackStart + 2;
 
 	if (Evaluate) {
-		real64_error_return InfixRet = InfixAccumulate(Tokens, AccumIndex, Fluents, FluentsCount, Entities, EntitiesCount);
-		if (InfixRet.Error.IsError) {
-			grab_fluent_return Ret = {};
-			Ret.Error = InfixRet.Error;
-			return (Ret);
-		}
-
-		FluentAdding.Value = InfixRet.Value;
+		FluentAdding.Value = InfixAccumulate(Tokens, AccumIndex, Fluents, FluentsCount, Entities, EntitiesCount);
 	} else {
 		while (Tokens[AccumIndex].Type != token_type::period) {
 			FluentAdding.Arithmetic[FluentAdding.ArithCount] = Tokens[AccumIndex];
@@ -1285,13 +1212,10 @@ GrabFluent(token_info* Tokens, int32 StackStart, bool32 Evaluate,
 		}
 	}
 
-	grab_fluent_return Ret = {};
-	Ret.FluentIfValid = FluentAdding;
-	return (Ret);
+	return (FluentAdding);
 }
 
 struct does_if_return {
-	error Error;
 	does_if DoesIf;
 	int32 TokensConsumed;
 };
@@ -1313,8 +1237,7 @@ GetDoesIf(token_stack* Tokens, int32 TI)
 		while (Tokens->Tokens[TI].Type != token_type::iff && Tokens->Tokens[TI].Type != token_type::period && Tokens->Tokens[TI].Type != token_type::does) {
 
 			if (IsStartingToken(Tokens->Tokens[TI].Type)) {
-				Ret.Error = CreateError(BuildErrorString(Tokens->Tokens[TI].LineNumber, InvalidStatementStarterPrefix));
-				return (Ret);
+				ThrowError(Tokens->Tokens[TI].LineNumber, InvalidStatementStarterPrefix);
 			}
 
 			DoesIf->DoesTokens[DoesIf->DoesTokensCount] = Tokens->Tokens[TI];
@@ -1333,7 +1256,7 @@ GetDoesIf(token_stack* Tokens, int32 TI)
 			while (Tokens->Tokens[TI].Type != token_type::period && Tokens->Tokens[TI].Type != token_type::does) {
 
 				if (IsStartingToken(Tokens->Tokens[TI].Type)) {
-					Ret.Error = CreateError(BuildErrorString(Tokens->Tokens[TI].LineNumber, InvalidStatementStarterPrefix));
+					ThrowError(Tokens->Tokens[TI].LineNumber, InvalidStatementStarterPrefix);
 					return (Ret);
 				}
 
@@ -1359,12 +1282,8 @@ void GrabEntityFluents(entity* EntityFilling, token_info* Tokens, int32 TokensSt
 	while (true) {
 
 		// Get the next fluent, and set all the instanced entities
-		grab_fluent_return Ret = GrabFluent(Tokens, TI, true, GameDefinition->Fluents, GameDefinition->FluentsCount,
-		                                    GameDefinition->InstancedEntities, GameDefinition->InstancedEntitiesCount);
-		if (Ret.Error.IsError) {
-			Assert(0);
-		}
-		fluent NextFluent = Ret.FluentIfValid;
+		fluent NextFluent = GrabFluent(Tokens, TI, true, GameDefinition->Fluents, GameDefinition->FluentsCount,
+		                               GameDefinition->InstancedEntities, GameDefinition->InstancedEntitiesCount);
 
 		EntityFilling->Fluents[EntityFilling->FluentsCount] = NextFluent;
 		EntityFilling->FluentsCount++;
@@ -1458,22 +1377,14 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 			fluent* Fluent = FindFluentInList(FluentName, Entity->Fluents, Entity->FluentsCount);
 			if (Fluent != NULL) {
 				// modify the existing one
-				grab_fluent_return Ret = GrabFluent(Tokens, TokenIndex + 2, true,
-				                                    GameDef->Fluents, GameDef->FluentsCount,
-				                                    GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
-				if (Ret.Error.IsError) {
-					return (Ret.Error.Desc);
-				}
-				Fluent->Value = Ret.FluentIfValid.Value;
+				Fluent->Value  = GrabFluent(Tokens, TokenIndex + 2, true,
+				                            GameDef->Fluents, GameDef->FluentsCount,
+				                            GameDef->InstancedEntities, GameDef->InstancedEntitiesCount).Value;
 			} else {
 				// add a new one
-				grab_fluent_return Ret = GrabFluent(Tokens, TokenIndex + 2, true,
-				                                    Entity->Fluents, Entity->FluentsCount,
-				                                    GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
-				if (Ret.Error.IsError) {
-					return (Ret.Error.Desc);
-				}
-				Entity->Fluents[Entity->FluentsCount] = Ret.FluentIfValid;
+				Entity->Fluents[Entity->FluentsCount] = GrabFluent(Tokens, TokenIndex + 2, true,
+				                                        Entity->Fluents, Entity->FluentsCount,
+				                                        GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
 				Entity->FluentsCount++;
 			}
 
@@ -1493,23 +1404,13 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 			// Change that fluent state if it exists
 			fluent* F = FindFluentInList(Tokens[TokenIndex].Name, GameDef->Fluents, GameDef->FluentsCount);
 			if (F != NULL) {
-
-				grab_fluent_return Ret = GrabFluent(Tokens, TokenIndex, true,
-				                                    GameDef->Fluents, GameDef->FluentsCount,
-				                                    GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
-				if (Ret.Error.IsError) {
-					return (Ret.Error.Desc);
-				}
-
-				*F = Ret.FluentIfValid;
+				*F = GrabFluent(Tokens, TokenIndex, true,
+				                GameDef->Fluents, GameDef->FluentsCount,
+				                GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
 			} else {
-				grab_fluent_return Ret = GrabFluent(Tokens, TokenIndex, true,
-				                                    GameDef->Fluents, GameDef->FluentsCount,
-				                                    GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
-				if (Ret.Error.IsError) {
-					return (Ret.Error.Desc);
-				}
-				GameDef->Fluents[GameDef->FluentsCount] = Ret.FluentIfValid;
+				GameDef->Fluents[GameDef->FluentsCount] = GrabFluent(Tokens, TokenIndex, true,
+				        GameDef->Fluents, GameDef->FluentsCount,
+				        GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
 				GameDef->FluentsCount++;
 			}
 
@@ -1536,7 +1437,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 				Assert(0);
 				// FluentSearchIn
 			} else {
-				return (BuildErrorString(Tokens[TokenIndex + 2].LineNumber, "Invalid token used for an array index."));
+				ThrowError(Tokens[TokenIndex + 2].LineNumber, "Invalid token used for an array index.");
 			}
 
 			array* ArrayEditing = {};
@@ -1548,7 +1449,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 			}
 
 			if (ArrayEditing == NULL) {
-				return (BuildErrorString(Tokens[TokenIndex].LineNumber, "Array of name " + Tokens[TokenIndex].Name + " does not exist."));
+				ThrowError(Tokens[TokenIndex].LineNumber, "Array of name " + Tokens[TokenIndex].Name + " does not exist.");
 			}
 
 			// Get the number of tokens until the closing square
@@ -1558,41 +1459,24 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 			}
 
 			if (Tokens[TokenIndex + CountUntilClose].Type == token_type::dot) {
-				real64_error_return InfixRet  = {};
-
 				string EntityName = Tokens[TokenIndex].Name;
 				string FluentName = Tokens[TokenIndex + CountUntilClose + 1].Name;
 				int32 TokenLineNum = Tokens[TokenIndex].LineNumber;
 
-				InfixRet = InfixAccumulate(Tokens, TokenIndex + 2,
-				                           GameDef->Fluents, GameDef->FluentsCount,
-				                           GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
-				if (InfixRet.Error.IsError) {
-					return (InfixRet.Error.Desc);
-				}
-				int32 ArrayIndex = InfixRet.Value;
+				int32 ArrayIndex = InfixAccumulate(Tokens, TokenIndex + 2,
+				                                   GameDef->Fluents, GameDef->FluentsCount,
+				                                   GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
 
-				fluent_in_array_return Ret = GetFluentInArray(EntityName, FluentName, ArrayIndex, TokenLineNum, GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
+				fluent* FluentEditing = GetFluentInArray(EntityName, FluentName, ArrayIndex, TokenLineNum, GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
 
-				if (Ret.Error.IsError) {
-					return (Ret.Error.Desc);
-				}
-				fluent* FluentEditing = Ret.Fluent;
-
-				InfixRet = InfixAccumulate(Tokens, TokenIndex + CountUntilClose + 3,
-				                           GameDef->Fluents, GameDef->FluentsCount,
-				                           GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
-				if (InfixRet.Error.IsError) {
-					return (InfixRet.Error.Desc);
-				}
-
-				FluentEditing->Value = InfixRet.Value;
-
+				FluentEditing->Value = InfixAccumulate(Tokens, TokenIndex + CountUntilClose + 3,
+				                                       GameDef->Fluents, GameDef->FluentsCount,
+				                                       GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
 			} else if (Tokens[TokenIndex + CountUntilClose].Type == token_type::equalTo) {
 				// We're putting a new fluent into the array
 				ArrayEditing->Array[IndexEditing] = Tokens[TokenIndex + CountUntilClose + 5].Name;
 			} else {
-				return (BuildErrorString(Tokens[TokenIndex].LineNumber, "Unexpected token after array."));
+				ThrowError(Tokens[TokenIndex].LineNumber, "Unexpected token after array.");
 			}
 
 			// Move until the period
@@ -1620,7 +1504,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 			}
 			if (MethodDoing == NULL) {
 				// Could not find that method. Error here
-				return (BuildErrorString(Tokens[TokenIndex].LineNumber, MethodNotFoundPrefix + Tokens[TokenIndex].Name));
+				ThrowError(Tokens[TokenIndex].LineNumber, MethodNotFoundPrefix + Tokens[TokenIndex].Name);
 			}
 
 			Assert(MethodDoing->UsingsCount < 50);
@@ -1659,14 +1543,10 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 				                             MethodDoing->Usings, MethodDoing->UsingsCount);
 
 				int32 NextLogicOp = 0;
-				bool_error_return Ret = EvaluateBoolean(ReplacedIfs.ReplacedTokens, ReplacedIfs.ReplacedTokensIndex, &NextLogicOp,
-				                                        GameDef->Fluents, GameDef->FluentsCount,
-				                                        GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
-				if (Ret.Error.IsError) {
-					return (Ret.Error.Desc);
-				}
-
-				if (Ret.Value) {
+				bool32 Ret = EvaluateBoolean(ReplacedIfs.ReplacedTokens, ReplacedIfs.ReplacedTokensIndex, &NextLogicOp,
+				                             GameDef->Fluents, GameDef->FluentsCount,
+				                             GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
+				if (Ret) {
 					// Event is valid, so do it
 					token_info ReplacedDoesTokens[100];
 					int32 ReplacedDoesTokensIndex = 0;
@@ -1675,11 +1555,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 					                              DI->DoesTokens, DI->DoesTokensCount,
 					                              MethodDoing->Usings, MethodDoing->UsingsCount);
 
-
-					string Error = TokensChangeState(ReplacedDoes.ReplacedTokens, ReplacedDoes.ReplacedTokensIndex, GameDef);
-					if (Error.CharArray[0] != 'x') {
-						return (Error);
-					}
+					TokensChangeState(ReplacedDoes.ReplacedTokens, ReplacedDoes.ReplacedTokensIndex, GameDef);
 				}
 			}
 
@@ -1701,7 +1577,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 			continue;
 		} else {
 			// This method changes state when given tokens. We could not find a pattern of those tokens which made sense.
-			return (BuildErrorString(Tokens[TokenIndex].LineNumber, "Invalid token type in a does statement."));
+			ThrowError(Tokens[TokenIndex].LineNumber, "Invalid token type in a does statement.");
 		}
 	}
 }
@@ -1970,16 +1846,10 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 					        Tokens.Tokens[StatementEnd + 1].Type == token_type::period) {
 						// Fluent with value statement
 
-						grab_fluent_return Ret =
+						GameDefinition->Fluents[GameDefinition->FluentsCount] =
 						    GrabFluent(Tokens.Tokens, StatementStart, true,
 						               GameDefinition->Fluents, GameDefinition->FluentsCount,
 						               GameDefinition->InstancedEntities, GameDefinition->InstancedEntitiesCount);
-						if (Ret.Error.IsError) {
-							free(Tokens.Tokens);
-							return (Ret.Error.Desc);
-						}
-
-						GameDefinition->Fluents[GameDefinition->FluentsCount] = Ret.FluentIfValid;
 						GameDefinition->FluentsCount++;
 
 						RESET
@@ -2067,14 +1937,9 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 						if (Fluent != NULL) {
 							// modify the existing one
 
-							grab_fluent_return Ret = GrabFluent(Tokens.Tokens, StatementStart + 2, true,
-							                                    GameDefinition->Fluents, GameDefinition->FluentsCount,
-							                                    GameDefinition->InstancedEntities, GameDefinition->InstancedEntitiesCount);
-							if (Ret.Error.IsError) {
-								free(Tokens.Tokens);
-								return (Ret.Error.Desc);
-							}
-							Fluent->Value = Ret.FluentIfValid.Value;
+							Fluent->Value = GrabFluent(Tokens.Tokens, StatementStart + 2, true,
+							                           GameDefinition->Fluents, GameDefinition->FluentsCount,
+							                           GameDefinition->InstancedEntities, GameDefinition->InstancedEntitiesCount).Value;
 						} else {
 							free(Tokens.Tokens);
 							ThrowError(Tokens.Tokens[StatementStart].LineNumber, FluentNotFoundPrefix + FluentName);
@@ -2084,10 +1949,7 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 					} else if (Tokens.Tokens[StatementStart].Type == token_type::id &&
 					           Tokens.Tokens[StatementStart + 1].Type == token_type::openSquare) {
 						// array assignment by index. These always have dot notation. This behavior is in TokensChangeState, because this is not a decleration.
-						string Error = TokensChangeState(Tokens.Tokens + StatementStart, StatementEnd - StatementStart, GameDefinition);
-						if (Error.CharArray[0] != 'x') {
-							return (Error);
-						}
+						TokensChangeState(Tokens.Tokens + StatementStart, StatementEnd - StatementStart, GameDefinition);
 						RESET
 					} else if (Tokens.Tokens[StatementStart].Type == token_type::id &&
 					           Tokens.Tokens[StatementStart + 1].Type == token_type::period) {
@@ -2114,11 +1976,6 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 						// Get all the does-ifs
 						while (Tokens.Tokens[TI].Type != token_type::period) {
 							does_if_return Ret = GetDoesIf(&Tokens, TI);
-							if (Ret.Error.IsError) {
-								free(Tokens.Tokens);
-								return (Ret.Error.Desc);
-							}
-
 							TI += Ret.TokensConsumed;
 
 							Event->DoesIf[Event->DoesIfCount] = Ret.DoesIf;
@@ -2161,11 +2018,6 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 						// Get all the does-ifs
 						while (Tokens.Tokens[StatementStart + UsingOffset].Type != token_type::period) {
 							does_if_return Ret = GetDoesIf(&Tokens, StatementStart + UsingOffset);
-							if (Ret.Error.IsError) {
-								free(Tokens.Tokens);
-								return (Ret.Error.Desc);
-							}
-
 							UsingOffset += Ret.TokensConsumed;
 
 							NextMethod->DoesIf[NextMethod->DoesIfCount] = Ret.DoesIf;
@@ -2238,25 +2090,20 @@ DoEvent(event* Event, game_def* Rules)
 {
 	GlobalProgState = prog_state::runtime;
 
+	if (setjmp(CompiletimeJumpBuffer) == 10) {
+		// This is an error. So return the error val;
+		return (GlobalErrorDesc);
+	}
+
+
 	for (int32 Index = 0; Index < Event->DoesIfCount; Index++) {
 		does_if* DoesIf = &Event->DoesIf[Index];
-		bool_error_return Ret = IfTokensValid(DoesIf->IfTokens, DoesIf->IfTokensCount, Rules);
-		if (Ret.Error.IsError) {
-			return (Ret.Error.Desc);
-		}
-		if (Ret.Value) {
-			string Error = TokensChangeState(DoesIf->DoesTokens, DoesIf->DoesTokensCount, Rules);
-
-			if (Error.CharArray[0] != 'x') {
-				return (Error);
-			}
+		if (IfTokensValid(DoesIf->IfTokens, DoesIf->IfTokensCount, Rules)) {
+			TokensChangeState(DoesIf->DoesTokens, DoesIf->DoesTokensCount, Rules);
 		}
 	}
 
 	return ("x");
-
-ThrowRuntimeError:
-	return (GlobalErrorDesc);
 }
 
 extern "C"

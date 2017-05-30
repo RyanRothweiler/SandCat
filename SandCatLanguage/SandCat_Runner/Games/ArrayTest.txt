@@ -1,0 +1,14 @@
+Mantaray = [5]{Atk = 2, Def = 2}.
+StepCounter = [10]{X = 0, Y = 0}.
+
+GlobalCount = 0.
+GlobalIndex = 3.
+
+Mantaray[GlobalCount]'Atk = 100.
+
+StepAdd = Event
+	does StepCounter[GlobalIndex] = GlobalCount, GlobalCount = GlobalCount * 2, GlobalIndex - GlobalIndex - 1, StepAdd() 
+	if GlobalIndex - 1 > 0.
+
+BeginStep = PlayerAction
+	does StepAdd(), GlobalCount = 0, GlobalIndex = 10.
