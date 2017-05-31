@@ -1919,8 +1919,7 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 
 						RESET
 					} else if (Tokens.Tokens[StatementStart].Type == token_type::id &&
-					           Tokens.Tokens[StatementStart + 1].Type == token_type::dot &&
-					           Tokens.Tokens[StatementEnd].Type == token_type::closeParen) {
+					           Tokens.Tokens[StatementStart + 1].Type == token_type::dot) {
 						// This is setting or creating a fluent within an instance
 
 						string EntityName = Tokens.Tokens[StatementStart].Name;
@@ -2067,9 +2066,9 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 
 						RESET
 					} else {
-						int x = 0;
+						int32 LineNumber = Tokens.Tokens[StatementStart].LineNumber;
 						free(Tokens.Tokens);
-						return (BuildErrorString(Tokens.Tokens[StatementStart].LineNumber, "This statement did not match any of the known patterns."));
+						return (BuildErrorString(LineNumber, "This statement did not match any of the known patterns."));
 					}
 				}
 			}
@@ -2295,7 +2294,7 @@ main(int argc, char const **argv)
 	int32 CharactersCount = 0;
 	// Load the program into the parser
 	{
-		HANDLE FileHandle = CreateFile("Games/TestGame.txt", GENERIC_READ, FILE_SHARE_READ,
+		HANDLE FileHandle = CreateFile("Games/TowerOfHanoi.txt", GENERIC_READ, FILE_SHARE_READ,
 		                               NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
 		int32 FileSizeBytes = GetFileSize(FileHandle, NULL);

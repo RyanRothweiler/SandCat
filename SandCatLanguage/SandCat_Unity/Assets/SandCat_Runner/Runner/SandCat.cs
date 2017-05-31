@@ -95,7 +95,7 @@ public class SandCat : MonoBehaviour
 			// TODO check if the fluent in the entity exists before getting it's value
 			return (SC_GetEntityFluent(entityName, fluentName));
 		} else {
-			Debug.LogError("That entity doesn't exist");
+			Debug.LogError("The entity of " + entityName + " doesn't exist");
 			return (0);
 		}
 	}

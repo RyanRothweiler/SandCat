@@ -39,16 +39,19 @@
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="UnityEngine">
-      <HintPath>C:/Program Files/UnityVersions/Unity_5.6.0f/Editor/Data/Managed/UnityEngine.dll</HintPath>
+      <HintPath>C:/Program Files/Unity/Editor/Data/Managed/UnityEngine.dll</HintPath>
     </Reference>
     <Reference Include="UnityEditor">
-      <HintPath>C:/Program Files/UnityVersions/Unity_5.6.0f/Editor/Data/Managed/UnityEditor.dll</HintPath>
+      <HintPath>C:/Program Files/Unity/Editor/Data/Managed/UnityEditor.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
      <Compile Include="Assets\Games\Cavern2\ActionSpace.cs" />
      <Compile Include="Assets\Games\Cavern2\Cavern2.cs" />
      <Compile Include="Assets\Games\Topsoil\NextColor.cs" />
+     <Compile Include="Assets\Games\TowerOfHanoi\Disc.cs" />
+     <Compile Include="Assets\Games\TowerOfHanoi\DiscHeld.cs" />
+     <Compile Include="Assets\Games\TowerOfHanoi\Tower.cs" />
      <Compile Include="Assets\SandCat_Runner\Runner\SandCat.cs" />
      <Compile Include="Assets\SandCat_Runner\Utilities\ActionButton.cs" />
      <Compile Include="Assets\SandCat_Runner\Utilities\DisplayIfFluent.cs" />
@@ -59,28 +62,30 @@
      <Compile Include="Assets\SandCat_Runner\Utilities\ValueToSprite\MapFluentToSprite.cs" />
      <Compile Include="Assets\SandCat_Runner\Utilities\ValueToSprite\ValuesToSprite.cs" />
      <None Include="Assets\Games\Cavern2\Cavern2.txt" />
+     <None Include="Assets\Games\Topsoil2\Topsoil.txt" />
      <None Include="Assets\Games\Scyther\Scyther.txt" />
      <None Include="Assets\Games\Topsoil\Topsoil.txt" />
+     <None Include="Assets\Games\TowerOfHanoi\TowerOfHanoi.txt" />
  <Reference Include="UnityEngine.UI">
- <HintPath>C:/Program Files/UnityVersions/Unity_5.6.0f/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
+ <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>
  <Reference Include="UnityEngine.Networking">
- <HintPath>C:/Program Files/UnityVersions/Unity_5.6.0f/Editor/Data/UnityExtensions/Unity/Networking/UnityEngine.Networking.dll</HintPath>
+ <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/Networking/UnityEngine.Networking.dll</HintPath>
  </Reference>
  <Reference Include="UnityEngine.TestRunner">
- <HintPath>C:/Program Files/UnityVersions/Unity_5.6.0f/Editor/Data/UnityExtensions/Unity/TestRunner/UnityEngine.TestRunner.dll</HintPath>
+ <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/TestRunner/UnityEngine.TestRunner.dll</HintPath>
  </Reference>
  <Reference Include="nunit.framework">
- <HintPath>C:/Program Files/UnityVersions/Unity_5.6.0f/Editor/Data/UnityExtensions/Unity/TestRunner/nunit.framework.dll</HintPath>
+ <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/TestRunner/nunit.framework.dll</HintPath>
  </Reference>
  <Reference Include="UnityEngine.Analytics">
- <HintPath>C:/Program Files/UnityVersions/Unity_5.6.0f/Editor/Data/UnityExtensions/Unity/UnityAnalytics/UnityEngine.Analytics.dll</HintPath>
+ <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/UnityAnalytics/UnityEngine.Analytics.dll</HintPath>
  </Reference>
  <Reference Include="UnityEngine.HoloLens">
- <HintPath>C:/Program Files/UnityVersions/Unity_5.6.0f/Editor/Data/UnityExtensions/Unity/UnityHoloLens/RuntimeEditor/UnityEngine.HoloLens.dll</HintPath>
+ <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/UnityHoloLens/RuntimeEditor/UnityEngine.HoloLens.dll</HintPath>
  </Reference>
  <Reference Include="UnityEngine.VR">
- <HintPath>C:/Program Files/UnityVersions/Unity_5.6.0f/Editor/Data/UnityExtensions/Unity/UnityVR/RuntimeEditor/UnityEngine.VR.dll</HintPath>
+ <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/UnityVR/RuntimeEditor/UnityEngine.VR.dll</HintPath>
  </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

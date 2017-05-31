@@ -1,4 +1,10 @@
-Cat = 10.
-Nancy = 5.
-Dog = PlayerAction
-	does Cat = Cat + 10 if Cat < 30.
+FoodTotal = 10.
+Cat, Dog = {FoodAte = 0, Happiness = 0}.
+
+FeedAnimal = Event
+	using Animal, Amount
+	does FoodTotal = FoodTotal - Amount, Animal'FoodAte = Animal'FoodAte + Amount
+	if FoodTotal - Amount > 0.
+
+FeedDog = PlayerAction does FeedAnimal(Dog, 2).
+FeedCat = PlayerAction does FeedAnimal(Cat, 1).
