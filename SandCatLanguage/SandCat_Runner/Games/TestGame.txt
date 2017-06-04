@@ -1,7 +1,7 @@
-StepCounter = [10]{Count = 0, Y = 0}.
+StepCounter = [20]{Count = 0, Y = 0}.
 
 GlobalCount = 1.
-GlobalIndex = 8.
+GlobalIndex = 19.
 
 StepAdd = Event
 	does StepCounter[GlobalIndex]'Count = GlobalCount, GlobalCount = GlobalCount * 2, GlobalIndex = GlobalIndex - 1, StepAdd() 

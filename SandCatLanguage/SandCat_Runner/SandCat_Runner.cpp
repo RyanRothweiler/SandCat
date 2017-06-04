@@ -1355,223 +1355,253 @@ TokenReplacement(param* ParamReals, int32 ParamRealsCount,
 	return (Ret);
 }
 
+// TokenChnageState State. Used to hold the state of a TokenChangeState iteration. So we don't recursively call it.
+struct tcs_state {
+	token_info* Tokens;
+	int32 TokensCount;
+	int32 TokenIndex;
+};
+
 void
 TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 {
-	int32 TokenIndex = 0;
-	while (TokenIndex < TokensCount) {
-		if (Tokens[TokenIndex].Type == token_type::id &&
-		        Tokens[TokenIndex + 1].Type == token_type::dot &&
-		        Tokens[TokenIndex + 2].Type == token_type::id) {
-			// this is dot notation
+	int32 StackSize = 100;
+	int32 StackTop = 0;
+	tcs_state* StateStack = (tcs_state*)malloc(sizeof(tcs_state) * StackSize);
+	ZeroMemory(StateStack, sizeof(tcs_state) * StackSize);
 
-			string EntityName = Tokens[TokenIndex].Name;
-			string FluentName = Tokens[TokenIndex + 2].Name;
+	StateStack[0].Tokens = Tokens;
+	StateStack[0].TokensCount = TokensCount;
 
-			entity* Entity = FindEntity(EntityName, GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
-			if (Entity == NULL) {
-				// That entity name does not exist. Report error.
-				ThrowError(Tokens[TokenIndex].LineNumber, EntityNotFoundPrefix + EntityName);
-			}
 
-			fluent* Fluent = FindFluentInList(FluentName, Entity->Fluents, Entity->FluentsCount);
-			if (Fluent != NULL) {
-				// modify the existing one
-				Fluent->Value  = GrabFluent(Tokens, TokenIndex + 2, true,
-				                            GameDef->Fluents, GameDef->FluentsCount,
-				                            GameDef->InstancedEntities, GameDef->InstancedEntitiesCount).Value;
-			} else {
-				// add a new one
-				Entity->Fluents[Entity->FluentsCount] = GrabFluent(Tokens, TokenIndex + 2, true,
-				                                        Entity->Fluents, Entity->FluentsCount,
-				                                        GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
-				Entity->FluentsCount++;
-			}
+	while (StackTop >= 0) {
+		tcs_state* StateUsing = &StateStack[StackTop];
 
-			// Move TokenIndex
-			while (Tokens[TokenIndex].Type != token_type::comma &&
-			        Tokens[TokenIndex].Type != token_type::iff &&
-			        TokenIndex < TokensCount) {
-				TokenIndex++;
-			}
-			TokenIndex++;
+		while (StateUsing->TokenIndex < StateUsing->TokensCount) {
+			if (StateUsing->Tokens[StateUsing->TokenIndex].Type == token_type::id &&
+			        StateUsing->Tokens[StateUsing->TokenIndex + 1].Type == token_type::dot &&
+			        StateUsing->Tokens[StateUsing->TokenIndex + 2].Type == token_type::id) {
+				// this is dot notation
 
-			continue;
-		} else if (Tokens[TokenIndex].Type == token_type::id &&
-		           Tokens[TokenIndex + 1].Type == token_type::equalTo) {
-			// this is a regular one
+				string EntityName = StateUsing->Tokens[StateUsing->TokenIndex].Name;
+				string FluentName = StateUsing->Tokens[StateUsing->TokenIndex + 2].Name;
 
-			// Change that fluent state if it exists
-			fluent* F = FindFluentInList(Tokens[TokenIndex].Name, GameDef->Fluents, GameDef->FluentsCount);
-			if (F != NULL) {
-				*F = GrabFluent(Tokens, TokenIndex, true,
-				                GameDef->Fluents, GameDef->FluentsCount,
-				                GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
-			} else {
-				GameDef->Fluents[GameDef->FluentsCount] = GrabFluent(Tokens, TokenIndex, true,
-				        GameDef->Fluents, GameDef->FluentsCount,
-				        GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
-				GameDef->FluentsCount++;
-			}
-
-			// Move TokenIndex until next comma
-			while (Tokens[TokenIndex].Type != token_type::comma  &&
-			        Tokens[TokenIndex].Type != token_type::iff &&
-			        TokenIndex < TokensCount) {
-				TokenIndex++;
-			}
-			TokenIndex++;
-
-			continue;
-		} else if (Tokens[TokenIndex].Type == token_type::id &&
-		           Tokens[TokenIndex + 1].Type == token_type::openSquare) {
-			// array assignment by index. These always have dot notation
-
-			int32 IndexEditing = (int32)InfixAccumulate(Tokens, TokenIndex + 2,
-			                     GameDef->Fluents, GameDef->FluentsCount,
-			                     GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
-
-			array* ArrayEditing = {};
-			for (int32 Index = 0; Index < GameDef->ArraysCount; Index++) {
-				if (GameDef->Arrays[Index].Name == Tokens[TokenIndex].Name) {
-					ArrayEditing = &GameDef->Arrays[Index];
-					break;
+				entity* Entity = FindEntity(EntityName, GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
+				if (Entity == NULL) {
+					// That entity name does not exist. Report error.
+					ThrowError(StateUsing->Tokens[StateUsing->TokenIndex].LineNumber, EntityNotFoundPrefix + EntityName);
 				}
-			}
 
-			if (ArrayEditing == NULL) {
-				ThrowError(Tokens[TokenIndex].LineNumber, "Array of name " + Tokens[TokenIndex].Name + " does not exist.");
-			}
-
-			// Get the number of tokens until the closing square
-			int32 CountUntilClose = 0;
-			while (Tokens[TokenIndex + CountUntilClose - 1].Type != token_type::closeSquare) {
-				CountUntilClose++;
-			}
-
-			if (Tokens[TokenIndex + CountUntilClose].Type == token_type::dot) {
-				string EntityName = Tokens[TokenIndex].Name;
-				string FluentName = Tokens[TokenIndex + CountUntilClose + 1].Name;
-				int32 TokenLineNum = Tokens[TokenIndex].LineNumber;
-
-				int32 ArrayIndex = InfixAccumulate(Tokens, TokenIndex + 2,
-				                                   GameDef->Fluents, GameDef->FluentsCount,
-				                                   GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
-
-				fluent* FluentEditing = GetFluentInArray(EntityName, FluentName, ArrayIndex, TokenLineNum, GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
-
-				FluentEditing->Value = InfixAccumulate(Tokens, TokenIndex + CountUntilClose + 3,
-				                                       GameDef->Fluents, GameDef->FluentsCount,
-				                                       GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
-			} else if (Tokens[TokenIndex + CountUntilClose].Type == token_type::equalTo) {
-				// We're putting a new fluent into the array
-				ArrayEditing->Array[IndexEditing] = Tokens[TokenIndex + CountUntilClose + 5].Name;
-			} else {
-				ThrowError(Tokens[TokenIndex].LineNumber, "Unexpected token after array.");
-			}
-
-			// Move until the period
-			while (Tokens[TokenIndex].Type != token_type::period &&
-			        Tokens[TokenIndex].Type != token_type::none &&
-			        Tokens[TokenIndex].Type != token_type::comma) {
-				TokenIndex++;
-			}
-
-			if (Tokens[TokenIndex].Type == token_type::comma) {
-				TokenIndex++;
-			}
-
-		} else if (Tokens[TokenIndex].Type == token_type::id &&
-		           Tokens[TokenIndex + 1].Type == token_type::openParen) {
-			// This is a method
-
-			// Find the method to do
-			method* MethodDoing = {};
-			for (int32 Index = 0; Index < GameDef->MethodsCount; Index++) {
-				if (GameDef->Methods[Index].Name == Tokens[TokenIndex].Name) {
-					MethodDoing = &GameDef->Methods[Index];
-					break;
+				fluent* Fluent = FindFluentInList(FluentName, Entity->Fluents, Entity->FluentsCount);
+				if (Fluent != NULL) {
+					// modify the existing one
+					Fluent->Value  = GrabFluent(StateUsing->Tokens, StateUsing->TokenIndex + 2, true,
+					                            GameDef->Fluents, GameDef->FluentsCount,
+					                            GameDef->InstancedEntities, GameDef->InstancedEntitiesCount).Value;
+				} else {
+					// add a new one
+					Entity->Fluents[Entity->FluentsCount] = GrabFluent(StateUsing->Tokens, StateUsing->TokenIndex + 2, true,
+					                                        Entity->Fluents, Entity->FluentsCount,
+					                                        GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
+					Entity->FluentsCount++;
 				}
-			}
-			if (MethodDoing == NULL) {
-				// Could not find that method. Error here
-				ThrowError(Tokens[TokenIndex].LineNumber, MethodNotFoundPrefix + Tokens[TokenIndex].Name);
-			}
 
-			Assert(MethodDoing->UsingsCount < 50);
+				// Move StateUsing->TokenIndex
+				while (StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::comma &&
+				        StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::iff &&
+				        StateUsing->TokenIndex < StateUsing->TokensCount) {
+					StateUsing->TokenIndex++;
+				}
+				StateUsing->TokenIndex++;
 
-			// The real params are the literal strings which are being passed in. Replace the method parameters with these literals.
-			int32 ParamCountMax = 20;
-			param ParamReals[20] = {};
-			int32 ParamRealsCount = 0;
-			ZeroMemory(ParamReals, ParamCountMax * sizeof(param));
+				continue;
+			} else if (StateUsing->Tokens[StateUsing->TokenIndex].Type == token_type::id &&
+			           StateUsing->Tokens[StateUsing->TokenIndex + 1].Type == token_type::equalTo) {
+				// this is a regular one
 
-			// Move past id and open curly
-			TokenIndex += 2;
+				// Change that fluent state if it exists
+				fluent* F = FindFluentInList(StateUsing->Tokens[StateUsing->TokenIndex].Name, GameDef->Fluents, GameDef->FluentsCount);
+				if (F != NULL) {
+					*F = GrabFluent(StateUsing->Tokens, StateUsing->TokenIndex, true,
+					                GameDef->Fluents, GameDef->FluentsCount,
+					                GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
+				} else {
+					GameDef->Fluents[GameDef->FluentsCount] = GrabFluent(StateUsing->Tokens, StateUsing->TokenIndex, true,
+					        GameDef->Fluents, GameDef->FluentsCount,
+					        GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
+					GameDef->FluentsCount++;
+				}
 
-			// Fill the real params
-			{
-				while (Tokens[TokenIndex].Type != token_type::closeParen &&
-				        Tokens[TokenIndex].Type != token_type::none &&
-				        Tokens[TokenIndex].Type != token_type::comma) {
-					param* P = &ParamReals[ParamRealsCount];
-					while (Tokens[TokenIndex].Type != token_type::comma && Tokens[TokenIndex].Type != token_type::closeParen) {
-						P->Tokens[P->TokenCount] = Tokens[TokenIndex];
-						P->TokenCount++;
-						TokenIndex++;
+				// Move StateUsing->TokenIndex until next comma
+				while (StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::comma  &&
+				        StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::iff &&
+				        StateUsing->TokenIndex < StateUsing->TokensCount) {
+					StateUsing->TokenIndex++;
+				}
+				StateUsing->TokenIndex++;
+
+				continue;
+			} else if (StateUsing->Tokens[StateUsing->TokenIndex].Type == token_type::id &&
+			           StateUsing->Tokens[StateUsing->TokenIndex + 1].Type == token_type::openSquare) {
+				// array assignment by index. These always have dot notation
+
+				int32 IndexEditing = (int32)InfixAccumulate(StateUsing->Tokens, StateUsing->TokenIndex + 2,
+				                     GameDef->Fluents, GameDef->FluentsCount,
+				                     GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
+
+				array* ArrayEditing = {};
+				for (int32 Index = 0; Index < GameDef->ArraysCount; Index++) {
+					if (GameDef->Arrays[Index].Name == StateUsing->Tokens[StateUsing->TokenIndex].Name) {
+						ArrayEditing = &GameDef->Arrays[Index];
+						break;
 					}
-
-					TokenIndex++;
-					ParamRealsCount++;
-					Assert(ParamRealsCount < ParamCountMax);
 				}
-			}
 
-			for (int32 DoesIfIndex = 0; DoesIfIndex < MethodDoing->DoesIfCount; DoesIfIndex++) {
-				does_if* DI = &MethodDoing->DoesIf[DoesIfIndex];
-
-				// first check if the method is valid
-				token_rep_ret ReplacedIfs =  TokenReplacement(ParamReals, ParamRealsCount,
-				                             DI->IfTokens, DI->IfTokensCount,
-				                             MethodDoing->Usings, MethodDoing->UsingsCount);
-
-				int32 NextLogicOp = 0;
-				bool32 Ret = EvaluateBoolean(ReplacedIfs.ReplacedTokens, ReplacedIfs.ReplacedTokensIndex, &NextLogicOp,
-				                             GameDef->Fluents, GameDef->FluentsCount,
-				                             GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
-				if (Ret) {
-					// Event is valid, so do it
-					token_info ReplacedDoesTokens[100];
-					int32 ReplacedDoesTokensIndex = 0;
-
-					token_rep_ret ReplacedDoes =  TokenReplacement(ParamReals, ParamRealsCount,
-					                              DI->DoesTokens, DI->DoesTokensCount,
-					                              MethodDoing->Usings, MethodDoing->UsingsCount);
-
-					TokensChangeState(ReplacedDoes.ReplacedTokens, ReplacedDoes.ReplacedTokensIndex, GameDef);
+				if (ArrayEditing == NULL) {
+					ThrowError(StateUsing->Tokens[StateUsing->TokenIndex].LineNumber, "Array of name " + StateUsing->Tokens[StateUsing->TokenIndex].Name + " does not exist.");
 				}
+
+				// Get the number of StateUsing->Tokens until the closing square
+				int32 CountUntilClose = 0;
+				while (StateUsing->Tokens[StateUsing->TokenIndex + CountUntilClose - 1].Type != token_type::closeSquare) {
+					CountUntilClose++;
+				}
+
+				if (StateUsing->Tokens[StateUsing->TokenIndex + CountUntilClose].Type == token_type::dot) {
+					string EntityName = StateUsing->Tokens[StateUsing->TokenIndex].Name;
+					string FluentName = StateUsing->Tokens[StateUsing->TokenIndex + CountUntilClose + 1].Name;
+					int32 TokenLineNum = StateUsing->Tokens[StateUsing->TokenIndex].LineNumber;
+
+					int32 ArrayIndex = InfixAccumulate(StateUsing->Tokens, StateUsing->TokenIndex + 2,
+					                                   GameDef->Fluents, GameDef->FluentsCount,
+					                                   GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
+
+					fluent* FluentEditing = GetFluentInArray(EntityName, FluentName, ArrayIndex, TokenLineNum, GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
+
+					FluentEditing->Value = InfixAccumulate(StateUsing->Tokens, StateUsing->TokenIndex + CountUntilClose + 3,
+					                                       GameDef->Fluents, GameDef->FluentsCount,
+					                                       GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
+				} else if (StateUsing->Tokens[StateUsing->TokenIndex + CountUntilClose].Type == token_type::equalTo) {
+					// We're putting a new fluent into the array
+					ArrayEditing->Array[IndexEditing] = StateUsing->Tokens[StateUsing->TokenIndex + CountUntilClose + 5].Name;
+				} else {
+					ThrowError(StateUsing->Tokens[StateUsing->TokenIndex].LineNumber, "Unexpected token after array.");
+				}
+
+				// Move until the period
+				while (StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::period &&
+				        StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::none &&
+				        StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::comma) {
+					StateUsing->TokenIndex++;
+				}
+
+				if (StateUsing->Tokens[StateUsing->TokenIndex].Type == token_type::comma) {
+					StateUsing->TokenIndex++;
+				}
+
+			} else if (StateUsing->Tokens[StateUsing->TokenIndex].Type == token_type::id &&
+			           StateUsing->Tokens[StateUsing->TokenIndex + 1].Type == token_type::openParen) {
+				// This is a method
+
+				// Find the method to do
+				method* MethodDoing = {};
+				for (int32 Index = 0; Index < GameDef->MethodsCount; Index++) {
+					if (GameDef->Methods[Index].Name == StateUsing->Tokens[StateUsing->TokenIndex].Name) {
+						MethodDoing = &GameDef->Methods[Index];
+						break;
+					}
+				}
+				if (MethodDoing == NULL) {
+					// Could not find that method. Error here
+					ThrowError(StateUsing->Tokens[StateUsing->TokenIndex].LineNumber, MethodNotFoundPrefix + StateUsing->Tokens[StateUsing->TokenIndex].Name);
+				}
+
+				Assert(MethodDoing->UsingsCount < 50);
+
+				// The real params are the literal strings which are being passed in. Replace the method parameters with these literals.
+				int32 ParamCountMax = 20;
+				param ParamReals[20] = {};
+				int32 ParamRealsCount = 0;
+				ZeroMemory(ParamReals, ParamCountMax * sizeof(param));
+
+				// Move past id and open curly
+				StateUsing->TokenIndex += 2;
+
+				// Fill the real params
+				{
+					while (StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::closeParen &&
+					        StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::none &&
+					        StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::comma) {
+						param* P = &ParamReals[ParamRealsCount];
+						while (StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::comma && StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::closeParen) {
+							P->Tokens[P->TokenCount] = StateUsing->Tokens[StateUsing->TokenIndex];
+							P->TokenCount++;
+							StateUsing->TokenIndex++;
+						}
+
+						StateUsing->TokenIndex++;
+						ParamRealsCount++;
+						Assert(ParamRealsCount < ParamCountMax);
+					}
+				}
+
+				// Move token index past the curly
+				while (StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::closeParen &&
+				        StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::comma &&
+				        StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::none) {
+					StateUsing->TokenIndex++;
+				}
+				StateUsing->TokenIndex++;
+
+				// Move past comma, only if it's there
+				if (StateUsing->Tokens[StateUsing->TokenIndex].Type == token_type::comma) {
+					StateUsing->TokenIndex++;
+				}
+
+				// Execute method last
+
+				for (int32 DoesIfIndex = 0; DoesIfIndex < MethodDoing->DoesIfCount; DoesIfIndex++) {
+					does_if* DI = &MethodDoing->DoesIf[DoesIfIndex];
+
+					// first check if the method is valid
+					token_rep_ret ReplacedIfs =  TokenReplacement(ParamReals, ParamRealsCount,
+					                             DI->IfTokens, DI->IfTokensCount,
+					                             MethodDoing->Usings, MethodDoing->UsingsCount);
+
+					int32 NextLogicOp = 0;
+					bool32 Ret = EvaluateBoolean(ReplacedIfs.ReplacedTokens, ReplacedIfs.ReplacedTokensIndex, &NextLogicOp,
+					                             GameDef->Fluents, GameDef->FluentsCount,
+					                             GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
+					if (Ret) {
+						// Event is valid, so do it
+						token_info ReplacedDoesTokens[100];
+						int32 ReplacedDoesTokensIndex = 0;
+
+						token_rep_ret ReplacedDoes =  TokenReplacement(ParamReals, ParamRealsCount,
+						                              DI->DoesTokens, DI->DoesTokensCount,
+						                              MethodDoing->Usings, MethodDoing->UsingsCount);
+
+						// Push new state onto the stack, and start from that state.
+						// TokensChangeState(ReplacedDoes.ReplacedTokens, ReplacedDoes.ReplacedTokensIndex, GameDef);
+
+						StackTop++;
+						StateStack[StackTop].Tokens = ReplacedDoes.ReplacedTokens;
+						StateStack[StackTop].TokensCount = ReplacedDoes.ReplacedTokensIndex;
+
+						StateUsing = &StateStack[StackTop];
+						StateUsing->TokenIndex = 0;
+					}
+				}
+
+				continue;
+			} else {
+				// This method changes state when given tokens. We could not find a pattern of those tokens which made sense.
+				ThrowError(StateUsing->Tokens[StateUsing->TokenIndex].LineNumber, "Invalid token type in a does statement.");
 			}
-
-			// Method is done executing
-
-			// Move token index past the curly
-			while (Tokens[TokenIndex].Type != token_type::closeParen &&
-			        Tokens[TokenIndex].Type != token_type::comma &&
-			        Tokens[TokenIndex].Type != token_type::none) {
-				TokenIndex++;
-			}
-			TokenIndex++;
-
-			// Move past comma, only if it's there
-			if (Tokens[TokenIndex].Type == token_type::comma) {
-				TokenIndex++;
-			}
-
-			continue;
-		} else {
-			// This method changes state when given tokens. We could not find a pattern of those tokens which made sense.
-			ThrowError(Tokens[TokenIndex].LineNumber, "Invalid token type in a does statement.");
 		}
+
+		// Pop off the stack, and continue with the next token change state.
+		StackTop--;
 	}
 }
 
