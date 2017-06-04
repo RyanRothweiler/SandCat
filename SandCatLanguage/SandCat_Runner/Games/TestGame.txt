@@ -1,10 +1,11 @@
-FoodTotal = 10.
-Cat, Dog = {FoodAte = 0, Happiness = 0}.
+StepCounter = [10]{Count = 0, Y = 0}.
 
-FeedAnimal = Event
-	using Animal, Amount
-	does FoodTotal = FoodTotal - Amount, Animal'FoodAte = Animal'FoodAte + Amount
-	if FoodTotal - Amount > 0.
+GlobalCount = 1.
+GlobalIndex = 8.
 
-FeedDog = PlayerAction does FeedAnimal(Dog, 2).
-FeedCat = PlayerAction does FeedAnimal(Cat, 1).
+StepAdd = Event
+	does StepCounter[GlobalIndex]'Count = GlobalCount, GlobalCount = GlobalCount * 2, GlobalIndex = GlobalIndex - 1, StepAdd() 
+	if GlobalIndex > 0.
+
+BeginStep = PlayerAction
+	does StepAdd(), GlobalCount = 0, GlobalIndex = 3.

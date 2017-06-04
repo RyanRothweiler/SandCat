@@ -1427,18 +1427,9 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 		           Tokens[TokenIndex + 1].Type == token_type::openSquare) {
 			// array assignment by index. These always have dot notation
 
-			int32 IndexEditing = 0;
-			if (Tokens[TokenIndex + 2].Type == token_type::number) {
-				IndexEditing = StringToInt32(Tokens[TokenIndex + 2].Name);
-			} else if (Tokens[TokenIndex + 2].Type == token_type::id) {
-				string FluentName = Tokens[TokenIndex + 2].Name;
-
-				// FIX THIS.
-				Assert(0);
-				// FluentSearchIn
-			} else {
-				ThrowError(Tokens[TokenIndex + 2].LineNumber, "Invalid token used for an array index.");
-			}
+			int32 IndexEditing = (int32)InfixAccumulate(Tokens, TokenIndex + 2,
+			                     GameDef->Fluents, GameDef->FluentsCount,
+			                     GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
 
 			array* ArrayEditing = {};
 			for (int32 Index = 0; Index < GameDef->ArraysCount; Index++) {
@@ -1510,9 +1501,10 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 			Assert(MethodDoing->UsingsCount < 50);
 
 			// The real params are the literal strings which are being passed in. Replace the method parameters with these literals.
-			param ParamReals[50] = {};
+			int32 ParamCountMax = 20;
+			param ParamReals[20] = {};
 			int32 ParamRealsCount = 0;
-			ZeroMemory(ParamReals, 50 * sizeof(param));
+			ZeroMemory(ParamReals, ParamCountMax * sizeof(param));
 
 			// Move past id and open curly
 			TokenIndex += 2;
@@ -1531,6 +1523,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 
 					TokenIndex++;
 					ParamRealsCount++;
+					Assert(ParamRealsCount < ParamCountMax);
 				}
 			}
 
@@ -2294,7 +2287,7 @@ main(int argc, char const **argv)
 	int32 CharactersCount = 0;
 	// Load the program into the parser
 	{
-		HANDLE FileHandle = CreateFile("Games/TowerOfHanoi.txt", GENERIC_READ, FILE_SHARE_READ,
+		HANDLE FileHandle = CreateFile("Games/TestGame.txt", GENERIC_READ, FILE_SHARE_READ,
 		                               NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
 		int32 FileSizeBytes = GetFileSize(FileHandle, NULL);

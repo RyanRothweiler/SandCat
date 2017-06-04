@@ -17,3 +17,5 @@
 - Added a language feature for random number generation.  
 
 0.0.4
+- Cleaned the syntax, it's much more consistent now. 
+- Added arrays.
