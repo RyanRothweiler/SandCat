@@ -1,0 +1,116 @@
+BoardWidth = 7.
+BoardHeight = 4.
+
+Worker = [3]{X = 0, Y = 1, StoneHeld = 0, WoodHeld = 0, GoldHeld = 0}.
+
+Worker[0]'X = random 0 to BoardHeight - 1.
+Worker[0]'Y = random 0 to BoardWidth - 1.
+# Worker[0]'X = 5.
+# Worker[0]'Y = 5.
+
+Worker[1]'X = random 0 to BoardHeight - 1.
+Worker[1]'Y = random 0 to BoardWidth - 1.
+
+Worker[2]'X = random 0 to BoardHeight - 1.
+Worker[2]'Y = random 0 to BoardWidth - 1.
+
+ActionsTotal = 6.
+MovesLeft = ActionsTotal.
+
+
+# Resource is the resource index. 0 = Stone, 1 = Wood, 2 = Gold,
+HarvestSpace = [6]{X = 0, Y = 0, Resource = 0}.
+
+HarvestSpace[0]'Y = random 0 to BoardWidth - 1.
+HarvestSpace[0]'X = random 0 to BoardHeight - 1.
+# HarvestSpace[0]'Y = 5.
+# HarvestSpace[0]'X = 5.
+HarvestSpace[0]'Resource = random 0 to 2.
+
+HarvestSpace[1]'Y = random 0 to BoardWidth - 1.
+HarvestSpace[1]'X = random 0 to BoardHeight - 1.
+HarvestSpace[1]'Resource = random 0 to 2.
+
+HarvestSpace[2]'Y = random 0 to BoardWidth - 1.
+HarvestSpace[2]'X = random 0 to BoardHeight - 1.
+HarvestSpace[2]'Resource = random 0 to 2.
+
+HarvestSpace[3]'Y = random 0 to BoardWidth - 1.
+HarvestSpace[3]'X = random 0 to BoardHeight - 1.
+HarvestSpace[3]'Resource = random 0 to 2.
+
+HarvestSpace[4]'Y = random 0 to BoardWidth - 1.
+HarvestSpace[4]'X = random 0 to BoardHeight - 1.
+HarvestSpace[4]'Resource = random 0 to 2.
+
+HarvestSpace[5]'Y = random 0 to BoardWidth - 1.
+HarvestSpace[5]'X = random 0 to BoardHeight - 1.
+HarvestSpace[5]'Resource = random 0 to 2.
+
+
+
+StoneHeld = 0.
+WoodHeld = 0.
+GoldHeld = 0.
+
+NullWorker = 1000.
+WorkerIndexMoving = NullWorker.
+
+DropWorker 			= 	PlayerAction does WorkerIndexMoving = NullWorker if not WorkerIndexMoving = NullWorker.
+SelectWorkerZero 	= 	PlayerAction does WorkerIndexMoving = 0 if WorkerIndexMoving = NullWorker.
+SelectWorkerOne 	= 	PlayerAction does WorkerIndexMoving = 1 if WorkerIndexMoving = NullWorker.
+SelectWorkerTwo 	= 	PlayerAction does WorkerIndexMoving = 2 if WorkerIndexMoving = NullWorker.
+
+
+GenerateResource = Event
+	using Cell
+	does Cell'X = random 0 to BoardHeight - 1
+	does Cell'Y = random 0 to BoardWidth - 1
+	does Cell'Resource = random 0 to 2.
+
+Collected = 0.
+
+GetResource = Event
+	using Cell
+	does StoneHeld = StoneHeld + 1 	if Cell'Resource = 0
+	does WoodHeld = WoodHeld + 1 	if Cell'Resource = 1
+	does GoldHeld = GoldHeld + 1 	if Cell'Resource = 2
+	does GenerateResource(Cell).
+
+CollectCell = Event 
+	using Cell
+	does GetResource(Cell)
+	if Collected = 0 and Cell'X = Worker[WorkerIndexMoving]'X and Cell'Y = Worker[WorkerIndexMoving]'Y.
+
+	
+CollectResource = PlayerAction
+	does CollectCell(HarvestSpace[0])
+	does CollectCell(HarvestSpace[1])
+	does CollectCell(HarvestSpace[2])
+	does CollectCell(HarvestSpace[3])
+	does CollectCell(HarvestSpace[4])
+	does CollectCell(HarvestSpace[5]).
+
+
+CycleWorld = Event
+	does MovesLeft = ActionsTotal.
+
+UseAction = Event
+	does MovesLeft = MovesLeft - 1
+	does CycleWorld() if MovesLeft - 1 = 0.
+
+MoveWorkerUp = PlayerAction 
+	does Worker[WorkerIndexMoving]'Y = Worker[WorkerIndexMoving]'Y + 1, UseAction()
+	if Worker[WorkerIndexMoving]'Y + 1 < BoardWidth and not WorkerIndexMoving = NullWorker.
+
+MoveWorkerDown = PlayerAction 
+	does Worker[WorkerIndexMoving]'Y = Worker[WorkerIndexMoving]'Y - 1, UseAction()
+	if Worker[WorkerIndexMoving]'Y > 0 and not WorkerIndexMoving = NullWorker.
+
+MoveWorkerLeft = PlayerAction 
+	does Worker[WorkerIndexMoving]'X = Worker[WorkerIndexMoving]'X - 1, UseAction()
+	if Worker[WorkerIndexMoving]'X > 0 and not WorkerIndexMoving = NullWorker.
+
+MoveWorkerRight = PlayerAction 
+	does Worker[WorkerIndexMoving]'X = Worker[WorkerIndexMoving]'X + 1, UseAction()
+	if Worker[WorkerIndexMoving]'X + 1 < BoardHeight and not WorkerIndexMoving = NullWorker.

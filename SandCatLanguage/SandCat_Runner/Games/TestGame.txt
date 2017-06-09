@@ -1,11 +1,60 @@
-StepCounter = [20]{Count = 0, Y = 0}.
+Worker = [3]{X = 0, Y = 1, StoneHeld = 0, FishHeld = 0, GoldHeld = 0}.
 
-GlobalCount = 1.
-GlobalIndex = 19.
+Worker[0]'X = 1.
+Worker[1]'X = 2.
+Worker[2]'X = 3.
 
-StepAdd = Event
-	does StepCounter[GlobalIndex]'Count = GlobalCount, GlobalCount = GlobalCount * 2, GlobalIndex = GlobalIndex - 1, StepAdd() 
-	if GlobalIndex > 0.
+BoardWidth = 10.
+BoardHeight = 10.
 
-BeginStep = PlayerAction
-	does StepAdd(), GlobalCount = 0, GlobalIndex = 3.
+ActionsTotal = 6.
+MovesLeft = ActionsTotal.
+
+HarvestSpace = [3]{X = 0, Y = 0, Stone = 0, Fish = 0, Gold = 0}.
+
+HarvestSpace[0]'X = random 3 to BoardWidth.
+HarvestSpace[0]'Y = random 3 to BoardHeight.
+HarvestSpace[0]'Stone = random 3 to 6.
+
+HarvestSpace[1]'X = random 3 to BoardWidth.
+HarvestSpace[1]'Y = random 3 to BoardHeight.
+HarvestSpace[1]'Fish = random 3 to 6.
+
+HarvestSpace[2]'X = random 3 to BoardWidth.
+HarvestSpace[2]'Y = random 3 to BoardHeight.
+HarvestSpace[2]'Gold = random 3 to 6.
+
+StoneHeld = 0.
+FishHeld = 0.
+GoldHeld = 0.
+
+NullWorker = 1000.
+WorkerIndexMoving = NullWorker.
+
+DropWorker 			= 	PlayerAction does WorkerIndexMoving = NullWorker if not WorkerIndexMoving = NullWorker.
+SelectWorkerZero 	= 	PlayerAction does WorkerIndexMoving = 0 if WorkerIndexMoving = NullWorker.
+SelectWorkerOne 	= 	PlayerAction does WorkerIndexMoving = 1 if WorkerIndexMoving = NullWorker.
+SelectWorkerTwo 	= 	PlayerAction does WorkerIndexMoving = 2 if WorkerIndexMoving = NullWorker.
+
+CycleWorld = Event
+	does MovesLeft = ActionsTotal.
+
+UseAction = Event
+	does MovesLeft = MovesLeft - 1
+	does CycleWorld() if MovesLeft - 1 = 0.
+
+MoveWorkerUp = PlayerAction 
+	does Worker[WorkerIndexMoving]'Y = Worker[WorkerIndexMoving]'Y + 1, UseAction()
+	if Worker[WorkerIndexMoving]'Y + 1 < BoardHeight and not WorkerIndexMoving = NullWorker.
+
+MoveWorkerDown = PlayerAction 
+	does Worker[WorkerIndexMoving]'Y = Worker[WorkerIndexMoving]'Y - 1, UseAction()
+	if Worker[WorkerIndexMoving]'Y > 0 and not WorkerIndexMoving = NullWorker.
+
+MoveWorkerLeft = PlayerAction 
+	does Worker[WorkerIndexMoving]'X = Worker[WorkerIndexMoving]'X - 1, UseAction()
+	if Worker[WorkerIndexMoving]'X > 0 and not WorkerIndexMoving = NullWorker.
+
+MoveWorkerRight = PlayerAction 
+	does Worker[WorkerIndexMoving]'X = Worker[WorkerIndexMoving]'X + 1, UseAction()
+	if Worker[WorkerIndexMoving]'X + 1 < BoardWidth and not WorkerIndexMoving = NullWorker.

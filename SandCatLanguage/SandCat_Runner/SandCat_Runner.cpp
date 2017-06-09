@@ -455,11 +455,6 @@ jmp_buf RuntimeJumpBuffer;
 string
 BuildErrorString(int32 Line, string Message)
 {
-	// If we're compiling the exe, then simply crash if there was an error
-#ifdef DLL
-	Assert(0);
-#endif
-
 	string NumString = Line;
 	return ("(" + NumString + ") : " + Message);
 }
@@ -469,10 +464,15 @@ ThrowError(int32 Line, string Message)
 {
 	GlobalErrorDesc = BuildErrorString(Line, Message);
 
+	// If we're compiling the exe, then simply crash if there was an error
+#ifdef DLL
+	Assert(0);
+#endif
+
 	if (GlobalProgState == prog_state::compiletime) {
-		longjmp(CompiletimeJumpBuffer, 1);
+		longjmp(CompiletimeJumpBuffer, 10);
 	} else {
-		longjmp(RuntimeJumpBuffer, 1);
+		longjmp(RuntimeJumpBuffer, 10);
 	}
 }
 
@@ -740,6 +740,12 @@ FluentSearch(token_info* Tokens, int32 ListStart, fluent* Fluents, int32 Fluents
 	return (Ret);
 }
 
+string
+BuildArrayFluentID(string ArrayName, int32 index)
+{
+	return ("ARRAY_" + ArrayName + "_" + index);
+}
+
 // This converts a string into an array of tokens. Used entirley for the display layer
 fluent_search_return
 FluentSearch(string TokenString, fluent* Fluents, int32 FluentsCount, entity* Entities, int32 EntitiesCount)
@@ -774,6 +780,216 @@ FluentSearch(string TokenString, fluent* Fluents, int32 FluentsCount, entity* En
 	return (FluentSearch(&Tokens[0], 0, Fluents, FluentsCount, Entities, EntitiesCount));
 }
 
+real64
+Accumulate(int32 Accum, token_type Operation, int32 NewOperand)
+{
+	if (Operation == token_type::add) {
+		Accum = Accum + NewOperand;
+	} else if (Operation == token_type::sub) {
+		Accum = Accum - NewOperand;
+	} else if (Operation == token_type::mult) {
+		Accum = Accum * NewOperand;
+	} else if (Operation == token_type::div) {
+		Accum = Accum / NewOperand;
+	} else {
+		Accum = NewOperand;
+	}
+
+	return (Accum);
+}
+
+fluent*
+GetFluentInArray(string EntityName, string FluentName, int32 ArrayIndex, int32 LineNum,
+                 entity* Entities, int32 EntitiesCount)
+{
+	string NameWanting = BuildArrayFluentID(EntityName, ArrayIndex);
+	entity* EntityEditing = FindEntity(NameWanting, Entities, EntitiesCount);
+	if (EntityEditing == NULL) {
+		ThrowError(LineNum, "Could not find entity of name " + NameWanting);
+	}
+
+	fluent* FluentEditing = FindFluentInList(FluentName, EntityEditing->Fluents, EntityEditing->FluentsCount);
+	if (FluentEditing == NULL) {
+		ThrowError(LineNum, "Could not find fluent of name " + FluentName);
+	}
+
+	return (FluentEditing);
+}
+
+real64
+InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
+                fluent* Fluents, int32 FluentsCount,
+                entity* Entities, int32 EntitiesCount)
+{
+	token_type AccumState = token_type::none;
+
+	int32 Accum = 0.0f;
+
+	int32 AccumIndex = TokenIndexStart;
+	while (Tokens[AccumIndex].Type != token_type::period &&
+	        Tokens[AccumIndex].Type != token_type::none &&
+	        Tokens[AccumIndex].Type != token_type::closedCurly &&
+	        Tokens[AccumIndex].Type != token_type::closeSquare &&
+	        Tokens[AccumIndex].Type != token_type::lessThan &&
+	        Tokens[AccumIndex].Type != token_type::lessThanOrEqual &&
+	        Tokens[AccumIndex].Type != token_type::greaterThan &&
+	        Tokens[AccumIndex].Type != token_type::greaterThanOrEqual &&
+	        Tokens[AccumIndex].Type != token_type::equalTo &&
+	        Tokens[AccumIndex].Type != token_type::andd &&
+	        Tokens[AccumIndex].Type != token_type::nott &&
+	        Tokens[AccumIndex].Type != token_type::orr &&
+	        Tokens[AccumIndex].Type != token_type::to &&
+	        Tokens[AccumIndex].Type != token_type::comma) {
+		token_type NewTokenType = Tokens[AccumIndex].Type;
+		if (NewTokenType == token_type::id || NewTokenType == token_type::number) {
+
+			real64 NewOperand = 0.0f;
+			if (Tokens[AccumIndex + 1].Type == token_type::dot) {
+				// Dot notation
+
+				entity* Event = FindEntity(Tokens[AccumIndex].Name, Entities, EntitiesCount);
+				if (Event == NULL) {
+					ThrowError(Tokens[AccumIndex].LineNumber, EntityNotFoundPrefix + Tokens[AccumIndex].Name);
+				}
+				fluent* Fluent = FindFluentInList(Tokens[AccumIndex + 2].Name, Event->Fluents, Event->FluentsCount);
+				if (Fluent == NULL) {
+					ThrowError(Tokens[AccumIndex].LineNumber, FluentNotFoundPrefix + Tokens[AccumIndex + 2].Name);
+				}
+
+				NewOperand = Fluent->Value;
+				AccumIndex += 2;
+			} else if (Tokens[AccumIndex + 1].Type == token_type::openSquare) {
+				// Fluent in an array
+
+				// Get the number of tokens until the closing square
+				int32 CountUntilClose = 0;
+				while (Tokens[AccumIndex + CountUntilClose - 1].Type != token_type::closeSquare) {
+					CountUntilClose++;
+				}
+
+				string EntityName = Tokens[AccumIndex].Name;
+				string FluentName = Tokens[AccumIndex + CountUntilClose + 1].Name;
+				int32 TokenLineNum = Tokens[AccumIndex].LineNumber;
+
+				int32 ArrayIndex = InfixAccumulate(Tokens, AccumIndex + 2, Fluents, FluentsCount, Entities, EntitiesCount);
+				fluent* FluentEditing = GetFluentInArray(EntityName, FluentName, ArrayIndex, TokenLineNum, Entities, EntitiesCount);
+
+				NewOperand = FluentEditing->Value;
+				AccumIndex += 1 + CountUntilClose;
+
+				if (false) {
+					string EntityName = Tokens[AccumIndex].Name;
+					string FluentName = Tokens[AccumIndex + 5].Name;
+					int32 ArrayIndex = StringToInt32(Tokens[AccumIndex + 2].Name);
+					int32 TokenLineNum = Tokens[AccumIndex].LineNumber;
+					NewOperand = GetFluentInArray(EntityName, FluentName, ArrayIndex, TokenLineNum, Entities, EntitiesCount)->Value;
+					AccumIndex += 5;
+				}
+			} else {
+				// Straight regular fluent
+
+				if (Tokens[AccumIndex].Type == token_type::id) {
+					// find that fluent
+					fluent* Fluent = FindFluentInList(Tokens[AccumIndex].Name, Fluents, FluentsCount);
+					if (Fluent == NULL) {
+						// Report error here. That fluent name does not exist.
+						ThrowError(Tokens[AccumIndex].LineNumber, FluentNotFoundPrefix + Tokens[AccumIndex].Name);
+					}
+
+					NewOperand = Fluent->Value;
+				} else if (Tokens[AccumIndex].Type == token_type::number) {
+					NewOperand = StringToInt32(Tokens[AccumIndex].Name);
+				} else {
+					ThrowError(Tokens[AccumIndex].LineNumber, "Cannot get the value of a token which is neither a number or id.");
+				}
+			}
+
+			Accum = Accumulate(Accum, AccumState, NewOperand);
+
+		} else if (NewTokenType == token_type::sub ||
+		           NewTokenType == token_type::add ||
+		           NewTokenType == token_type::mult ||
+		           NewTokenType == token_type::div) {
+			AccumState = NewTokenType;
+		} else if (NewTokenType == token_type::random) {
+			// random
+
+			int32 Min = (int32)InfixAccumulate(Tokens, AccumIndex + 1, Fluents, FluentsCount, Entities, EntitiesCount);
+			while (Tokens[AccumIndex].Type != token_type::to) {
+				AccumIndex++;
+			}
+			AccumIndex++;
+			int32 Max = (int32)InfixAccumulate(Tokens, AccumIndex, Fluents, FluentsCount, Entities, EntitiesCount);
+
+			int32 RandNum = RandomRangeInt(Min, Max + 1);
+
+			Accum = Accumulate(Accum, AccumState, RandNum);
+
+			while (Tokens[AccumIndex].Type != token_type::comma &&
+			        Tokens[AccumIndex].Type != token_type::period &&
+			        Tokens[AccumIndex].Type != token_type::does &&
+			        Tokens[AccumIndex].Type != token_type::iff &&
+			        Tokens[AccumIndex].Type != token_type::none) {
+				AccumIndex++;
+			}
+
+			if (Tokens[AccumIndex].Type == token_type::period) {
+				AccumIndex--;
+			}
+		} else {
+			// Something wrong
+			ThrowError(Tokens[AccumIndex].LineNumber, "Unexpected token type.");
+		}
+
+		AccumIndex++;
+	}
+
+	return (Accum);
+}
+
+
+// // This is only used in Evaluate Boolean to get the operands
+// real64
+// BoolGetValue(token_info* Tokens, int32* NextLogicOp,
+//              fluent* Fluents, int32 FluentsCount,
+//              entity* Entities, int32 EntitiesCount)
+// {
+// 	real64 Val = 0.0f;
+
+// 	if (StringIsInt(Tokens[*NextLogicOp].Name)) {
+// 		// This is just a number
+// 		Val = StringToInt32(Tokens[*NextLogicOp].Name);
+// 		(*NextLogicOp)++;
+// 	} else if (Tokens[*NextLogicOp].Type == token_type::id &&
+// 	           Tokens[*NextLogicOp + 1].Type != token_type::openSquare) {
+// 		// This is dot notation
+// 		fluent_search_return Ret = FluentSearch(Tokens, *NextLogicOp,
+// 		                                        Fluents, FluentsCount, Entities, EntitiesCount);
+// 		(*NextLogicOp) += Ret.TokensConsumed;
+// 		Val = Ret.Fluent->Value;
+// 	} else if (Tokens[*NextLogicOp + 1].Type == token_type::openSquare) {
+// 		// This is an array, they always have dot notation
+// 		string ArrayName = Tokens[*NextLogicOp].Name;
+// 		(*NextLogicOp) += 2;
+
+// 		real64 ArrayIndex = InfixAccumulate(Tokens, *NextLogicOp, Fluents, FluentsCount, Entities, EntitiesCount);
+
+// 		// Move past the array index
+// 		while (Tokens[*NextLogicOp].Type != token_type::dot) {
+// 			(*NextLogicOp)++;
+// 		}
+// 		(*NextLogicOp) += 2;
+
+// 		string FluentName = Tokens[*NextLogicOp].Name;
+
+// 		Val = GetFluentInArray(ArrayName, FluentName, ArrayIndex, Tokens[*NextLogicOp].LineNumber, Entities, EntitiesCount)->Value;
+// 	} else {
+// 		ThrowError(Tokens[*NextLogicOp].LineNumber, "Invalid token pattern in an if statment");
+// 	}
+
+// 	return (Val);
+// }
+
 bool32
 EvaluateBoolean(token_info* ConditionalTokens, int32 ConditionalsCount,
                 int32* NextLogicOp,
@@ -781,11 +997,10 @@ EvaluateBoolean(token_info* ConditionalTokens, int32 ConditionalsCount,
                 entity* Entities, int32 EntitiesCount)
 {
 	bool32 AccumBool = true;
+	bool32 NegateNext = false;
 
 	// This state must be held separate from the logicO
 	token_type CurrLogicOp = token_type::none;
-
-	bool32 NegateNext = false;
 
 	while (*NextLogicOp < ConditionalsCount) {
 		token_info* NextToken = &ConditionalTokens[*NextLogicOp];
@@ -795,7 +1010,7 @@ EvaluateBoolean(token_info* ConditionalTokens, int32 ConditionalsCount,
 			CurrLogicOp = NextToken->Type;
 		} else if (NextToken->Type == token_type::nott) {
 			NegateNext = true;
-		} else if (NextToken->Type == token_type::openSquare) {
+		} else if (NextToken->Type == token_type::openParen) {
 			bool32 NextVal = EvaluateBoolean(ConditionalTokens, ConditionalsCount, NextLogicOp, Fluents, FluentsCount, Entities, EntitiesCount);
 
 			if (NegateNext) {
@@ -820,47 +1035,14 @@ EvaluateBoolean(token_info* ConditionalTokens, int32 ConditionalsCount,
 			(*NextLogicOp)--;
 
 			// First Value
-			real64 FirstVal = 0.0f;
-			string FirstName = ConditionalTokens[*NextLogicOp].Name;
-			if (StringIsInt(FirstName)) {
-				FirstVal = StringToInt32(FirstName);
+			real64 FirstVal = InfixAccumulate(ConditionalTokens, *NextLogicOp, Fluents, FluentsCount, Entities, EntitiesCount);
+
+			while (ConditionalTokens[*NextLogicOp].Type != token_type::greaterThan &&
+			        ConditionalTokens[*NextLogicOp].Type != token_type::greaterThanOrEqual &&
+			        ConditionalTokens[*NextLogicOp].Type != token_type::equalTo &&
+			        ConditionalTokens[*NextLogicOp].Type != token_type::lessThanOrEqual &&
+			        ConditionalTokens[*NextLogicOp].Type != token_type::lessThan) {
 				(*NextLogicOp)++;
-			} else {
-				fluent_search_return Ret = FluentSearch(ConditionalTokens, *NextLogicOp,
-				                                        Fluents, FluentsCount, Entities, EntitiesCount);
-				(*NextLogicOp) += Ret.TokensConsumed;
-				FirstVal = Ret.Fluent->Value;
-			}
-
-			// Check for operations. This needs to be significantly more robust.
-			if (ConditionalTokens[*NextLogicOp].Type == token_type::sub ||
-			        ConditionalTokens[*NextLogicOp].Type == token_type::add ||
-			        ConditionalTokens[*NextLogicOp].Type == token_type::mult ||
-			        ConditionalTokens[*NextLogicOp].Type == token_type::div) {
-
-				token_type Operation = ConditionalTokens[*NextLogicOp].Type;
-				(*NextLogicOp)++;
-
-				int32 Accum = 0;
-				if (StringIsInt(ConditionalTokens[*NextLogicOp].Name)) {
-					Accum = StringToInt32(ConditionalTokens[*NextLogicOp].Name);
-					(*NextLogicOp)++;
-				} else {
-					fluent_search_return Ret = FluentSearch(ConditionalTokens, *NextLogicOp,
-					                                        Fluents, FluentsCount, Entities, EntitiesCount);
-					(*NextLogicOp) += Ret.TokensConsumed;
-					Accum = Ret.Fluent->Value;
-				}
-
-				if (Operation == token_type::sub) {
-					FirstVal -= Accum;
-				} else if (Operation == token_type::add) {
-					FirstVal += Accum;
-				} else if (Operation == token_type::div) {
-					FirstVal /= Accum;
-				} else if (Operation == token_type::mult) {
-					FirstVal *= Accum;
-				}
 			}
 
 			// Get operation
@@ -868,17 +1050,7 @@ EvaluateBoolean(token_info* ConditionalTokens, int32 ConditionalsCount,
 			(*NextLogicOp)++;
 
 			// Second Value
-			real64 SecondVal = 0.0f;
-			string SecondName = ConditionalTokens[*NextLogicOp].Name;
-			if (StringIsInt(SecondName)) {
-				SecondVal = StringToInt32(SecondName);
-				(*NextLogicOp)++;
-			} else {
-				fluent_search_return Ret = FluentSearch(ConditionalTokens, *NextLogicOp,
-				                                        Fluents, FluentsCount, Entities, EntitiesCount);
-				(*NextLogicOp) += Ret.TokensConsumed;
-				SecondVal = Ret.Fluent->Value;
-			}
+			real64 SecondVal = InfixAccumulate(ConditionalTokens, *NextLogicOp, Fluents, FluentsCount, Entities, EntitiesCount);
 
 			if (Op == token_type::greaterThan) {
 				NextVal = FirstVal > SecondVal;
@@ -908,6 +1080,15 @@ EvaluateBoolean(token_info* ConditionalTokens, int32 ConditionalsCount,
 			} else if (CurrLogicOp == token_type::none) {
 				AccumBool = NextVal;
 			}
+
+			// Move onto the next conditional
+			while (ConditionalTokens[*NextLogicOp].Type != token_type::none &&
+			        ConditionalTokens[*NextLogicOp].Type != token_type::andd &&
+			        ConditionalTokens[*NextLogicOp].Type != token_type::nott &&
+			        ConditionalTokens[*NextLogicOp].Type != token_type::orr &&
+			        ConditionalTokens[*NextLogicOp].Type != token_type::openParen) {
+				(*NextLogicOp)++;
+			}
 		} else if (NextToken->Type == token_type::closeSquare) {
 			return (AccumBool);
 		} else {
@@ -931,12 +1112,6 @@ IfTokensValid(token_info* IfTokens, int32 TokensCount, game_def* GameDef)
 		// If there are no conditionals then event is always valid
 		return (true);
 	}
-}
-
-string
-BuildArrayFluentID(string ArrayName, int32 index)
-{
-	return ("ARRAY_" + ArrayName + "_" + index);
 }
 
 void
@@ -1036,151 +1211,6 @@ CheckNumberOrID(parser* Parser, token_stack* Tokens, int32 LineNum)
 	}
 }
 
-real64
-Accumulate(int32 Accum, token_type Operation, int32 NewOperand)
-{
-	if (Operation == token_type::add) {
-		Accum = Accum + NewOperand;
-	} else if (Operation == token_type::sub) {
-		Accum = Accum - NewOperand;
-	} else if (Operation == token_type::mult) {
-		Accum = Accum * NewOperand;
-	} else if (Operation == token_type::div) {
-		Accum = Accum / NewOperand;
-	} else {
-		Accum = NewOperand;
-	}
-
-	return (Accum);
-}
-
-fluent*
-GetFluentInArray(string EntityName, string FluentName, int32 ArrayIndex, int32 LineNum,
-                 entity* Entities, int32 EntitiesCount)
-{
-	string NameWanting = BuildArrayFluentID(EntityName, ArrayIndex);
-	entity* EntityEditing = FindEntity(NameWanting, Entities, EntitiesCount);
-	if (EntityEditing == NULL) {
-		ThrowError(LineNum, "Could not find entity of name " + NameWanting);
-	}
-
-	fluent* FluentEditing = FindFluentInList(FluentName, EntityEditing->Fluents, EntityEditing->FluentsCount);
-	if (FluentEditing == NULL) {
-		ThrowError(LineNum, "Could not find fluent of name " + FluentName);
-	}
-
-	return (FluentEditing);
-}
-
-real64
-InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
-                fluent* Fluents, int32 FluentsCount,
-                entity* Entities, int32 EntitiesCount)
-{
-	token_type AccumState = token_type::none;
-
-	int32 Accum = 0.0f;
-
-	int32 AccumIndex = TokenIndexStart;
-	while (Tokens[AccumIndex].Type != token_type::period &&
-	        Tokens[AccumIndex].Type != token_type::none &&
-	        Tokens[AccumIndex].Type != token_type::closedCurly &&
-	        Tokens[AccumIndex].Type != token_type::closeSquare &&
-	        Tokens[AccumIndex].Type != token_type::comma) {
-		token_type NewTokenType = Tokens[AccumIndex].Type;
-		if (NewTokenType == token_type::id || NewTokenType == token_type::number) {
-
-			real64 NewOperand = 0.0f;
-			if (Tokens[AccumIndex + 1].Type == token_type::dot) {
-				// Dot notation
-
-				entity* Event = FindEntity(Tokens[AccumIndex].Name, Entities, EntitiesCount);
-				if (Event == NULL) {
-					ThrowError(Tokens[AccumIndex].LineNumber, EntityNotFoundPrefix + Tokens[AccumIndex].Name);
-				}
-				fluent* Fluent = FindFluentInList(Tokens[AccumIndex + 2].Name, Event->Fluents, Event->FluentsCount);
-				if (Fluent == NULL) {
-					ThrowError(Tokens[AccumIndex].LineNumber, FluentNotFoundPrefix + Tokens[AccumIndex + 2].Name);
-				}
-
-				NewOperand = Fluent->Value;
-				AccumIndex += 2;
-			} else if (Tokens[AccumIndex + 1].Type == token_type::openSquare) {
-				// Fluent in an array
-
-				// Get the number of tokens until the closing square
-				int32 CountUntilClose = 0;
-				while (Tokens[AccumIndex + CountUntilClose - 1].Type != token_type::closeSquare) {
-					CountUntilClose++;
-				}
-
-				string EntityName = Tokens[AccumIndex].Name;
-				string FluentName = Tokens[AccumIndex + CountUntilClose + 1].Name;
-				int32 TokenLineNum = Tokens[AccumIndex].LineNumber;
-
-				int32 ArrayIndex = InfixAccumulate(Tokens, AccumIndex + 2, Fluents, FluentsCount, Entities, EntitiesCount);
-				fluent* FluentEditing = GetFluentInArray(EntityName, FluentName, ArrayIndex, TokenLineNum, Entities, EntitiesCount);
-
-				NewOperand = FluentEditing->Value;
-				AccumIndex += 1 + CountUntilClose;
-
-				if (false) {
-					string EntityName = Tokens[AccumIndex].Name;
-					string FluentName = Tokens[AccumIndex + 5].Name;
-					int32 ArrayIndex = StringToInt32(Tokens[AccumIndex + 2].Name);
-					int32 TokenLineNum = Tokens[AccumIndex].LineNumber;
-					NewOperand = GetFluentInArray(EntityName, FluentName, ArrayIndex, TokenLineNum, Entities, EntitiesCount)->Value;
-					AccumIndex += 5;
-				}
-			} else {
-				// Straight regular fluent
-
-				if (Tokens[AccumIndex].Type == token_type::id) {
-					// find that fluent
-					fluent* Fluent = FindFluentInList(Tokens[AccumIndex].Name, Fluents, FluentsCount);
-					if (Fluent == NULL) {
-						// Report error here. That fluent name does not exist.
-						ThrowError(Tokens[AccumIndex].LineNumber, FluentNotFoundPrefix + Tokens[AccumIndex].Name);
-					}
-
-					NewOperand = Fluent->Value;
-				} else if (Tokens[AccumIndex].Type == token_type::number) {
-					NewOperand = StringToInt32(Tokens[AccumIndex].Name);
-				} else {
-					ThrowError(Tokens[AccumIndex].LineNumber, "Cannot get the value of a token which is neither a number or id.");
-				}
-			}
-
-			Accum = Accumulate(Accum, AccumState, NewOperand);
-
-		} else if (NewTokenType == token_type::sub ||
-		           NewTokenType == token_type::add ||
-		           NewTokenType == token_type::mult ||
-		           NewTokenType == token_type::div) {
-			AccumState = NewTokenType;
-		} else if (NewTokenType == token_type::random) {
-			if (Tokens[AccumIndex + 1].Type != token_type::number ||
-			        Tokens[AccumIndex + 2].Type != token_type::to ||
-			        Tokens[AccumIndex + 3].Type != token_type::number) {
-				ThrowError(Tokens[AccumIndex].LineNumber, "Incorrect random syntax. Random must follow form of random min to max.");
-			}
-
-			int32 Min = StringToInt32(Tokens[AccumIndex + 1].Name);
-			int32 Max = StringToInt32(Tokens[AccumIndex + 3].Name);
-			int32 RandNum = RandomRangeInt(Min, Max + 1);
-
-			Accum = Accumulate(Accum, AccumState, RandNum);
-			AccumIndex += 3;
-		} else {
-			// Something wrong
-			ThrowError(Tokens[AccumIndex].LineNumber, "Unexpected token type.");
-		}
-
-		AccumIndex++;
-	}
-
-	return (Accum);
-}
 
 // returns if the given token is a token which appears at the beginning of a statment.
 bool
@@ -1357,7 +1387,7 @@ TokenReplacement(param* ParamReals, int32 ParamRealsCount,
 
 // TokenChnageState State. Used to hold the state of a TokenChangeState iteration. So we don't recursively call it.
 struct tcs_state {
-	token_info* Tokens;
+	token_info Tokens[50];
 	int32 TokensCount;
 	int32 TokenIndex;
 };
@@ -1370,7 +1400,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 	tcs_state* StateStack = (tcs_state*)malloc(sizeof(tcs_state) * StackSize);
 	ZeroMemory(StateStack, sizeof(tcs_state) * StackSize);
 
-	StateStack[0].Tokens = Tokens;
+	memcpy(StateStack[0].Tokens, Tokens, sizeof(token_info) * (TokensCount + 1));
 	StateStack[0].TokensCount = TokensCount;
 
 
@@ -1585,7 +1615,8 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 						// TokensChangeState(ReplacedDoes.ReplacedTokens, ReplacedDoes.ReplacedTokensIndex, GameDef);
 
 						StackTop++;
-						StateStack[StackTop].Tokens = ReplacedDoes.ReplacedTokens;
+						memcpy(StateStack[StackTop].Tokens, ReplacedDoes.ReplacedTokens, sizeof(token_info) * (ReplacedDoes.ReplacedTokensIndex + 1));
+						// StateStack[StackTop].Tokens = ReplacedDoes.ReplacedTokens;
 						StateStack[StackTop].TokensCount = ReplacedDoes.ReplacedTokensIndex;
 
 						StateUsing = &StateStack[StackTop];
@@ -2112,11 +2143,14 @@ DoEvent(event* Event, game_def* Rules)
 {
 	GlobalProgState = prog_state::runtime;
 
-	if (setjmp(CompiletimeJumpBuffer) == 10) {
+	if (setjmp(RuntimeJumpBuffer) == 10) {
 		// This is an error. So return the error val;
 		return (GlobalErrorDesc);
 	}
 
+	if (Event == NULL) {
+		ThrowError(0, "Action is null, you probably typed the action name incorrectly.");
+	}
 
 	for (int32 Index = 0; Index < Event->DoesIfCount; Index++) {
 		does_if* DoesIf = &Event->DoesIf[Index];
@@ -2265,14 +2299,8 @@ extern "C"
 			}
 		}
 
-		if (EventChecking == NULL) {
-			string Action = ActionName;
-			string ErrorDesc = "Action of " + Action + " does not exist.";
-			StringCopy(ErrorDesc.CharArray, ErrorBuffer);
-		} else {
-			string Ret = DoEvent(EventChecking, &GlobalRulesDef);;
-			StringCopy(Ret.CharArray, ErrorBuffer);
-		}
+		string Ret = DoEvent(EventChecking, &GlobalRulesDef);;
+		StringCopy(Ret.CharArray, ErrorBuffer);
 	}
 
 	int32 EXPORT SC_GetActionsCount()
@@ -2307,65 +2335,95 @@ extern "C"
 			}
 		}
 	}
+
+	int32 EXPORT SC_GetFluentInArray(char* ArrayName, int ArrayIndex, char* FluentName)
+	{
+		return (GetFluentInArray(ArrayName, FluentName, ArrayIndex, 0,
+		                         GlobalRulesDef.InstancedEntities, GlobalRulesDef.InstancedEntitiesCount)->Value);
+	}
+
+	bool32 EXPORT SC_ArrayExists(string ArrayName)
+	{
+		for (int32 Index = 0; Index < GlobalRulesDef.ArraysCount; Index++) {
+			if (GlobalRulesDef.Arrays[Index].Name == ArrayName) {
+				return (true);
+			}
+		}
+		return (false);
+	}
 }
 
 
 void
 main(int argc, char const **argv)
 {
-	char* Prog = {};
-	int32 CharactersCount = 0;
-	// Load the program into the parser
-	{
-		HANDLE FileHandle = CreateFile("Games/TestGame.txt", GENERIC_READ, FILE_SHARE_READ,
-		                               NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	while (true) {
+		char* Prog = {};
+		int32 CharactersCount = 0;
+		// Load the program into the parser
+		{
+			string UnityGameFile = "../SandCat_Unity/Assets/Games/Situps/Situps.txt";
+			// string UnityGameFile = "../SandCat_Unity/Assets/Games/Test/Test.txt";
+			HANDLE FileHandle = CreateFile(UnityGameFile.CharArray, GENERIC_READ, FILE_SHARE_READ,
+			                               NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
-		int32 FileSizeBytes = GetFileSize(FileHandle, NULL);
+			int32 FileSizeBytes = GetFileSize(FileHandle, NULL);
 
-		// Make sure we got the file
-		Assert(FileSizeBytes != 0);
+			// Make sure we got the file
+			Assert(FileSizeBytes != 0);
 
-		Prog = (char*)malloc(FileSizeBytes);
-		ZeroMemory(Prog, FileSizeBytes);
+			Prog = (char*)malloc(FileSizeBytes);
+			ZeroMemory(Prog, FileSizeBytes);
 
-		CharactersCount = FileSizeBytes;
+			CharactersCount = FileSizeBytes;
 
-		DWORD BytesRead;
-		if (!ReadFile(FileHandle, (void*)Prog, FileSizeBytes, &BytesRead, NULL)) {
-			// Couldn't read the file. Something wrong happened
-			Assert(0);
-		}
-
-		CloseHandle(FileHandle);
-	}
-
-	game_def GameDefinition = {};
-	string Error = LoadGameDefinition(Prog, CharactersCount, &GameDefinition);
-
-	int32 x = 0;
-
-	// This is the playing part
-	{
-		PrintOptions(&GameDefinition);
-
-		while (true) {
-			char Input[100];
-			scanf("%99s", &Input);
-			char Selection = Input[0];
-			system("cls");
-
-			string SelStr = Selection;
-			int32 SelInt = StringToInt32(SelStr);
-			if (SelInt < GameDefinition.EventsCount) {
-				DoEvent(&GameDefinition.Events[SelInt], &GameDefinition);
-			} else {
-				Print("Not a valid action");
+			DWORD BytesRead;
+			if (!ReadFile(FileHandle, (void*)Prog, FileSizeBytes, &BytesRead, NULL)) {
+				// Couldn't read the file. Something wrong happened
+				Assert(0);
 			}
 
-			PrintOptions(&GameDefinition);
+			CloseHandle(FileHandle);
 		}
 
-		Print("Closing");
-		return;
+		game_def GameDefinition = {};
+		string Error = LoadGameDefinition(Prog, CharactersCount, &GameDefinition);
+
+		if (Error.CharArray[0] == 'x') {
+
+			// This is the playing part
+			{
+				PrintOptions(&GameDefinition);
+
+				while (true) {
+					char Input[100];
+					scanf("%99s", &Input);
+					char Selection = Input[0];
+					system("cls");
+
+					string SelStr = Selection;
+					int32 SelInt = StringToInt32(SelStr);
+					if (SelInt < GameDefinition.EventsCount) {
+						DoEvent(&GameDefinition.Events[SelInt], &GameDefinition);
+					} else {
+						Print("Not a valid action");
+					}
+
+					PrintOptions(&GameDefinition);
+				}
+
+				return;
+			}
+		} else {
+			Print(Error);
+			Print("\n");
+			Print("Press anything to reload the rules.");
+
+			char Input[100];
+			scanf("%99s", &Input);
+			system("cls");
+
+			free(Prog);
+		}
 	}
 }

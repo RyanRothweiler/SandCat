@@ -7,10 +7,6 @@ public enum FluentDisplayType {
 	Fluent, Entity
 }
 
-public enum Comparison {
-	AlwaysShow, LessThan, LessThanOrEqualTo, EqualTo, NotEqualTo, GreaterThan, GreaterThanOrEqualTo,
-}
-
 [RequireComponent(typeof(Text))]
 public class FluentTextDisplay : MonoBehaviour
 {
@@ -37,28 +33,9 @@ public class FluentTextDisplay : MonoBehaviour
 	// Update is called once per frame
 	void Update ()
 	{
-		float fluentValue = 0;
-		if (type == FluentDisplayType.Fluent) {
-			fluentValue = SandCat.instance.GetFluentValue(fluentName);
-		} else if (type == FluentDisplayType.Entity) {
-			fluentValue = SandCat.instance.GetEntityFluentValue(entityName, fluentName);
-		}
-
-		if (hideComparison == Comparison.AlwaysShow) {
-			display.text = fluentValue.ToString();
-		} else if (hideComparison == Comparison.LessThan) {
-			DisplayOrHide(fluentValue < comparisonValue, fluentValue);
-		} else if (hideComparison == Comparison.LessThanOrEqualTo) {
-			DisplayOrHide(fluentValue <= comparisonValue, fluentValue);
-		} else if (hideComparison == Comparison.EqualTo) {
-			DisplayOrHide(fluentValue == comparisonValue, fluentValue);
-		} else if (hideComparison == Comparison.NotEqualTo) {
-			DisplayOrHide(fluentValue != comparisonValue, fluentValue);
-		} else if (hideComparison == Comparison.GreaterThanOrEqualTo) {
-			DisplayOrHide(fluentValue >= comparisonValue, fluentValue);
-		} else if (hideComparison == Comparison.GreaterThan) {
-			DisplayOrHide(fluentValue > comparisonValue, fluentValue);
-		}
+		int fluentValue = (int)SandCat.instance.GetFluentValue(fluentName);
+		display.text = fluentValue.ToString();
+		// DisplayOrHide(hideComparison.IsTrue(fluentValue, comparisonValue), fluentValue);
 	}
 
 	private void DisplayOrHide(bool state, float value)
