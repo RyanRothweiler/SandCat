@@ -1,0 +1,10 @@
+Mantaray = [5]{sad = 0, happy = 0}.
+
+AddHappy = Event
+	using Cell
+	does Cell'happy = Cell'happy + 1.
+
+Game = PlayerAction
+	does AddHappy(Mantaray[0])
+	does AddHappy(Mantaray[1])
+	does AddHappy(Mantaray[2]).

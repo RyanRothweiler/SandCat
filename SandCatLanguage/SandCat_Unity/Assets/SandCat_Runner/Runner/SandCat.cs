@@ -36,6 +36,10 @@ public class SandCat : MonoBehaviour
 	[DllImport ("SandCat_Runner")] private static extern int 	SC_DoesEntityExist(string entityName);
 	[DllImport ("SandCat_Runner")] private static extern float 	SC_GetEntityFluent(string entityName, string fluentName);
 
+	// Arrays
+	[DllImport ("SandCat_Runner")] private static extern int 	SC_GetFluentInArray(string ArrayName, int ArrayIndex, string FluentName);
+	[DllImport ("SandCat_Runner")] private static extern bool 	SC_ArrayExists(string srrayName);
+
 	[HideInInspector] public string prevError;
 
 	public void Awake()
@@ -136,8 +140,6 @@ public class SandCat : MonoBehaviour
 
 	public void DoAction(string actionName)
 	{
-		// canDoAction = false;
-		// Debug.Log("Star");
 		if (SC_DoesActionExist(actionName) == 1) {
 			StringBuilder stringBuilder = new StringBuilder(200);
 			SC_DoAction(actionName, stringBuilder, stringBuilder.Length);
@@ -166,6 +168,18 @@ public class SandCat : MonoBehaviour
 			if (prevError != "x") {
 				Debug.Log(prevError);
 			}
+		}
+	}
+
+	public float GetFluentInArray(string arrayName, int arrayIndex, string fluentName)
+	{
+		if (SC_ArrayExists(arrayName)) {
+			// TODO Check if that fluent exists
+
+			return (SC_GetFluentInArray(arrayName, arrayIndex, fluentName));
+		} else {
+			Debug.LogError("Array name of " + arrayName + " does not exist.");
+			return (1.0f);
 		}
 	}
 }
