@@ -1,0 +1,11 @@
+p {
+  font-family: "acumin-pro", sans-serif;
+}
+
+#home 
+{
+	margin: 0 auto; 
+	width: 100%; 
+	max-width: 900px; 
+	position: relative; 
+}
