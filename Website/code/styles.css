@@ -2,10 +2,8 @@ p {
   font-family: "acumin-pro", sans-serif;
 }
 
-#home 
+
+#navbar
 {
-	margin: 0 auto; 
-	width: 100%; 
-	max-width: 900px; 
-	position: relative; 
+	height: 20%;
 }
