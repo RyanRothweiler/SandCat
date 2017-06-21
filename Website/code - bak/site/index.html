@@ -39,8 +39,8 @@
   <!-- Primary Page Layout
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
 
-<script src="processor.js"></script>
-<body onload="PageLoad('Index');">
+<script src="header.js"></script>
+<body onload="InsertNav();">
 <div id="header"></div>
 
 <!--  -->
@@ -104,8 +104,12 @@ DropOnRight = PlayerAction
 
             <div class="sm-col sm-col-6 md-col-7 lg-col-8 px2">
 
-              <div id="PostOne"></div>
-              <div id="PostTwo"></div>
+              <!-- This is a post on the home page -->
+              <h5><a href='http://google.com'>Title</a></h5>
+              <p>Hey this is some content! Hey this is some content! Hey this is some content! Hey this is some content! Hey this is some content </p>
+              <!--  -->
+
+
               <h6 class="border-top"><a href='http://google.com'>See all news</a></h5>
 
             </div>
