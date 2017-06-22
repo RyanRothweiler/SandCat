@@ -1,0 +1,73 @@
+<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>SandCat — Update 2</title><meta name="description" content="Welcome to the second update for SandCat. In short, SandCat is a game description language which aims to empower game designers, allowing…"><style>
+      * {
+        font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+      }
+      h1 {
+        font-size: 50px;
+        margin-bottom: 17px;
+        color: #333;
+      }
+      h2 {
+        font-size: 24px;
+        line-height: 1.6;
+        margin: 30px 0 0 0;
+        margin-bottom: 18px;
+        margin-top: 33px;
+        color: #333;
+      }
+      h3 {
+        font-size: 30px;
+        margin: 10px 0 20px 0;
+        color: #333;
+      }
+      header {
+        width: 640px;
+        margin: auto;
+      }
+      section {
+        width: 640px;
+        margin: auto;
+      }
+      section p {
+        margin-bottom: 27px;
+        font-size: 20px;
+        line-height: 1.6;
+        color: #333;
+      }
+      section img {
+        max-width: 640px;
+      }
+      footer {
+        padding: 0 20px;
+        margin: 50px 0;
+        text-align: center;
+        font-size: 12px;
+      }
+      .aspectRatioPlaceholder {
+        max-width: auto !important;
+        max-height: auto !important;
+      }
+      .aspectRatioPlaceholder-fill {
+        padding-bottom: 0 !important;
+      }
+      header,
+      section[data-field=subtitle] {
+        display: none;
+      }
+      </style></head><body><article class="h-entry">
+<header>
+<h1 class="p-name">SandCat — Update 2</h1>
+</header>
+<section data-field="subtitle" class="p-summary">
+Welcome to the second update for SandCat. In short, SandCat is a game description language which aims to empower game designers, allowing…
+</section>
+<section data-field="body" class="e-content">
+<section name="d64d" class="section section--body section--first section--last"><div class="section-divider"><hr class="section-divider"></div><div class="section-content"><div class="section-inner sectionLayout--insetColumn"><h3 name="4529" id="4529" class="graf graf--h3 graf--leading graf--title">SandCat — Update 2</h3><p name="feeb" id="feeb" class="graf graf--p graf-after--h3">Welcome to the second update for SandCat. In short, SandCat is a game description language which aims to empower game designers, allowing them to focus on the game instead of the software. <a href="https://medium.com/@ryanrothweiler/sandcat-update-1-e7f4fcf95899" data-href="https://medium.com/@ryanrothweiler/sandcat-update-1-e7f4fcf95899" class="markup--anchor markup--p-anchor" target="_blank">You can read update one here.</a> Read update 1 or my article titled <a href="https://medium.com/@ryanrothweiler/improving-game-design-process-9e392ebf73af" data-href="https://medium.com/@ryanrothweiler/improving-game-design-process-9e392ebf73af" class="markup--anchor markup--p-anchor" target="_blank">Improving Game Design Process</a> if you want more information about SandCat.</p><p name="7991" id="7991" class="graf graf--p graf-after--p">Also a quick disclaimer. I hope this language will be readable by non-programmers. As such, I attempt to explain the concepts without reliance on programming knowledge. Unfortunately this isn’t entirely possible. As a warning, I’m sure programmers will feel annoyed at the excessive explanations, while non-programmers will be annoyed at the lack of explanations.</p><p name="534c" id="534c" class="graf graf--p graf-after--p">Lets get to the update.</p><h3 name="f474" id="f474" class="graf graf--h3 graf-after--p">Technical</h3><p name="31f5" id="31f5" class="graf graf--p graf-after--h3">The first biggest change is entirely technical, and not related to the language itself. I’ve moved from a haphazard blend of parsing and lexing the rules to the traditional hard separation of the two. The old blend was messy and made simple syntactical changes a pain. This improvement is only interesting because it allows for easier syntactical error checking. Currently there is nothing to help designers to fix their syntax, something which is usually done with simple error reporting. This feature should be done soon.</p><h3 name="e35f" id="e35f" class="graf graf--h3 graf-after--p">Language</h3><h4 name="fc49" id="fc49" class="graf graf--h4 graf-after--h3">Action Syntax</h4><p name="cd8d" id="cd8d" class="graf graf--p graf-after--h4">First, I’ve changed the syntax of player initiated actions (previously called events). As a note, lines that start with an exclamation point are comments, they’re completely ignored by the parser.</p><figure name="09f3" id="09f3" class="graf graf--figure graf--iframe graf-after--p"><script src="https://gist.github.com/RyanRothweiler/169cd36f15e1668b583cba871c4aea8f.js"></script></figure><p name="dbbb" id="dbbb" class="graf graf--p graf-after--figure">When possible, I want to move toward a more human language syntax. I hope it will help reduce the barrier of entry for designers without programming experience. I find that excessive reliance on human language can make the syntax more confusing and less readable, however: I think the switch to a human language is much stronger here.</p><h4 name="6489" id="6489" class="graf graf--h4 graf-after--p">Dot Notation and Methods</h4><p name="8ec5" id="8ec5" class="graf graf--p graf-after--h4">I’ve added two new language features. First is dot notation, and the second is methods.</p><p name="bc48" id="bc48" class="graf graf--p graf-after--p">Traditional programmers will be familiar with dot notation. It’s simply a way to group pieces of data. Without dot notation, pieces of data which are similar will need to be manually duplicated.</p><p name="8aab" id="8aab" class="graf graf--p graf-after--p">Lets imagine a worker placement game. Each action space has some resources on it and more are added each round, but only up to a maximum. Players can place workers on the action space to claim the resources, though workers cannot be stacked; the player can only place a worker on a space which does not already have a worker.</p><p name="a9c7" id="a9c7" class="graf graf--p graf-after--p">Lets start with only three action spaces, a coal mine, a wheat field, and a gold mine. A designer could specify that state like such.</p><figure name="4797" id="4797" class="graf graf--figure graf--iframe graf-after--p"><script src="https://gist.github.com/RyanRothweiler/02726c591e6f8cacad539bb534ecfe24.js"></script></figure><p name="ac74" id="ac74" class="graf graf--p graf-after--figure">Unfortunately, if the designer wants to add another action space, they need to duplicate all four lines — additionally — if the designer wants to add something new to all the spaces, they must copy and paste that feature for each action space. Dot notation fixes all this by allowing designers to easily group and duplicate data. The above twelve lines does the same as line two in the code below.</p><figure name="2273" id="2273" class="graf graf--figure graf--iframe graf-after--p"><script src="https://gist.github.com/RyanRothweiler/e80f0cbb55ea6ba7531402be006896e9.js"></script></figure><p name="70b3" id="70b3" class="graf graf--p graf-after--figure">This is a big improvement. Designers can easily add new action spaces, and adjust current action spaces without excessive duplication.</p><p name="abaa" id="abaa" class="graf graf--p graf-after--p">That leads to the next new feature — methods. Methods allow designers to specify and reuse changes in state. Back to our test game, at the end of each round, all action spaces are refilled with resources. Without methods, the designer must write that behavior for every action space, despite the fact that the behavior is exactly the same. Methods let designers package that behavior and use it across multiple actions spaces.</p><figure name="f347" id="f347" class="graf graf--figure graf--iframe graf-after--p"><script src="https://gist.github.com/RyanRothweiler/7b3e77cb48d489a8692d078ac5165a86.js"></script></figure><p name="5c11" id="5c11" class="graf graf--p graf-after--figure">Now the designer can easily reuse the RefillSpace behavior without manually duplicating the definition of that behavior.</p><h3 name="855a" id="855a" class="graf graf--h3 graf-after--p">Test Game</h3><p name="d8ae" id="d8ae" class="graf graf--p graf-after--h3">Here is a full, yet simple, worker placement game which shows off all the new features.</p><figure name="b456" id="b456" class="graf graf--figure graf--iframe graf-after--p"><script src="https://gist.github.com/RyanRothweiler/3bfd62dfa7f50dc8bca8a3dedfaef5c8.js"></script></figure><p name="90b0" id="90b0" class="graf graf--p graf-after--figure">Here is the game being played. You’ll have to excuse the poor presentation. The entire game state is being displayed, so I understand it is difficult to see exactly what is going on.</p><figure name="b8bc" id="b8bc" class="graf graf--figure graf-after--p"><div class="aspectRatioPlaceholder is-locked" style="max-width: 459px; max-height: 755px;"><div class="aspectRatioPlaceholder-fill" style="padding-bottom: 164.5%;"></div><img class="graf-image" data-image-id="1*iJQEUapqxL6SLEpWVSGEXA.gif" data-width="459" data-height="755" src="https://cdn-images-1.medium.com/max/800/1*iJQEUapqxL6SLEpWVSGEXA.gif"></div></figure><p name="9c93" id="9c93" class="graf graf--p graf-after--figure">Players have two workers which they can place on the coal mine, wheat field, or gold mine. When the player places their worker on an action space, they get the resources which are on that space. Once the player places both workers, the round ends. The player then gets both their workers back — which they can place next round — and the action spaces are filled with resources. There currently is no goal, since this is just a proof of concept.</p><h3 name="3e0f" id="3e0f" class="graf graf--h3 graf-after--p">Future</h3><p name="8a00" id="8a00" class="graf graf--p graf-after--h3">I’m happy with this. I think these features are a step in the right direction, but there are improvements to be made.</p><p name="aeca" id="aeca" class="graf graf--p graf-after--p">You might have noticed, there are two actions for placing workers on action spaces. One called PlaceDwarf_GoldMine and a second called PlaceFinalDwarf_GoldMine. From the designers perspective these two actions are very similar, so it would be better if they were one action. This can be done by allowing actions to have multiple ‘does if’ statements. This is a simple change which allows for greater flexibility. This is my first planned addition.</p><p name="a8f5" id="a8f5" class="graf graf--p graf-after--p">My second planned addition is to start adding mechanisms for visual organization. For now, this will take the form of a simple c api which allows developers to query information about the game state and display it in the best way they see fit. I have plans to take this visual organization system very far, but explaining that is out of the scope of this article.</p><p name="0cf0" id="0cf0" class="graf graf--p graf-after--p">And that’s the update. That’s all for now!</p><p name="e761" id="e761" class="graf graf--p graf-after--p graf--trailing"><a href="https://twitter.com/RyanRothweiler" data-href="https://twitter.com/RyanRothweiler" class="markup--anchor markup--p-anchor" rel="noopener" target="_blank">Follow me on twitter for day to day updates.</a></p></div></div></section>
+</section>
+<footer><p class="p-tags">Tagged in <a href="https://medium.com/tag/programming" class="p-tag">Programming</a>, <a href="https://medium.com/tag/javascript" class="p-tag">JavaScript</a></p><p>By <a href="https://medium.com/@ryanrothweiler" class="p-author h-card">Ryan Rothweiler</a> on <a href="https://medium.com/p/fc5207567160"><time class="dt-published" datetime="2017-04-22T20:16:27.745Z">April 22, 2017</time></a>.</p><p>Exported from <a href="https://medium.com">Medium</a> on June 22, 2017.</p></footer></article>
+
+</body></html>

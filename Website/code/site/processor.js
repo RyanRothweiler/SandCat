@@ -32,7 +32,9 @@ function PageLoad(pageName) {
     document.getElementById("PostOne").innerHTML = GetPostHTML(0);
     document.getElementById("PostTwo").innerHTML = GetPostHTML(1);    
   } else if (pageName == "News") {
-    console.log("NEWS");
+    for (index = 0; index < NewsTitles.length; index++) {
+      document.getElementById("posts").innerHTML += GetNewsPostHTML(index);
+    }
   }
 }
 
@@ -52,6 +54,28 @@ function GetPostHTML(index) {
   return (finalHTML);
 }
 
-function DoNewsPage() {
+function GetNewsPostHTML(index) {
 
+  var finalHTML = "";
+  finalHTML+= '<pre></pre>';
+  finalHTML+= '<div class="container">';
+  finalHTML+= '<div class="row">';
+  finalHTML+= '<div class="clearfix mxn2">';
+  finalHTML+= '<div class="sm-col sm-col-6 md-col-5 lg-col-4 px2">';
+  finalHTML+= "<h5><a href='http://google.com'><strong>";
+  finalHTML+= NewsTitles[index];
+  finalHTML+= "</strong></a></h5>";
+  finalHTML+= "<h6>";
+  finalHTML+= NewsDates[index];
+  finalHTML+= "</h6>";
+  finalHTML+= "</div>";
+  finalHTML+= '<div class="sm-col sm-col-6 md-col-7 lg-col-8 px2">';
+  finalHTML+= '<p>';
+  finalHTML+= NewsSample[index];
+  finalHTML+= '</p>';
+  finalHTML+= '</div>';
+  finalHTML+= '</div>';
+  finalHTML+= '</div>';
+  finalHTML+= '</div>';
+  return (finalHTML);
 }

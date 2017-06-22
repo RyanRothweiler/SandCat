@@ -1,0 +1,73 @@
+<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>SandCat — Update 1</title><meta name="description" content="Welcome to the first update for my latest project, SandCat. I have not yet written a true introduction to the project, so you’ll just have…"><style>
+      * {
+        font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+      }
+      h1 {
+        font-size: 50px;
+        margin-bottom: 17px;
+        color: #333;
+      }
+      h2 {
+        font-size: 24px;
+        line-height: 1.6;
+        margin: 30px 0 0 0;
+        margin-bottom: 18px;
+        margin-top: 33px;
+        color: #333;
+      }
+      h3 {
+        font-size: 30px;
+        margin: 10px 0 20px 0;
+        color: #333;
+      }
+      header {
+        width: 640px;
+        margin: auto;
+      }
+      section {
+        width: 640px;
+        margin: auto;
+      }
+      section p {
+        margin-bottom: 27px;
+        font-size: 20px;
+        line-height: 1.6;
+        color: #333;
+      }
+      section img {
+        max-width: 640px;
+      }
+      footer {
+        padding: 0 20px;
+        margin: 50px 0;
+        text-align: center;
+        font-size: 12px;
+      }
+      .aspectRatioPlaceholder {
+        max-width: auto !important;
+        max-height: auto !important;
+      }
+      .aspectRatioPlaceholder-fill {
+        padding-bottom: 0 !important;
+      }
+      header,
+      section[data-field=subtitle] {
+        display: none;
+      }
+      </style></head><body><article class="h-entry">
+<header>
+<h1 class="p-name">SandCat — Update 1</h1>
+</header>
+<section data-field="subtitle" class="p-summary">
+Welcome to the first update for my latest project, SandCat. I have not yet written a true introduction to the project, so you’ll just have…
+</section>
+<section data-field="body" class="e-content">
+<section name="c46c" class="section section--body section--first section--last"><div class="section-divider"><hr class="section-divider"></div><div class="section-content"><div class="section-inner sectionLayout--insetColumn"><h3 name="9cd0" id="9cd0" class="graf graf--h3 graf--leading graf--title">SandCat — Update 1</h3><p name="5d33" id="5d33" class="graf graf--p graf-after--h3">Welcome to the first update for my latest project, SandCat. I have not yet written a true introduction to the project, so you’ll just have to bear with me for now. But — here is the meat of the project. SandCat is the first game ruleset prototyping language. The language aims to expedite the game design process by allowing designers to focus entirely on the core mechanics and rules while ignoring the software requirements. If you want more information on what I mean by this, go read my previous article <a href="https://medium.com/@ryanrothweiler/improving-game-design-process-9e392ebf73af" data-href="https://medium.com/@ryanrothweiler/improving-game-design-process-9e392ebf73af" class="markup--anchor markup--p-anchor" target="_blank">Improving Game Design Process</a>.</p><p name="0b2f" id="0b2f" class="graf graf--p graf-after--p">This is the first update — obviously that implies this is the first of many. These updates are where I plan to discuss language design decisions, planned features, general progress, and really anything else that applies to the project. The updates will be quick, informal, and unpolished. I’m writing these for two reasons: 1. For the reader — to market the project, get the word out, and hopefully get feedback. 2. For myself — to document progress and organize my thoughts.</p><p name="1343" id="1343" class="graf graf--p graf-after--p">Considering these are quick informal updates, everything is first draft and will most likely be changed. Therefore: I strongly encourage the reader to ignore the minute specifics and focus on the long term goal. For example, don’t pay any attention to syntax. I’m not yet worried about syntax. I know it is very rough, sub-optimal, and wildly inconsistent. I aim to prove the core ideas before I refine the specifics.</p><h3 name="39e5" id="39e5" class="graf graf--h3 graf-after--p">Groundwork</h3><p name="6d0e" id="6d0e" class="graf graf--p graf-after--h3">For this first update, I’ll simply introduce the beginnings of the project.</p><p name="acd2" id="acd2" class="graf graf--p graf-after--p">First off, all games needs some kind of state. You can specify state like such,</p><pre name="b3c5" id="b3c5" class="graf graf--pre graf-after--p">Chicken.</pre><p name="eee1" id="eee1" class="graf graf--p graf-after--pre">When played, you get this.</p><figure name="c228" id="c228" class="graf graf--figure graf-after--p"><div class="aspectRatioPlaceholder is-locked" style="max-width: 700px; max-height: 169px;"><div class="aspectRatioPlaceholder-fill" style="padding-bottom: 24.099999999999998%;"></div><img class="graf-image" data-image-id="1*wXnAj9wi88IIrVTdDuoOaw.png" data-width="979" data-height="236" src="https://cdn-images-1.medium.com/max/800/1*wXnAj9wi88IIrVTdDuoOaw.png"></div></figure><p name="3a78" id="3a78" class="graf graf--p graf-after--figure">This is simply a truth statement. It’s difficult to conceptualize without more context. We can add some context by supplying a better name.</p><pre name="adaf" id="adaf" class="graf graf--pre graf-after--p">ChickenHealth.</pre><figure name="0111" id="0111" class="graf graf--figure graf-after--pre"><div class="aspectRatioPlaceholder is-locked" style="max-width: 700px; max-height: 187px;"><div class="aspectRatioPlaceholder-fill" style="padding-bottom: 26.8%;"></div><img class="graf-image" data-image-id="1*mW-MWRWSxk89cemQ1czmOw.png" data-width="979" data-height="262" src="https://cdn-images-1.medium.com/max/800/1*mW-MWRWSxk89cemQ1czmOw.png"></div></figure><p name="4853" id="4853" class="graf graf--p graf-after--figure">But a chicken’s health implies a numerical value. We can specify that also.</p><pre name="fbd2" id="fbd2" class="graf graf--pre graf-after--p">ChickenHealth(10).</pre><figure name="09d0" id="09d0" class="graf graf--figure graf-after--pre"><div class="aspectRatioPlaceholder is-locked" style="max-width: 700px; max-height: 202px;"><div class="aspectRatioPlaceholder-fill" style="padding-bottom: 28.9%;"></div><img class="graf-image" data-image-id="1*HLjJRj_gGGt4aaWvxX_3Rw.png" data-width="979" data-height="283" src="https://cdn-images-1.medium.com/max/800/1*HLjJRj_gGGt4aaWvxX_3Rw.png"></div></figure><p name="2e44" id="2e44" class="graf graf--p graf-after--figure">Great. We have some very basic initial state. Now how do we change that state? For now, that is done through events. They follow the pattern of</p><pre name="e460" id="e460" class="graf graf--pre graf-after--p">// event(EVENT_NAME) - STATE_CHANGING : CONDITIONS<br>event(HurtChicken) - ChickenHealth(ChickenHealth - 1) : conditional(ChickenHealth &gt; 0).</pre><figure name="0ec3" id="0ec3" class="graf graf--figure graf-after--pre"><div class="aspectRatioPlaceholder is-locked" style="max-width: 700px; max-height: 188px;"><div class="aspectRatioPlaceholder-fill" style="padding-bottom: 26.900000000000002%;"></div><img class="graf-image" data-image-id="1*Um7tWop1TJS2hI_XB6QLBg.gif" data-width="978" data-height="263" src="https://cdn-images-1.medium.com/max/800/1*Um7tWop1TJS2hI_XB6QLBg.gif"></div></figure><p name="41f7" id="41f7" class="graf graf--p graf-after--figure">In english, this reads as — this event is called HurtChicken, it sets ChickenHealth to one minus the current ChickenHealth, and it is only possible if ChickenHealth is greater than 0.</p><p name="3cbb" id="3cbb" class="graf graf--p graf-after--p">I think that is a nice start. It’s very rudimentary, but it’s already capable of expressing simple games.</p><h3 name="b5d6" id="b5d6" class="graf graf--h3 graf-after--p">Shield Push</h3><p name="44cf" id="44cf" class="graf graf--p graf-after--h3">Using just these two features, I was able to write a small game called Shield Push.</p><p name="2724" id="2724" class="graf graf--p graf-after--p">This game features a graphical representation of the rules. Don’t worry about that. It is very important to give designers tools to visually organize their game, but I haven’t tackled that challenge yet.</p><p name="9d76" id="9d76" class="graf graf--p graf-after--p">Back to the game. In this game the player can move the red square around, but never outside the bounds of the grid, and never into the black square. The blue rectangle is a shield which, once picked up, allows the player to push the black square only up or down. Below are the rules definition for the game, followed by a gif of the game being played.</p><pre name="8be6" id="8be6" class="graf graf--pre graf-after--p">// Initial state<br>GridMaxX(10).<br>GridMinX(0).<br>GridMaxY(10).<br>GridMinY(0).</pre><pre name="e3b5" id="e3b5" class="graf graf--pre graf-after--pre">PlayerX(2).<br>PlayerY(3).</pre><pre name="97be" id="97be" class="graf graf--pre graf-after--pre">BlockX(3).<br>BlockY(3).</pre><pre name="8cf3" id="8cf3" class="graf graf--pre graf-after--pre">ShieldPosX(5).<br>ShieldPosY(7).</pre><pre name="85f6" id="85f6" class="graf graf--pre graf-after--pre">// Moving player. Can&#39;t move into the block. <br>event(MoveUp) - PlayerY(PlayerY - 1) : <br>conditional(PlayerY &gt; GridMinY) &amp; ! [ conditional(PlayerY - 1 = BlockY) &amp; conditional(PlayerX = BlockX) ].</pre><pre name="43c5" id="43c5" class="graf graf--pre graf-after--pre">event(MoveDown) - PlayerY(PlayerY + 1) : <br>conditional(PlayerY &lt; GridMaxY) &amp; ! [ conditional(PlayerY + 1 = BlockY) &amp; conditional(PlayerX = BlockX) ].</pre><pre name="938b" id="938b" class="graf graf--pre graf-after--pre">event(MoveLeft) - PlayerX(PlayerX - 1) : <br>conditional(PlayerX &gt; GridMinX) &amp; ! [ conditional(PlayerX - 1 = BlockX) &amp; conditional(PlayerY = BlockY) ].</pre><pre name="33c6" id="33c6" class="graf graf--pre graf-after--pre">event(MoveRight) - PlayerX(PlayerX + 1) : <br>conditional(PlayerX &lt; GridMaxX) &amp; ! [ conditional(PlayerX + 1 = BlockX) &amp; conditional(PlayerY = BlockY) ].</pre><pre name="4806" id="4806" class="graf graf--pre graf-after--pre">// Pushing the block.<br>event(PushBlockUp) - PlayerY(PlayerY - 1), BlockY(BlockY - 1) : <br>conditional(PlayerY &gt; GridMinY) &amp; [ conditional(PlayerY - 1 = BlockY) &amp; conditional(PlayerX = BlockX) ] &amp; conditional(BlockY &gt; GridMinY) &amp; conditional(PlayerHoldingShield = 0).</pre><pre name="0ea4" id="0ea4" class="graf graf--pre graf-after--pre">event(PushBlockDown) - PlayerY(PlayerY + 1), BlockY(BlockY + 1) : <br>conditional(PlayerY &lt; GridMaxY) &amp; [ conditional(PlayerY + 1 = BlockY) &amp; conditional(PlayerX = BlockX) ] &amp; conditional(BlockY &lt; GridMaxY) &amp; conditional(PlayerHoldingShield = 0).</pre><pre name="a021" id="a021" class="graf graf--pre graf-after--pre">// Pickingup shield<br>event(PickupShield) - PlayerHoldingShield(0) : <br>conditional(PlayerX = ShieldPosX) &amp; conditional(PlayerY = ShieldPosY).</pre><figure name="e8ca" id="e8ca" class="graf graf--figure graf-after--pre"><div class="aspectRatioPlaceholder is-locked" style="max-width: 565px; max-height: 561px;"><div class="aspectRatioPlaceholder-fill" style="padding-bottom: 99.3%;"></div><img class="graf-image" data-image-id="1*--vLafUg-p3uev8uNJCGhg.gif" data-width="565" data-height="561" src="https://cdn-images-1.medium.com/max/800/1*--vLafUg-p3uev8uNJCGhg.gif"></div></figure><h3 name="a6ef" id="a6ef" class="graf graf--h3 graf-after--figure">Issues and Solutions</h3><p name="da41" id="da41" class="graf graf--p graf-after--h3">This can obviously be improved. There are two big issues I see with this.</p><ul class="postList"><li name="700e" id="700e" class="graf graf--li graf-after--p">There is a lot of repetition in the rules definition. Moving the player up or down is a very similar concept— so the similarities should be compressed and into it’s own reusable unit. The same can be said for the block. Making sure the player does not have the same position as the block should only need to be written once, but currently it’s spread across multiple events.</li><li name="ff5d" id="ff5d" class="graf graf--li graf-after--li">You cannot bundle data. For example, adding a second block is an arduous and monotonous task. This is partially because of the first issue, but also because the data and rules for the block are not bundled together.</li></ul><p name="26f8" id="26f8" class="graf graf--p graf-after--li graf--trailing">These are my next two big tasks: reduce the repetition of similar rules and allow for easier bundling and duplicating of data. I think this is off to a good start but there is still tons to do.</p></div></div></section>
+</section>
+<footer><p class="p-tags">Tagged in <a href="https://medium.com/tag/game-design" class="p-tag">Game Design</a>, <a href="https://medium.com/tag/game-development" class="p-tag">Game Development</a></p><p>By <a href="https://medium.com/@ryanrothweiler" class="p-author h-card">Ryan Rothweiler</a> on <a href="https://medium.com/p/e7f4fcf95899"><time class="dt-published" datetime="2017-04-03T18:37:29.509Z">April 3, 2017</time></a>.</p><p>Exported from <a href="https://medium.com">Medium</a> on June 22, 2017.</p></footer></article>
+
+</body></html>

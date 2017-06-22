@@ -56,6 +56,15 @@ line {
   width: 100%;
 }
 
+.PostDate {
+  padding-top: 31px;
+
+}
+
+.BodyCopy {
+  font-family: serif;
+  font-size: 16pt;
+}
 
 
 /* unvisited link */
@@ -81,7 +90,7 @@ a:visited {
 
 .code
 {
-  font-family: 400 .8125em/1.4375, 'Menlo', 'Consolas', 'DejaVu Sans Mono' monospace;
+  font-family: 'Courier New';
   background: #F1F1F1;
   border: 1px solid #E1E1E1;
   border-radius: 4px; 
