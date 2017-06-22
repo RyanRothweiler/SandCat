@@ -46,6 +46,7 @@
 <!--  -->
 
 
+
         <div class="container">
           <div class="row">
             <div class="six columns">
@@ -53,20 +54,8 @@
             </div>
             <div class="six columns">
 
-<pre><code>PegLeft, PegMiddle, PegRight = 
-    {LevelOne = 0, LevelTwo = 0, 
-    LevelThree = 0, LevelFour = 0}.
- 
-DropOnLeft = PlayerAction 
-    does DropOnPeg(PegLeft) 
-    if not DiscHeld = 0.
-DropOnMiddle = PlayerAction 
-    does DropOnPeg(PegMiddle)
-    if not DiscHeld = 0.
-DropOnRight = PlayerAction 
-    does DropOnPeg(PegRight) 
-    if not DiscHeld = 0.
-</code></pre>
+
+          <p>SandCat is a game rules description language designed to empower game designers. The language allows game rules to be specified in a rigorous and declarative way. This means designers can focus on the core design of their game, while entirely ignoring the software that allows their game to be played. However; because games are meant to be played, that software is still very necessary. Therefore SandCat also features a library of supporting code to allow someone to play a game encoded in SandCat rules.</p>
 
             </div>
           </div>
@@ -74,16 +63,27 @@ DropOnRight = PlayerAction
 
         <div class="container">
           <div class="row">
+          <p class="code">PegLeft, PegMiddle, PegRight =  {LevelOne = 0, LevelTwo = 0, LevelThree = 0, LevelFour = 0}. <br>
+<br>
+DropOnLeft = PlayerAction does DropOnPeg(PegLeft) if not DiscHeld = 0. <br>
+DropOnMiddle = PlayerAction does DropOnPeg(PegMiddle)if not DiscHeld = 0. <br>
+DropOnRight = PlayerAction does DropOnPeg(PegRight) if not DiscHeld = 0. <br> </p>
+
+          </div>
+        </div>
+
+        <div class="container">
+          <div class="row">
             <div class="four columns">
-              <h4 class="border-bottom">Archivable</h4>
+              <h5 class="border-bottom">Archivable</h5>
               <p>Beacuse SandCat is a declarative language</p>
             </div>
             <div class="four columns">
-              <h4 class="border-bottom">Expressive</h4>
+              <h5 class="border-bottom">Expressive</h5>
               <p>Hey this is some content! Hey this is some content! Hey this is some content! Hey this is some content! Hey this is some content!</p>
             </div>
             <div class="four columns">
-              <h4 class="border-bottom">Iterative</h4>
+              <h5 class="border-bottom">Iterative</h5>
               <p>Hey this is some content! Hey this is some content! Hey this is some content! Hey this is some content! Hey this is some content!</p>
             </div>
           </div>
@@ -99,7 +99,7 @@ DropOnRight = PlayerAction
           <div class="row">
           <div class="clearfix mxn2">
             <div class="sm-col sm-col-6 md-col-5 lg-col-4 px2">
-              <h4><strong>Read the latest update</strong></h4>
+              <h5><strong>Read the latest update</strong></h5>
             </div>
 
             <div class="sm-col sm-col-6 md-col-7 lg-col-8 px2">
@@ -122,7 +122,7 @@ DropOnRight = PlayerAction
           <div class="row">
           <div class="clearfix mxn2">
             <div class="sm-col sm-col-6 md-col-5 lg-col-4 px2">
-              <h4><strong>Play SandCat games</strong></h4>
+              <h5><strong>Play SandCat games</strong></h5>
             </div>
 
             <div class="sm-col sm-col-6 md-col-7 lg-col-8 px2">

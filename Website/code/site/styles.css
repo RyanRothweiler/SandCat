@@ -79,3 +79,11 @@ a:visited {
     text-decoration: none;
 }
 
+.code
+{
+  font-family: 400 .8125em/1.4375, 'Menlo', 'Consolas', 'DejaVu Sans Mono' monospace;
+  background: #F1F1F1;
+  border: 1px solid #E1E1E1;
+  border-radius: 4px; 
+  padding: 1rem 1.5rem; 
+}

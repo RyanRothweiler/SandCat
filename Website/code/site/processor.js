@@ -40,9 +40,9 @@ function GetPostHTML(index) {
 
   // title
   var finalHTML = "";
-  finalHTML += "<h5><a href='http://google.com'>"
+  finalHTML += "<h5><strong><a href='http://google.com'>"
   finalHTML += NewsTitles[index];
-  finalHTML += "</a></h5>";
+  finalHTML += "</a></strong></h5>";
 
   // sample
   finalHTML += "<p>";
