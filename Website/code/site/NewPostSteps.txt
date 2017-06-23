@@ -1,0 +1,4 @@
+1. Replace 
+	<p>
+	with 
+	<p class="BodyCopy">
