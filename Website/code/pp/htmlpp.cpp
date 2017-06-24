@@ -394,6 +394,20 @@ struct post {
 	string Sample;
 };
 
+void AddChar(char Character, char* Array, int32* Index)
+{
+	Array[*Index] = Character;
+	(*Index)++;
+}
+
+void AddString(string String, char* Array, int32* ArrayIndex)
+{
+	int32 Len = StringLength(String);
+	for (int32 Index = 0; Index < Len; Index++) {
+		AddChar(String.CharArray[Index], Array, ArrayIndex);
+	}
+}
+
 void main ()
 {
 
@@ -405,7 +419,6 @@ void main ()
 	int32 NextPost = 0;
 
 	// The total amount of mem we need for the final js file.
-	int32 JSTotalSizeNeeded = 0;
 
 	int32 PostIndex = 1;
 	printf("---------------------------------- \n");
@@ -429,8 +442,6 @@ void main ()
 
 			PostCreating->HTMLBody = (char*)malloc(FileSize.QuadPart);
 			ZeroMemory(PostCreating->HTMLBody, FileSize.QuadPart);
-			JSTotalSizeNeeded += FileSize.QuadPart;
-
 
 			LPDWORD BytesRead = {};
 			DWORD BytesToRead = FileSize.QuadPart;
@@ -454,7 +465,6 @@ void main ()
 				PostCreating->HTMLBody[Index] = ' ';
 
 				PostCreating->Title = Title;
-				JSTotalSizeNeeded += ARRAY_SIZE(PostCreating->Title.CharArray, char);
 			}
 
 			// Get post date
@@ -477,12 +487,10 @@ void main ()
 				}
 
 				PostCreating->Date = Title;
-				JSTotalSizeNeeded += ARRAY_SIZE(PostCreating->Date.CharArray, char);
 			}
 
 			// PostCreating->HTMLBody = (char*)malloc()
 			PostCreating->Sample = "Sample goes here. Sample goes here. Sample goes here. Sample goes here. Sample goes here.";
-			JSTotalSizeNeeded += ARRAY_SIZE(PostCreating->Sample.CharArray, char);
 
 			string PostIndexStr = PostIndex;
 			PostIndex++;
@@ -505,14 +513,91 @@ void main ()
 	// Now place all this info into the js file
 
 	HANDLE JSFile = CreateFile("../site/processor_base.js", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	int32 FileSize = GetFileSize(JSFile, NULL);
-	char* JSData = (char*)malloc(FileSize);
+	int32 JSFileSize = GetFileSize(JSFile, NULL);
+	char* JSData = (char*)malloc(JSFileSize);
 	LPDWORD BytesRead = {};
-	bool Success = ReadFile(JSFile, JSData, FileSize, BytesRead, NULL);
+	bool Success = ReadFile(JSFile, JSData, JSFileSize, BytesRead, NULL);
+
+	// Create the titles string
+	int32 TitlesLength = 5000;
+	int32 TitlesCount = 0;
+	char* Titles = (char*)malloc(TitlesLength);
+	ZeroMemory(Titles, TitlesLength);
+
+	AddString("var NewsTitles = [", Titles, &TitlesCount);
+	for (int32 Index = 0; Index < NextPost; Index++) {
+		AddChar('\'', Titles, &TitlesCount);
+		AddString(Posts[Index].Title, Titles, &TitlesCount);
+
+		AddChar('\'', Titles, &TitlesCount);
+		if (Index != NextPost - 1) {
+			AddChar(',', Titles, &TitlesCount);
+		}
+	}
+	AddString("];", Titles, &TitlesCount);
 
 
+	// Create the dates string
+	int32 DatesLength = 5000;
+	int32 DatesCount = 0;
+	char* Dates = (char*)malloc(DatesLength);
+	ZeroMemory(Dates, DatesLength);
+
+	AddString("var NewsDates = [", Dates, &DatesCount);
+	for (int32 Index = 0; Index < NextPost; Index++) {
+		AddChar('\'', Dates, &DatesCount);
+		AddString(Posts[Index].Date, Dates, &DatesCount);
+
+		AddChar('\'', Dates, &DatesCount);
+		if (Index != NextPost - 1) {
+			AddChar(',', Dates, &DatesCount);
+		}
+	}
+	AddString("];", Dates, &DatesCount);
 
 
+	// Create the samples string
+	int32 SamplesLength = 5000;
+	int32 SamplesCount = 0;
+	char* Samples = (char*)malloc(SamplesLength);
+	ZeroMemory(Samples, SamplesLength);
+
+	AddString("var NewsSample = [", Samples, &SamplesCount);
+	for (int32 Index = 0; Index < NextPost; Index++) {
+		AddChar('\'', Samples, &SamplesCount);
+		AddString(Posts[Index].Sample, Samples, &SamplesCount);
+
+		AddChar('\'', Samples, &SamplesCount);
+		if (Index != NextPost - 1) {
+			AddChar(',', Samples, &SamplesCount);
+		}
+	}
+	AddString("];", Samples, &SamplesCount);
+
+
+	int64 TotalJSSize = 0;
+	TotalJSSize += TitlesCount;
+	TotalJSSize += DatesCount;
+	TotalJSSize += SamplesCount;
+	TotalJSSize += JSFileSize;
+
+	char* FinalJSPointer = (char*)malloc(TotalJSSize);
+	char* FinalJS = FinalJSPointer;
+	memcpy(FinalJSPointer, Titles, TitlesCount);
+	FinalJSPointer += TitlesCount;
+
+	memcpy(FinalJSPointer, Dates, DatesCount);
+	FinalJSPointer += DatesCount;
+
+	memcpy(FinalJSPointer, Samples, SamplesCount);
+	FinalJSPointer += SamplesCount;
+
+	memcpy(FinalJSPointer, JSData, JSFileSize);
+	FinalJSPointer += JSFileSize;
+
+	HANDLE FinalJSFile = CreateFile("../site/processor.js", GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	DWORD BytesWritten = {};
+	bool SuccessWrite = WriteFile(FinalJSFile, FinalJS, TotalJSSize, &BytesWritten, NULL);
 
 	printf("Done :)");
 }
