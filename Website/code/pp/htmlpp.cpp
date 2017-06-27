@@ -568,12 +568,12 @@ void main ()
 	ZeroMemory(Titles, TitlesLength);
 
 	AddString("var NewsTitles = [", Titles, &TitlesCount);
-	for (int32 Index = 0; Index < NextPost; Index++) {
+	for (int32 Index = NextPost - 1; Index >= 0; Index--) {
 		AddChar('\'', Titles, &TitlesCount);
 		AddString(Posts[Index].Title, Titles, &TitlesCount);
 
 		AddChar('\'', Titles, &TitlesCount);
-		if (Index != NextPost - 1) {
+		if (Index != 0) {
 			AddChar(',', Titles, &TitlesCount);
 		}
 	}
@@ -587,12 +587,12 @@ void main ()
 	ZeroMemory(Dates, DatesLength);
 
 	AddString("var NewsDates = [", Dates, &DatesCount);
-	for (int32 Index = 0; Index < NextPost; Index++) {
+	for (int32 Index = NextPost - 1; Index >= 0; Index--) {
 		AddChar('\'', Dates, &DatesCount);
 		AddString(Posts[Index].Date, Dates, &DatesCount);
 
 		AddChar('\'', Dates, &DatesCount);
-		if (Index != NextPost - 1) {
+		if (Index != 0) {
 			AddChar(',', Dates, &DatesCount);
 		}
 	}
@@ -606,12 +606,12 @@ void main ()
 	ZeroMemory(Samples, SamplesLength);
 
 	AddString("var NewsSample = [", Samples, &SamplesCount);
-	for (int32 Index = 0; Index < NextPost; Index++) {
+	for (int32 Index = NextPost - 1; Index >= 0; Index--) {
 		AddChar('\'', Samples, &SamplesCount);
 		AddString(Posts[Index].Sample, Samples, &SamplesCount);
 
 		AddChar('\'', Samples, &SamplesCount);
-		if (Index != NextPost - 1) {
+		if (Index != 0) {
 			AddChar(',', Samples, &SamplesCount);
 		}
 	}
