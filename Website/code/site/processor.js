@@ -1,4 +1,4 @@
-var NewsTitles = ['Update One','Update Two'];var NewsDates = ['4/3/2017','4/22/2017'];var NewsSample = ['Sample goes here. Sample goes here. Sample goes here. Sample goes here. Sample goes here.','Sample goes here. Sample goes here. Sample goes here. Sample goes here. Sample goes here.'];
+var NewsTitles = ['Update One','Update Two','Good news everybody'];var NewsDates = ['4/3/2017','4/22/2017','TODAY'];var NewsSample = ['Sample goes here. Sample goes here. Sample goes here. Sample goes here. Sample goes here.','Sample goes here. Sample goes here. Sample goes here. Sample goes here. Sample goes here.','Sample goes here. Sample goes here. Sample goes here. Sample goes here. Sample goes here.'];
 ///////////////////
 
 //var NewsTitles = ['Hey! News title one!', 'News title two!', 'News title three'];
