@@ -46,7 +46,9 @@ function GetPostHTML(index) {
 
   // title
   var finalHTML = "";
-  finalHTML += "<h5><strong><a href='http://google.com'>"
+  finalHTML += '<h5><strong><a href="';
+  finalHTML += NewsTitles[index] + '.html"';
+  finalHTML += '>';
   finalHTML += NewsTitles[index];
   finalHTML += "</a></strong></h5>";
 
@@ -66,7 +68,9 @@ function GetNewsPostHTML(index) {
   finalHTML+= '<div class="row">';
   finalHTML+= '<div class="clearfix mxn2">';
   finalHTML+= '<div class="sm-col sm-col-6 md-col-5 lg-col-4 px2">';
-  finalHTML+= "<h5><a href='http://google.com'><strong>";
+  finalHTML+= '<h5><a href="';
+  finalHTML+= NewsTitles[index] + '.html"';
+  finalHTML+= "><strong>";
   finalHTML+= NewsTitles[index];
   finalHTML+= "</strong></a></h5>";
   finalHTML+= "<h6>";

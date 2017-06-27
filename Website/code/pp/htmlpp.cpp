@@ -393,6 +393,7 @@ struct post {
 	string Date;
 	string Title;
 	string Sample;
+	string PostFileName;
 };
 
 void AddChar(char Character, char* Array, int32* Index)
@@ -419,7 +420,31 @@ void main ()
 	post Posts[100];
 	int32 NextPost = 0;
 
-	// The total amount of mem we need for the final js file.
+	bool Success = false;
+	DWORD BytesRead;
+
+
+	// Get post top data
+	char* PostTopData = {};
+	int32 PostTopSize = 0;
+	{
+		HANDLE TopFileHandle = CreateFile("../site/newsPost_top.html", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		PostTopSize = GetFileSize(TopFileHandle, NULL);
+		PostTopData = (char*)malloc(PostTopSize);
+		ZeroMemory(PostTopData, PostTopSize);
+		Success = ReadFile(TopFileHandle, PostTopData, PostTopSize, &BytesRead, NULL);
+	}
+
+	// Get post bottom data
+	char* PostBottomData = {};
+	int32 PostBottomSize = 0;
+	{
+		HANDLE TopFileHandle = CreateFile("../site/newsPost_bottom.html", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		PostBottomSize = GetFileSize(TopFileHandle, NULL);
+		PostBottomData = (char*)malloc(PostBottomSize);
+		ZeroMemory(PostBottomData, PostBottomSize);
+		Success = ReadFile(TopFileHandle, PostBottomData, PostBottomSize, &BytesRead, NULL);
+	}
 
 	int32 PostIndex = 1;
 	printf("---------------------------------- \n");
@@ -491,29 +516,21 @@ void main ()
 				PostCreating->Date = Title;
 			}
 
-			// Remove all \n from the html body
-			bool32 InCodeBlock = false;
-			{
-				for (int32 Index = 0; Index < PostCreating->HTMLBodySize; Index++) {
+			// Create the post html page
+			int32 TotalPostSize = PostTopSize + PostBottomSize + PostCreating->HTMLBodySize;
+			char* TotalPostHTML = (char*)malloc(TotalPostSize);
+			void* TotalPostTop = TotalPostHTML;
+			memcpy(TotalPostHTML, PostTopData, PostTopSize);
+			TotalPostHTML += PostTopSize;
+			memcpy(TotalPostHTML, PostCreating->HTMLBody, PostCreating->HTMLBodySize);
+			TotalPostHTML += PostCreating->HTMLBodySize;
+			memcpy(TotalPostHTML, PostBottomData, PostBottomSize);
 
-					if (Index > 10) {
-						if (PostCreating->HTMLBody[Index - 3] == 'p' &&
-						        PostCreating->HTMLBody[Index - 2] == 'r' &&
-						        PostCreating->HTMLBody[Index - 1] == 'e' &&
-						        PostCreating->HTMLBody[Index] == '>') {
-							InCodeBlock = !InCodeBlock;
-						}
-					}
+			string PostFileName = "../site/" + PostCreating->Title + ".html";
+			HANDLE PostFileHandle = CreateFile(PostFileName.CharArray, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+			DWORD BytesWritten = {};
+			Success = WriteFile(PostFileHandle, TotalPostTop, TotalPostSize, &BytesWritten, NULL);
 
-					if (PostCreating->HTMLBody[Index] == '\n' && !InCodeBlock) {
-						PostCreating->HTMLBody[Index] = ' ';
-					}
-
-					if (PostCreating->HTMLBody[Index] == '\'') {
-						PostCreating->HTMLBody[Index] = '\\\'';
-					}
-				}
-			}
 
 			// PostCreating->HTMLBody = (char*)malloc()
 			PostCreating->Sample = "Sample goes here. Sample goes here. Sample goes here. Sample goes here. Sample goes here.";
@@ -541,8 +558,8 @@ void main ()
 	HANDLE JSFile = CreateFile("../site/processor_base.js", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	int32 JSFileSize = GetFileSize(JSFile, NULL);
 	char* JSData = (char*)malloc(JSFileSize);
-	LPDWORD BytesRead = {};
-	bool Success = ReadFile(JSFile, JSData, JSFileSize, BytesRead, NULL);
+	BytesRead = {};
+	Success = ReadFile(JSFile, JSData, JSFileSize, &BytesRead, NULL);
 
 	// Create the titles string
 	int32 TitlesLength = 5000;
@@ -601,38 +618,11 @@ void main ()
 	AddString("];", Samples, &SamplesCount);
 
 
-	// Create the htmlbody string
-	int32 BodyLength = 0;
-	for (int32 Index = 0; Index < NextPost; Index++) {
-		BodyLength += Posts[Index].HTMLBodySize + 50;
-	}
-
-	int32 BodyCount = 0;
-	char* Body = (char*)malloc(BodyLength + 100);
-	ZeroMemory(Body, BodyLength);
-
-	AddString("var HTMLBody = [", Body, &BodyCount);
-	for (int32 Index = 0; Index < NextPost; Index++) {
-		AddChar('\'', Body, &BodyCount);
-
-		char* BodyStart = Body + BodyCount;
-		memcpy(BodyStart, Posts[Index].HTMLBody, Posts[Index].HTMLBodySize);
-		BodyCount += Posts[Index].HTMLBodySize;
-
-		AddChar('\'', Body, &BodyCount);
-		if (Index != NextPost - 1) {
-			AddChar(',', Body, &BodyCount);
-		}
-	}
-	AddString("];", Body, &BodyCount);
-
-
 	int64 TotalJSSize = 0;
 	TotalJSSize += TitlesCount;
 	TotalJSSize += DatesCount;
 	TotalJSSize += SamplesCount;
 	TotalJSSize += JSFileSize;
-	TotalJSSize += BodyCount;
 
 	char* FinalJSPointer = (char*)malloc(TotalJSSize);
 	char* FinalJS = FinalJSPointer;
@@ -644,9 +634,6 @@ void main ()
 
 	memcpy(FinalJSPointer, Samples, SamplesCount);
 	FinalJSPointer += SamplesCount;
-
-	memcpy(FinalJSPointer, Body, BodyCount);
-	FinalJSPointer += BodyCount;
 
 	memcpy(FinalJSPointer, JSData, JSFileSize);
 	FinalJSPointer += JSFileSize;
