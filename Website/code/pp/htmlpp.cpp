@@ -389,6 +389,7 @@ void StringCopy(char* Source, char* Dest)
 
 struct post {
 	char *HTMLBody;
+	int32 HTMLBodySize;
 	string Date;
 	string Title;
 	string Sample;
@@ -442,6 +443,7 @@ void main ()
 
 			PostCreating->HTMLBody = (char*)malloc(FileSize.QuadPart);
 			ZeroMemory(PostCreating->HTMLBody, FileSize.QuadPart);
+			PostCreating->HTMLBodySize = FileSize.QuadPart;
 
 			LPDWORD BytesRead = {};
 			DWORD BytesToRead = FileSize.QuadPart;
@@ -487,6 +489,30 @@ void main ()
 				}
 
 				PostCreating->Date = Title;
+			}
+
+			// Remove all \n from the html body
+			bool32 InCodeBlock = false;
+			{
+				for (int32 Index = 0; Index < PostCreating->HTMLBodySize; Index++) {
+
+					if (Index > 10) {
+						if (PostCreating->HTMLBody[Index - 3] == 'p' &&
+						        PostCreating->HTMLBody[Index - 2] == 'r' &&
+						        PostCreating->HTMLBody[Index - 1] == 'e' &&
+						        PostCreating->HTMLBody[Index] == '>') {
+							InCodeBlock = !InCodeBlock;
+						}
+					}
+
+					if (PostCreating->HTMLBody[Index] == '\n' && !InCodeBlock) {
+						PostCreating->HTMLBody[Index] = ' ';
+					}
+
+					if (PostCreating->HTMLBody[Index] == '\'') {
+						PostCreating->HTMLBody[Index] = '\\\'';
+					}
+				}
 			}
 
 			// PostCreating->HTMLBody = (char*)malloc()
@@ -575,11 +601,38 @@ void main ()
 	AddString("];", Samples, &SamplesCount);
 
 
+	// Create the htmlbody string
+	int32 BodyLength = 0;
+	for (int32 Index = 0; Index < NextPost; Index++) {
+		BodyLength += Posts[Index].HTMLBodySize + 50;
+	}
+
+	int32 BodyCount = 0;
+	char* Body = (char*)malloc(BodyLength + 100);
+	ZeroMemory(Body, BodyLength);
+
+	AddString("var HTMLBody = [", Body, &BodyCount);
+	for (int32 Index = 0; Index < NextPost; Index++) {
+		AddChar('\'', Body, &BodyCount);
+
+		char* BodyStart = Body + BodyCount;
+		memcpy(BodyStart, Posts[Index].HTMLBody, Posts[Index].HTMLBodySize);
+		BodyCount += Posts[Index].HTMLBodySize;
+
+		AddChar('\'', Body, &BodyCount);
+		if (Index != NextPost - 1) {
+			AddChar(',', Body, &BodyCount);
+		}
+	}
+	AddString("];", Body, &BodyCount);
+
+
 	int64 TotalJSSize = 0;
 	TotalJSSize += TitlesCount;
 	TotalJSSize += DatesCount;
 	TotalJSSize += SamplesCount;
 	TotalJSSize += JSFileSize;
+	TotalJSSize += BodyCount;
 
 	char* FinalJSPointer = (char*)malloc(TotalJSSize);
 	char* FinalJS = FinalJSPointer;
@@ -591,6 +644,9 @@ void main ()
 
 	memcpy(FinalJSPointer, Samples, SamplesCount);
 	FinalJSPointer += SamplesCount;
+
+	memcpy(FinalJSPointer, Body, BodyCount);
+	FinalJSPointer += BodyCount;
 
 	memcpy(FinalJSPointer, JSData, JSFileSize);
 	FinalJSPointer += JSFileSize;

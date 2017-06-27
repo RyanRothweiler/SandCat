@@ -36,7 +36,10 @@ function PageLoad(pageName) {
     for (index = 0; index < NewsTitles.length; index++) {
       document.getElementById("posts").innerHTML += GetNewsPostHTML(index);
     }
-  }
+  } else if (pageName == "NewsPost") {
+      document.getElementById("Title").innerHTML = NewsTitles[0];
+      document.getElementById("Date").innerHTML = NewsDates[0];
+    }
 }
 
 function GetPostHTML(index) {
