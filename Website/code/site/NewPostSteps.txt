@@ -1,4 +1,3 @@
-1. Replace 
-	<p>
-	with 
-	<p class="BodyCopy">
+1. Replace <p> with <p class="BodyCopy">
+2. Replace ol with ul
+3. Replace <ul> with <ul class="BodyCopy">

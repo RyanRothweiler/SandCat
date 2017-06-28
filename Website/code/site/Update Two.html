@@ -56,7 +56,7 @@
           <div class="row">
           <div class="nine columns">
 
-<!-- post comes after this -->                   
+<!-- post comes after this -->                                                                                                   
 
 <!-- post title here  -->
 <h1><strong id="Title">Update Two</strong></h1>
@@ -64,7 +64,7 @@
            </div>
 
            <div class="three columns PostDate">
-<h6 id="Date">4/3/2017</h6>
+<h6 id="Date">4/22/2017</h6>
 
            </div>
 
@@ -77,89 +77,148 @@
 <!--  -->
 
 
-<!-- body stuff here -->
-<p class="BodyCopy">Welcome to the first update for my latest project, SandCat. I have not yet written a true introduction to the project, so you’ll just have to bear with me for now. But-here is the meat of the project. SandCat is the first game ruleset prototyping language. The language aims to expedite the game design process by allowing designers to focus entirely on the core mechanics and rules while ignoring the software requirements. If you want more information on what I mean by this, go read my previous article <a href="https://medium.com/@ryanrothweiler/improving-game-design-process-9e392ebf73af">Improving Game Design Process</a>.</p>
-<p class="BodyCopy">This is the first update—obviously that implies this is the first of many. These updates are where I plan to discuss language design decisions, planned features, general progress, and really anything else that applies to the project. The updates will be quick, informal, and unpolished. I’m writing these for two reasons: 1. For the reader — to market the project, get the word out, and hopefully get feedback. 2. For myself — to document progress and organize my thoughts.</p>
-<p class="BodyCopy">Considering these are quick informal updates, everything is first draft and will most likely be changed. Therefore: I strongly encourage the reader to ignore the minute specifics and focus on the long term goal. For example, don’t pay any attention to syntax. I’m not yet worried about syntax. I know it is very rough, sub-optimal, and wildly inconsistent. I aim to prove the core ideas before I refine the specifics.</p>
-<h3><a id="Groundwork_9"></a>Groundwork</h3>
-<p class="BodyCopy">For this first update, I’ll simply introduce the beginnings of the project.</p>
-<p class="BodyCopy">First off, all games needs some kind of state. You can specify state like such,</p>
-<p class="code">Chicken.</p>
-<p class="BodyCopy">When played, you get this.</p>
-<p class="BodyCopy"><img src="https://cdn-images-1.medium.com/max/800/1*wXnAj9wi88IIrVTdDuoOaw.png" alt=""></p>
-<p class="BodyCopy">This is simply a truth statement. It’s difficult to conceptualize without more context. We can add some context by supplying a better name.</p>
-<p class="code">ChickenHealth.</p>
-<p class="BodyCopy"><img src="https://cdn-images-1.medium.com/max/800/1*mW-MWRWSxk89cemQ1czmOw.png" alt=""></p>
-<p class="BodyCopy">But a chicken’s health implies a numerical value. We can specify that also.</p>
-<p class="code">ChickenHealth(10).</p>
-<p class="BodyCopy"><img src="https://cdn-images-1.medium.com/max/800/1*HLjJRj_gGGt4aaWvxX_3Rw.png" alt=""></p>
-<p class="BodyCopy">Great. We have some very basic initial state. Now how do we change that state? For now, that is done through events. They follow the pattern of</p>
-<p class="code">// event(EVENT_NAME) - STATE_CHANGING : CONDITIONS  
-event(HurtChicken) - ChickenHealth(ChickenHealth - 1) : conditional(ChickenHealth &gt; 0).</p>
-<p class="BodyCopy"><img src="https://cdn-images-1.medium.com/max/800/1*Um7tWop1TJS2hI_XB6QLBg.gif" alt=""></p>
-<p class="BodyCopy">In english, this reads as–this event is called HurtChicken, it sets ChickenHealth to one minus the current ChickenHealth, and it is only possible if ChickenHealth is greater than 0.</p>
-<p class="BodyCopy">I think that is a nice start. It’s very rudimentary, but it’s already capable of expressing simple games.</p>
-<h3><a id="Shield_Push_44"></a>Shield Push</h3>
-<p class="BodyCopy">Using just these two features, I was able to write a small game called Shield Push.</p>
-<p class="BodyCopy">This game features a graphical representation of the rules. Don’t worry about that. It is very important to give designers tools to visually organize their game, but I haven’t tackled that challenge yet.</p>
-<p class="BodyCopy">Back to the game. In this game the player can move the red square around, but never outside the bounds of the grid, and never into the black square. The blue rectangle is a shield which, once picked up, allows the player to push the black square only up or down. Below are the rules definition for the game, followed by a gif of the game being played.</p>
+<!-- body stuff here --><p class="BodyCopy">Welcome to the second update for SandCat. In short, SandCat is a game description language which aims to empower game designers, allowing them to focus on the game instead of the software. <a href="https://medium.com/@ryanrothweiler/sandcat-update-1-e7f4fcf95899">You can read update one here.</a> Read update 1 or my article titled <a href="https://medium.com/@ryanrothweiler/improving-game-design-process-9e392ebf73af">Improving Game Design Process</a> if you want more information about SandCat.</p>
+<p class="BodyCopy">Also a quick disclaimer. I hope this language will be readable by non-programmers. As such, I attempt to explain the concepts without reliance on programming knowledge. Unfortunately this isn’t entirely possible. As a warning, I’m sure programmers will feel annoyed at the excessive explanations, while non-programmers will be annoyed at the lack of explanations.</p>
+<p class="BodyCopy">Lets get to the update.</p>
+<h3><a id="Technical_7"></a>Technical</h3>
+<p class="BodyCopy">The first biggest change is entirely technical, and not related to the language itself. I’ve moved from a haphazard blend of parsing and lexing the rules to the traditional hard separation of the two. The old blend was messy and made simple syntactical changes a pain. This improvement is only interesting because it allows for easier syntactical error checking. Currently there is nothing to help designers to fix their syntax, something which is usually done with simple error reporting. This feature should be done soon.</p>
+<h3><a id="Language_11"></a>Language</h3>
+<h4><a id="Action_Syntax_13"></a>Action Syntax</h4>
+<p class="BodyCopy">First, I’ve changed the syntax of player initiated actions (previously called events). As a note, lines that start with an exclamation point are comments, they’re completely ignored by the parser.</p>
+<pre><code>
+! Old
+event(HurtChicken) - ChickenHealth(ChickenHealth - 1) : conditional(ChickenHealth > 0).
 
+! New
+action(HurtChicken) does ChickenHealth(ChickenHealth - 1) if ChickenHealth > 0.
 
-
-<pre><code>// Initial state  
-GridMaxX(10).  
-GridMinX(0).  
-GridMaxY(10).  
-GridMinY(0).
-
-PlayerX(2).  
-PlayerY(3). 
-
-BlockX(3).  
-BlockY(3).
-
-ShieldPosX(5).  
-ShieldPosY(7).
-
-// Moving player. Can't move into the block.   
-event(MoveUp) - PlayerY(PlayerY - 1) : conditional(PlayerY GridMinY) 
-! [ conditional(PlayerY - 1 = BlockY) conditional(PlayerX = BlockX) ].
-
-event(MoveDown) - PlayerY(PlayerY + 1) : conditional(PlayerY GridMaxY) 
-! [ conditional(PlayerY + 1 = BlockY) conditional(PlayerX = BlockX) ].
-
-event(MoveLeft) - PlayerX(PlayerX - 1) : conditional(PlayerX GridMinX) 
-! [ conditional(PlayerX - 1 = BlockX) conditional(PlayerY = BlockY) ].
-
-event(MoveRight) - PlayerX(PlayerX + 1) : conditional(PlayerX GridMaxX) 
-! [ conditional(PlayerX + 1 = BlockX) conditional(PlayerY = BlockY) ].
-
-// Pushing the block.  
-event(PushBlockUp) - PlayerY(PlayerY - 1), BlockY(BlockY - 1) :   
-conditional(PlayerY GridMinY) [ conditional(PlayerY - 1 = BlockY) 
-conditional(PlayerX = BlockX) ] conditional(BlockY GridMinY) conditional(PlayerHoldingShield = 0).
-
-event(PushBlockDown) - PlayerY(PlayerY + 1), BlockY(BlockY + 1) :   
-conditional(PlayerY GridMaxY) [ conditional(PlayerY + 1 = BlockY) 
-conditional(PlayerX = BlockX) ] conditional(BlockY GridMaxY) conditional(PlayerHoldingShield = 0).
-
-// Pickingup shield  
-event(PickupShield) - PlayerHoldingShield(0) :   
-conditional(PlayerX = ShieldPosX) &amp; conditional(PlayerY = ShieldPosY).
+! White space isn't necessary, but helps for longer actions
+action(HurtChicken) 
+	does  ChickenHealth(ChickenHealth - 1) 
+	if    ChickenHealth > 0.
 </code></pre>
 
+<p class="BodyCopy">When possible, I want to move toward a more human language syntax. I hope it will help reduce the barrier of entry for designers without programming experience. I find that excessive reliance on human language can make the syntax more confusing and less readable, however: I think the switch to a human language is much stronger here.</p>
+<h4><a id="Dot_Notation_and Methods_19"></a>Dot Notation and Methods</h4>
+<p class="BodyCopy">I’ve added two new language features. First is dot notation, and the second is methods.</p>
+<p class="BodyCopy">Traditional programmers will be familiar with dot notation. It’s simply a way to group pieces of data. Without dot notation, pieces of data which are similar will need to be manually duplicated.</p>
+<p class="BodyCopy">Lets imagine a worker placement game. Each action space has some resources on it and more are added each round, but only up to a maximum. Players can place workers on the action space to claim the resources, though workers cannot be stacked; the player can only place a worker on a space which does not already have a worker.</p>
+<p class="BodyCopy">Lets start with only three action spaces, a coal mine, a wheat field, and a gold mine. A designer could specify that state like such.</p>
+<pre><code>
+CoalMine_Current(0).
+CoalMine_Addition(0).
+CoalMine_Maximum(0).
+CoalMine_SpaceTaken(0).
+
+WheatField_Current(0).
+WheatField_Addition(0).
+WheatField_Maximum(0).
+WheatField_SpaceTaken(0).
+
+GoldMine_Current(0).
+GoldMine_Addition(0).
+GoldMine_Maximum(0).
+GoldMine_SpaceTaken(0).
+</code></pre>
+
+<p class="BodyCopy">Unfortunately, if the designer wants to add another action space, they need to duplicate all four lines — additionally — if the designer wants to add something new to all the spaces, they must copy and paste that feature for each action space. Dot notation fixes all this by allowing designers to easily group and duplicate data. The above twelve lines does the same as line two in the code below.</p>
+<pre><code>
+! State Definition
+CoalMine, WheatField, GoldMine : [Current(0), Addition(0), Maximum(0), SpaceTaken(0)].
+
+! Can access like such
+CoalMine'Current(10).
+WheatField'Current(10).
+</code></pre>
+<p class="BodyCopy">This is a big improvement. Designers can easily add new action spaces, and adjust current action spaces without excessive duplication.</p>
+<p class="BodyCopy">That leads to the next new feature — methods. Methods allow designers to specify and reuse changes in state. Back to our test game, at the end of each round, all action spaces are refilled with resources. Without methods, the designer must write that behavior for every action space, despite the fact that the behavior is exactly the same. Methods let designers package that behavior and use it across multiple actions spaces.</p>
+<pre><code>
+! Method Definition
+method RefillSpace
+	using	ThingOne
+	does	ThingOne'Current(ThingOne'Current + ThingOne'Addition)
+	if	ThingOne'Current + ThingOne'Addition < ThingOne'Maximum.
+
+! Using a method
+action(RoundEnd)
+	does	RefillSpace{CoalMine}, RefillSpace{WheatField}, RefillSpace{GoldMine}.</code></pre>
+<p class="BodyCopy">Now the designer can easily reuse the RefillSpace behavior without manually duplicating the definition of that behavior.</p>
+<h3><a id="Test_Game_37"></a>Test Game</h3>
+<p class="BodyCopy">Here is a full, yet simple, worker placement game which shows off all the new features.</p>
+<pre><code>
+! Action Spaces
+CoalMine, WheatField, GoldMine: [Current(2), Addition(5), Maximum(10), SpaceTaken(0)].
+
+CoalMine'Addition(2).
+WheatField'Addition(3).
+GoldMine'Addition(1).
+
+! Player info
+PlayerCoal(0).
+PlayerWheat(0).
+PlayerGold(0).
+
+PlayerDwarvesHome(2).
+PlayerDwarvesTotal(PlayerDwarvesHome).
+
+
+method RefillSpace
+	using	ThingOne
+	does	ThingOne'Current(ThingOne'Current + ThingOne'Addition)
+	if	ThingOne'Current + ThingOne'Addition < ThingOne'Maximum.
+
+method RefillBoard
+	does 	RefillSpace{CoalMine}, RefillSpace{WheatField}, RefillSpace{GoldMine}, 
+			CoalMine'SpaceTaken(0), WheatField'SpaceTaken(0), GoldMine'SpaceTaken(0).
+
+method UseSpace
+	using	Space, PlayerResource
+	does PlayerDwarvesHome(PlayerDwarvesHome - 1), 
+	PlayerResource(PlayerResource + Space'Current), Space'Current(0), Space'SpaceTaken(1).
 
 
 
-<p class="BodyCopy"><img src="https://cdn-images-1.medium.com/max/800/1*--vLafUg-p3uev8uNJCGhg.gif" alt=""></p>
-<p class="BodyCopy">&lt;div class=“UnityGame”&gt;&lt;/div&gt;</p>
-<h3><a id="Issues_and_Solutions_94"></a>Issues and Solutions</h3>
-<p class="BodyCopy">This can obviously be improved. There are two big issues I see with this.</p>
-<ul class="BodyCopy">
-<li>There is a lot of repetition in the rules definition. Moving the player up or down is a very similar concept— so the similarities should be compressed and into it’s own reusable unit. The same can be said for the block. Making sure the player does not have the same position as the block should only need to be written once, but currently it’s spread across multiple events.</li>
-<li>You cannot bundle data. For example, adding a second block is an arduous and monotonous task. This is partially because of the first issue, but also because the data and rules for the block are not bundled together.</li>
-</ul>
-<p class="BodyCopy">These are my next two big tasks: reduce the repetition of similar rules and allow for easier bundling and duplicating of data. I think this is off to a good start but there is still tons to do.</p>
+
+! ----------- Coal Placement
+action(PlaceDwarf_Coal)
+	does 	UseSpace{CoalMine, PlayerCoal} 
+	if 	CoalMine'SpaceTaken = 0 and PlayerDwarvesHome > 1.
+
+action(PlaceFinalDwarf_Coal)
+	does UseSpace{CoalMine, PlayerCoal}, PlayerDwarvesHome(PlayerDwarvesTotal), RefillBoard{}
+	if 	CoalMine'SpaceTaken = 0 and PlayerDwarvesHome = 1.
+
+
+
+! ----------- Wheat Placement
+action(PlaceDwarf_Wheat)
+	does UseSpace{WheatField, PlayerWheat}
+	if 	WheatField'SpaceTaken = 0 and PlayerDwarvesHome > 1.
+
+action(PlaceFinalDwarf_Wheat)
+	does UseSpace{WheatField, PlayerWheat}, PlayerDwarvesHome(PlayerDwarvesTotal), RefillBoard{}
+	if 	WheatField'SpaceTaken = 0 and PlayerDwarvesHome = 1.
+
+
+
+! ----------- Gold Placement
+action(PlaceDwarf_GoldMine)
+	does 	UseSpace{GoldMine, PlayerGold}
+	if 	GoldMine'SpaceTaken = 0 and PlayerDwarvesHome > 1.
+
+action(PlaceFinalDwarf_Gold)
+	does 	UseSpace{GoldMine, PlayerGold}, PlayerDwarvesHome(PlayerDwarvesTotal), RefillBoard{}
+	if 	GoldMine'SpaceTaken = 0 and PlayerDwarvesHome = 1.
+</code></pre>
+<p class="BodyCopy">Here is the game being played. You’ll have to excuse the poor presentation. The entire game state is being displayed, so I understand it is difficult to see exactly what is going on.</p>
+<img src="https://cdn-images-1.medium.com/max/800/1*iJQEUapqxL6SLEpWVSGEXA.gif">
+<p class="BodyCopy">Players have two workers which they can place on the coal mine, wheat field, or gold mine. When the player places their worker on an action space, they get the resources which are on that space. Once the player places both workers, the round ends. The player then gets both their workers back — which they can place next round — and the action spaces are filled with resources. There currently is no goal, since this is just a proof of concept.</p>
+<h3><a id="Future_45"></a>Future</h3>
+<p class="BodyCopy">I’m happy with this. I think these features are a step in the right direction, but there are improvements to be made.</p>
+<p class="BodyCopy">You might have noticed, there are two actions for placing workers on action spaces. One called PlaceDwarf_GoldMine and a second called PlaceFinalDwarf_GoldMine. From the designers perspective these two actions are very similar, so it would be better if they were one action. This can be done by allowing actions to have multiple ‘does if’ statements. This is a simple change which allows for greater flexibility. This is my first planned addition.</p>
+<p class="BodyCopy">My second planned addition is to start adding mechanisms for visual organization. For now, this will take the form of a simple c api which allows developers to query information about the game state and display it in the best way they see fit. I have plans to take this visual organization system very far, but explaining that is out of the scope of this article.</p>
+<p class="BodyCopy">And that’s the update. That’s all for now!</p>
+
 
 <!--  -->          <!-- post comes before this -->
           </div>

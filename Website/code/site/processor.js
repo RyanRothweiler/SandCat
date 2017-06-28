@@ -1,4 +1,4 @@
-var NewsTitles = ['Update Two','Update One'];var NewsDates = ['4/3/2017','4/3/2017'];var NewsSample = ['Sample goes here. Sample goes here. Sample goes here. Sample goes here. Sample goes here.','Sample goes here. Sample goes here. Sample goes here. Sample goes here. Sample goes here.'];
+var NewsTitles = ['Update Three','Update Two','Update One'];var NewsDates = ['5/14/2017','4/22/2017','4/3/2017'];var NewsSample = ['Creation of SandCat_Unity. Reorganizing code to make it easier to port. Topsoil rules specified in SandCat and playable within Unity.','Adding actions, dot notation and methods. Plus a simple worker placement game.','The beginnings of SandCat.'];
 ///////////////////
 
 //var NewsTitles = ['Hey! News title one!', 'News title two!', 'News title three'];
@@ -14,9 +14,9 @@ var headerHTML = " \
         <tr> \
           <th><a href='index.html'><img src='images/cathead.png' width='35'></a></th> \
           <th><a href='news.html'>News</a></th> \
-          <th><a href='http://google.com'>Games</a></th> \
-          <th><a href='http://google.com'>Download</a></th> \
-          <th><a href='http://google.com'>About</a></th> \
+          <th><a href='games.html'>Games</a></th> \
+          <th><a href='download.html'>Download</a></th> \
+          <th><a href='about.html'>About</a></th> \
         </tr> \
       </thead> \
     </table> \
@@ -36,10 +36,7 @@ function PageLoad(pageName) {
     for (index = 0; index < NewsTitles.length; index++) {
       document.getElementById("posts").innerHTML += GetNewsPostHTML(index);
     }
-  } else if (pageName == "NewsPost") {
-      document.getElementById("Title").innerHTML = NewsTitles[0];
-      document.getElementById("Date").innerHTML = NewsDates[0];
-    }
+  } 
 }
 
 function GetPostHTML(index) {

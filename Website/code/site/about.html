@@ -1,0 +1,131 @@
+<!-- These go at the top of every page -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta charset="utf-8">
+  <title>SandCat</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- FONT
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+
+
+  <!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <script src="https://use.typekit.net/prn5ylg.js"></script>
+  <script>try{Typekit.load({ async: true });}catch(e){}</script>
+
+  <link href="https://unpkg.com/basscss@8.0.2/css/basscss.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/skeleton.css">
+
+  <link href="styles.css" rel="stylesheet">
+
+  <!-- Favicon
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="icon" type="image/png" href="images/favicon.png">
+
+</head>
+<body>
+
+  <!-- Primary Page Layout
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+
+<script src="processor.js"></script>
+<body onload="PageLoad('About');">
+<div id="header"></div>
+
+<!--  -->
+
+        <pre></pre>
+
+
+        <div class="container">
+          <div class="row">
+            <div class="container">
+
+          <div class="row">
+          <div class="nine columns">
+
+<!-- post comes after this -->                   
+
+<!-- post title here  -->
+<h1><strong id="Title">What is SandCat?</strong></h1>
+<!--  -->
+           </div>
+
+           <div class="three columns PostDate">
+
+           </div>
+
+      </div>
+
+          <div id="PostBody">
+           </div>
+
+<!-- post date here  -->
+<!--  -->
+
+<p class="BodyCopy"></p>
+
+
+<p class="BodyCopy">Game design is difficult. There are many reasons for this, but I believe the biggest reason is that game design requires software engineering. If a designer wants to test a game they must either prototype with paper or write code. Both of these solutions have many problems. You can read more about these problems and my <a href="https://medium.com/@ryanrothweiler/improving-game-design-process-9e392ebf73af">thoughts on game design process here</a>.</p>
+<p class="BodyCopy">There really are no good tools for game designers. All popular tools like Unity, GameMaker, UnrealEngine, or Construct are actually software production tools — they focus on creating a piece of software and not on the design of a game. These tools were not created for designers so their primary goal is to speed up the software development process but not the game design process. Because these tools don’t keep game design in mind, when a game designer has an idea, they are forced to either make a paper prototype, or write code. This is a problem — game designers should be spending their time designing games, not writing software or cutting paper. Designers need tools created specifically for them. I am working on such a tool called SandCat which aims to solve these problems.</p>
+<p class="BodyCopy">SandCat is a game rules description language. The language allows designers to specify the rules of their game in a rigorous and declarative way. This means game designers can focus on the core design of their game, while entirely ignoring the software that allows their game to be played. However; because games are meant to be played, that software is still very necessary. Therefore SandCat also features a library of supporting code to allow someone to play a game encoded in SandCat rules.</p>
+<p class="BodyCopy">Before explaining more, I want the reader to know that this is all currently in development. I have some nice proof of concepts, but there is still much to do. This article is meant to explain what exactly SandCat is, where I see it going, and why it’s needed. This is not meant to be a sales pitch, or a demo.</p>
+<h3><a id="Solutions_10"></a>Solutions</h3>
+<p class="BodyCopy">The SandCat language aims to solve three core problems with current game design tools. All of these goals work together to expedite the game design process.</p>
+<ul class="BodyCopy">
+<li><strong>Archivable</strong>. Game designers must be able to test out an idea, put it away, and return it years later with minimal work.</li>
+<li><strong>Expressive</strong>. Game designers must be able to describe games of significant complexity with minimal work.</li>
+<li><strong>Iterative</strong>. Designers must be able to iterate quickly on their ideas. This also means that designers need to easily get feedback.</li>
+</ul>
+<h3><a id="Game_Description_Language_18"></a>Game Description Language</h3>
+<p class="BodyCopy">SandCat is a declarative language which allows designers to describe the rules of their game, effectively encoding game mechanics into the SandCat language. This focus on descriptive game rules has many advantages. Firstly, it allows the game rules to live independently of the software which runs them. This separation lets designers focus entirely on the design of their game — without being distracted by any software engineering concerns. Further, this means that SandCat rules can live through time. Software is brittle, it breaks without maintenance but SandCat rules do not have this problem because they only describe the rules of a game and not the steps of a program. This means SandCat rules do not break on their own. It will always be possible to write software which realizes the SandCat game rules, for any platform, at any time.</p>
+<p class="BodyCopy">SandCat is not a procedural language. As such, it has no compiler, and it is never executed. A program called a runner takes input as a SandCat rules file, and then provides an interface for players to interact with the rules, effectively allowing someone to play the game which the SandCat rules file describes. Because this player interface is very important, SandCat is designed to work alongside modern game production tools. The SandCat language is designed only to handle the rules of the game — which means it requires some other piece software that allows the player to interact with the rules. For example, imagine a Unity plugin which leverages the traditional Unity toolset, allowing easy interaction with the rules specified in the SandCat language. Such a plugin can be written for any game engine.</p>
+<h3><a id="How_does_this_all_fit_together_24"></a>How does this all fit together?</h3>
+<p class="BodyCopy">The SandCat language is the core of the solution, but the language also requires a back bone of supporting code. These supporting plugins allow the designer to utilize current game engines for common game software requirements, such as rendering, input, and various platform support. To get a clearer picture, lets look at the game development process, and how SandCat fits within it.</p>
+<p class="BodyCopy">The game design process starts with ideas in the designer’s head. The designer then begins experimenting with these ideas, writing the mechanics of their game in the SandCat language. The designer loads these rules into the game engine of their choice, using a supplied plugin. This plugin interfaces with the game engine, allowing the engine to query the game mechanics, and report syntax and runtime errors. The designer uses this plugin to construct a display layer on top of the SandCat rules allowing the designer to organize the interactivity of their game in an intuitive way. For example the designer can add buttons or bind keys which trigger SandCat actions. Now the designer can play test their game. Certainly, the designer has some new ideas, so they then edit the SandCat rules, make any necessary visual adjustments, and play their game again. The designer can even build and distribute their game online to get more feedback. SandCat is designed to make this entire process very quick. The designer can be playtesting their ideas within minutes.</p>
+<p class="BodyCopy">SandCat is designed to increase the speed of design iteration, sometimes at the expense runtime speed. Thus SandCat is not intended to be shipped in the final project. Traditional software engineers will still be needed to construct a final ship-able program. However; during the development process, the designer can always return to their SandCat rules and playtest a new idea within minutes. Once the designer is happy, software engineers can apply the idea to the larger project with software engineering in mind. SandCat allows designers to save time by waiting until they know they have a good idea before building the software.</p>
+<h3><a id="Methodology_and Process_32"></a>Methodology and Process</h3>
+<p class="BodyCopy">This type of game description language has been done before. <a href="http://logic.stanford.edu/classes/cs227/2013/readings/gdl_spec.pdf">GDL is a language</a> which was designed to encode games for use in artificial intelligence. <a href="http://www.cse.unsw.edu.au/~mit/Papers/AAAI10a.pdf">GDL-II then expands the language, allowing for asymmetry.</a> However; GDL was not created for game designers so for a variety of reasons it fails to facilitate game rules iterative process.</p>
+<p class="BodyCopy">With SandCat, I want to tackle the problem from the perspective of a game designer. With this in mind, I believe the best way to prove the language is to simply write a lot of games with it. Thus, the development of SandCat follows a circular pattern of, write a fully working game, decide on the most painful parts of that games development, find a solution, implement solution into the language, write another game, and repeat. This allows me to be very in-tune to the needs of the game design process.</p>
+<h3><a id="Why_the_name SandCat_38"></a>Why the name SandCat?</h3>
+<p class="BodyCopy">A sand cat is a real animal which lives almost entirely in desert environments. The sand cat and the goals of the language share many similarities. Because the sand cat is the only cat which lives primarily in deserts, they are uniquely equipped for that environment. Similarly, the SandCat language is not general purpose. It is designed specifically for the game design iterative process. Secondly sand cats are small, agile, and quick. Likewise I hope to keep the language minimal yet expressive. Thirdly sand cats are cute, so they make a good mascot.</p>
+<h3><a id="Conclusion_42"></a>Conclusion</h3>
+<p class="BodyCopy">Everything you see here is a work in progress, there is still a lot to do, but I have a good start that I believe is encouraging. If you want to read more, I write periodic updates on my progress, <a href="https://medium.com/@ryanrothweiler/sandcat-update-3-95a0f6e5848e">here is the latest update</a>, which features a simple puzzle game written in the language.</p>
+<p class="BodyCopy">Stay tuned for more updates.</p>
+
+
+<!--  -->          <!-- post comes before this -->
+          </div>
+
+
+
+
+
+
+        <pre></pre>
+        <div class="border-bottom"></div>
+        <a href="news.html">Return to news </a>
+        <pre></pre>
+        <pre></pre>
+
+           </div>
+          </div>
+        </div>
+
+
+
+</body>
+</body>
+</html>

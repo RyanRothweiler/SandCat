@@ -29,7 +29,7 @@ static bool CrashDontError = true;
 
 #define RetAssert(Expression) if (!(Expression)) {return(__LINE__);}
 
-#define MAX_STRING_SIZE 100
+#define MAX_STRING_SIZE 1000
 
 int32
 DigitCount(int64 Input)
@@ -512,13 +512,44 @@ void main ()
 					PostCreating->HTMLBody[Index] = ' ';
 					Index++;
 				}
+				PostCreating->HTMLBody[Index] = ' ';
 
 				PostCreating->Date = Title;
 			}
 
+			// Get sample
+			{
+				int32 Index = 0;
+
+				char* Title = (char*)malloc(1000);
+				ZeroMemory(Title, 1000);
+
+				int32 TitleIndex = 0;
+				bool32 FoundFirstWord = false;
+				while (PostCreating->HTMLBody[Index] != '\n') {
+
+					if (PostCreating->HTMLBody[Index] != ' ') {
+						FoundFirstWord = true;
+					}
+
+					if (FoundFirstWord) {
+						Title[TitleIndex] = PostCreating->HTMLBody[Index];
+						TitleIndex++;
+					}
+
+					PostCreating->HTMLBody[Index] = ' ';
+					Index++;
+				}
+
+				PostCreating->Sample = Title;
+			}
+
 			// Create the post html page
 			int32 TotalPostSize = PostTopSize + PostBottomSize + PostCreating->HTMLBodySize;
-			char* TotalPostHTML = (char*)malloc(TotalPostSize);
+			char* TotalPostHTML = {};
+			void* test = malloc(TotalPostSize);
+
+			TotalPostHTML = (char*)test;
 			void* TotalPostTop = TotalPostHTML;
 			memcpy(TotalPostHTML, PostTopData, PostTopSize);
 			TotalPostHTML += PostTopSize;
@@ -531,10 +562,6 @@ void main ()
 			DWORD BytesWritten = {};
 			Success = WriteFile(PostFileHandle, TotalPostTop, TotalPostSize, &BytesWritten, NULL);
 
-
-			// PostCreating->HTMLBody = (char*)malloc()
-			PostCreating->Sample = "Sample goes here. Sample goes here. Sample goes here. Sample goes here. Sample goes here.";
-
 			string PostIndexStr = PostIndex;
 			PostIndex++;
 
@@ -546,6 +573,9 @@ void main ()
 			printf("\n");
 			printf("		Date - ");
 			printf(PostCreating->Date.CharArray);
+			printf("\n");
+			printf("		Sample - ");
+			printf(PostCreating->Sample.CharArray);
 			printf("\n");
 			printf("---------------------------------- \n");
 		}
