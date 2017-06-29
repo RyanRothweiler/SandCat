@@ -459,7 +459,7 @@ BuildErrorString(int32 Line, string Message)
 	return ("(" + NumString + ") : " + Message);
 }
 
-void
+void 
 ThrowError(int32 Line, string Message)
 {
 	GlobalErrorDesc = BuildErrorString(Line, Message);
@@ -469,11 +469,13 @@ ThrowError(int32 Line, string Message)
 	Assert(0);
 #endif
 
+	#ifndef WDLL
 	if (GlobalProgState == prog_state::compiletime) {
 		longjmp(CompiletimeJumpBuffer, 10);
 	} else {
 		longjmp(RuntimeJumpBuffer, 10);
 	}
+	#endif
 }
 
 char DotNotationChar = '\'';
@@ -1639,11 +1641,13 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 bool32 firstLoad = true;
 string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefinition)
 {
+	#ifndef WDLL
 	GlobalProgState = prog_state::compiletime;
 	if (setjmp(CompiletimeJumpBuffer) == 10) {
 		// This is an error. So return the error val;
 		return (GlobalErrorDesc);
 	}
+	#endif
 
 	if (RulesLength == 0) {
 		ThrowError(0, "Rules file is empty.");
@@ -2141,12 +2145,13 @@ Any errors that occur during runtime are returned here.
 string
 DoEvent(event* Event, game_def* Rules)
 {
+	#ifndef WDLL
 	GlobalProgState = prog_state::runtime;
-
 	if (setjmp(RuntimeJumpBuffer) == 10) {
 		// This is an error. So return the error val;
 		return (GlobalErrorDesc);
 	}
+	#endif
 
 	if (Event == NULL) {
 		ThrowError(0, "Action is null, you probably typed the action name incorrectly.");
@@ -2164,7 +2169,14 @@ DoEvent(event* Event, game_def* Rules)
 
 extern "C"
 {
+
+#ifdef WDLL
+#define EXPORT 
+#else
 #define EXPORT __declspec(dllexport)
+#endif
+
+
 	game_def GlobalRulesDef;
 
 	void EXPORT SC_LoadGame(char* Rules, int32 RuleLen, char* ErrorDescBuffer, int32 ErrorBuffSize)
@@ -2354,6 +2366,7 @@ extern "C"
 }
 
 
+#ifndef WDLL
 void
 main(int argc, char const **argv)
 {
@@ -2427,3 +2440,9 @@ main(int argc, char const **argv)
 		}
 	}
 }
+#else
+void 
+main() {
+	
+}
+#endif
