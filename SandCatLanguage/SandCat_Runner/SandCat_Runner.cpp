@@ -2,7 +2,10 @@
 // Windows
 // -----------------------------------------------------------------------------
 #include <iostream>
+
+#ifndef WDLL
 #include <windows.h>
+#endif
 
 #include <time.h>
 #include <stdlib.h>
@@ -77,6 +80,13 @@ RandomRangeInt(int32 Bottom, int32 Top)
 }
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
+
+#ifdef WDLL
+void ZeroMemory(void* Data, int32 DataSize)
+{
+	memset(Data, 0, DataSize);
+}
+#endif
 
 // -----------------------------------------------------------------------------
 // String Things
@@ -254,8 +264,6 @@ struct string {
 	}
 };
 
-const string EmptyString = string{};
-
 string
 IntToString(int64 Input)
 {
@@ -272,7 +280,8 @@ StringLength(string String)
 string
 operator + (string A, string B)
 {
-	string Output = {};
+	string Output;
+	ZeroMemory(&Output, sizeof(string));
 	ConcatCharArrays(A.CharArray, B.CharArray, Output.CharArray);
 	return (Output);
 }
@@ -316,7 +325,8 @@ ConcatIntChar(int64 IntInput, char *CharInput,
 string
 CopyString(string OrigString)
 {
-	string FinalString = {};
+	string FinalString;
+	ZeroMemory(&FinalString, sizeof(string));
 
 	uint32 StringCount = StringLength(OrigString);
 	for (uint32 Index = 0;
@@ -1484,7 +1494,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 				                     GameDef->Fluents, GameDef->FluentsCount,
 				                     GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
 
-				array* ArrayEditing = {};
+				array* ArrayEditing;
 				for (int32 Index = 0; Index < GameDef->ArraysCount; Index++) {
 					if (GameDef->Arrays[Index].Name == StateUsing->Tokens[StateUsing->TokenIndex].Name) {
 						ArrayEditing = &GameDef->Arrays[Index];
@@ -1539,7 +1549,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 				// This is a method
 
 				// Find the method to do
-				method* MethodDoing = {};
+				method* MethodDoing;
 				for (int32 Index = 0; Index < GameDef->MethodsCount; Index++) {
 					if (GameDef->Methods[Index].Name == StateUsing->Tokens[StateUsing->TokenIndex].Name) {
 						MethodDoing = &GameDef->Methods[Index];
@@ -1694,7 +1704,8 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 
 		// Create all the tokens
 		{
-			parser Parser = {};
+			parser Parser;
+			ZeroMemory(&Parser, sizeof(parser));
 			ResetParserWord(&Parser);
 
 			int32 CharactersCount = RulesLength;
@@ -2048,7 +2059,7 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 					           Tokens.Tokens[StatementStart + 2].Type == token_type::event) {
 						// Method
 
-						GameDefinition->Methods[GameDefinition->MethodsCount] = {};
+						ZeroMemory(&GameDefinition->Methods[GameDefinition->MethodsCount], sizeof(method));
 
 						method* NextMethod = &GameDefinition->Methods[GameDefinition->MethodsCount];
 						GameDefinition->MethodsCount++;
@@ -2310,7 +2321,7 @@ extern "C"
 	{
 		ZeroMemory(ErrorBuffer, ErrorBufferSize);
 
-		event* EventChecking = {};
+		event* EventChecking;
 		for (int32 Index = 0; Index < GlobalRulesDef.EventsCount; Index++) {
 			if (ActionName == GlobalRulesDef.Events[Index].Name) {
 				EventChecking = &GlobalRulesDef.Events[Index];
@@ -2448,9 +2459,9 @@ main(int argc, char const **argv)
 	}
 }
 #else
-void
-main()
+int main()
 {
-
+	printf("Java Lib Working... maybe");
+	return (0);
 }
 #endif
