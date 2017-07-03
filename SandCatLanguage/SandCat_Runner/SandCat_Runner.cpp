@@ -3,7 +3,7 @@
 // -----------------------------------------------------------------------------
 #include <iostream>
 
-#ifndef WDLL
+#ifndef UNITY_WEBGL
 #include <windows.h>
 #endif
 
@@ -81,7 +81,7 @@ RandomRangeInt(int32 Bottom, int32 Top)
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 
-#ifdef WDLL
+#ifdef UNITY_WEBGL
 void ZeroMemory(void* Data, int32 DataSize)
 {
 	memset(Data, 0, DataSize);
@@ -455,7 +455,7 @@ void StringCopy(char* Source, char* Dest)
 
 string GlobalErrorDesc;
 
-#ifndef WDLL
+#ifndef UNITY_WEBGL
 enum class prog_state {
 	compiletime, runtime
 };
@@ -482,7 +482,7 @@ ThrowError(int32 Line, string Message)
 	Assert(0);
 #endif
 
-#ifndef WDLL
+#ifndef UNITY_WEBGL
 	if (GlobalProgState == prog_state::compiletime) {
 		longjmp(CompiletimeJumpBuffer, 10);
 	} else {
@@ -1654,7 +1654,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 bool32 firstLoad = true;
 string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefinition)
 {
-#ifndef WDLL
+#ifndef UNITY_WEBGL
 	GlobalProgState = prog_state::compiletime;
 	if (setjmp(CompiletimeJumpBuffer) == 10) {
 		// This is an error. So return the error val;
@@ -2159,7 +2159,7 @@ Any errors that occur during runtime are returned here.
 string
 DoEvent(event* Event, game_def* Rules)
 {
-#ifndef WDLL
+#ifndef UNITY_WEBGL
 	GlobalProgState = prog_state::runtime;
 	if (setjmp(RuntimeJumpBuffer) == 10) {
 		// This is an error. So return the error val;
@@ -2184,7 +2184,7 @@ DoEvent(event* Event, game_def* Rules)
 extern "C"
 {
 
-#ifdef WDLL
+#ifdef UNITY_WEBGL
 #define EXPORT
 #else
 #define EXPORT __declspec(dllexport)
@@ -2384,7 +2384,7 @@ extern "C"
 }
 
 
-#ifndef WDLL
+#ifndef UNITY_WEBGL
 void
 main(int argc, char const **argv)
 {
@@ -2457,11 +2457,5 @@ main(int argc, char const **argv)
 			free(Prog);
 		}
 	}
-}
-#else
-int main()
-{
-	printf("Java Lib Working... maybe");
-	return (0);
 }
 #endif

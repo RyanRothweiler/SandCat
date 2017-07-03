@@ -1,1 +1,0 @@
-emcc -DWDLL=0 -Wfatal-errors -o Test.html ../../SandCat_Runner.cpp
