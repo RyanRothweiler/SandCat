@@ -48,11 +48,11 @@
   <ItemGroup>
      <Compile Include="Assets\Editor\FluentDisplayEditor.cs" />
      <Compile Include="Assets\Editor\SandCatEditor.cs" />
-     <None Include="Assets\Games\Pre 0.0.3\Cavern2\Cavern2.txt" />
-     <None Include="Assets\Games\Pre 0.0.3\Topsoil2\Topsoil.txt" />
+     <None Include="Assets\Games\0.0.2\Cavern2\Cavern2.txt" />
+     <None Include="Assets\Games\0.0.2\Topsoil2\Topsoil.txt" />
      <None Include="Assets\Games\Test\Test.txt" />
-     <None Include="Assets\Games\Pre 0.0.3\Scyther\Scyther.txt" />
-     <None Include="Assets\Games\Pre 0.0.3\Topsoil\Topsoil.txt" />
+     <None Include="Assets\Games\0.0.2\Scyther\Scyther.txt" />
+     <None Include="Assets\Games\0.0.2\Topsoil\Topsoil.txt" />
      <None Include="Assets\Games\Situps\Situps.txt" />
      <None Include="Assets\Games\TowerOfHanoi\TowerOfHanoi.txt" />
  <Reference Include="UnityEditor.Advertisements">

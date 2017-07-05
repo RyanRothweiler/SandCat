@@ -46,9 +46,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\Games\Pre 0.0.3\Cavern2\ActionSpace.cs" />
-     <Compile Include="Assets\Games\Pre 0.0.3\Cavern2\Cavern2.cs" />
-     <Compile Include="Assets\Games\Pre 0.0.3\Topsoil\NextColor.cs" />
+     <Compile Include="Assets\Games\0.0.2\Cavern2\ActionSpace.cs" />
+     <Compile Include="Assets\Games\0.0.2\Cavern2\Cavern2.cs" />
+     <Compile Include="Assets\Games\0.0.2\Topsoil\NextColor.cs" />
      <Compile Include="Assets\Games\Situps\ResourceCell.cs" />
      <Compile Include="Assets\Games\Situps\Worker.cs" />
      <Compile Include="Assets\Games\TowerOfHanoi\Disc.cs" />
@@ -65,11 +65,11 @@
      <Compile Include="Assets\SandCat_Runner\Utilities\ValueToColor\ValuesToColor.cs" />
      <Compile Include="Assets\SandCat_Runner\Utilities\ValueToSprite\MapFluentToSprite.cs" />
      <Compile Include="Assets\SandCat_Runner\Utilities\ValueToSprite\ValuesToSprite.cs" />
-     <None Include="Assets\Games\Pre 0.0.3\Cavern2\Cavern2.txt" />
-     <None Include="Assets\Games\Pre 0.0.3\Topsoil2\Topsoil.txt" />
+     <None Include="Assets\Games\0.0.2\Cavern2\Cavern2.txt" />
+     <None Include="Assets\Games\0.0.2\Topsoil2\Topsoil.txt" />
      <None Include="Assets\Games\Test\Test.txt" />
-     <None Include="Assets\Games\Pre 0.0.3\Scyther\Scyther.txt" />
-     <None Include="Assets\Games\Pre 0.0.3\Topsoil\Topsoil.txt" />
+     <None Include="Assets\Games\0.0.2\Scyther\Scyther.txt" />
+     <None Include="Assets\Games\0.0.2\Topsoil\Topsoil.txt" />
      <None Include="Assets\Games\Situps\Situps.txt" />
      <None Include="Assets\Games\TowerOfHanoi\TowerOfHanoi.txt" />
  <Reference Include="UnityEngine.UI">

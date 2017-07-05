@@ -14,35 +14,35 @@ public class SandCat : MonoBehaviour
 
 #if UNITY_EDITOR
 	// Linked Methods
-	[DllImport ("SandCat_Runner_Windows")] private static extern void 	SC_LoadGame(string progData, int progCharLength, StringBuilder errorDesc, int errorSize);
+	[DllImport ("SandCat_Runner")] private static extern void 	SC_LoadGame(string progData, int progCharLength, StringBuilder errorDesc, int errorSize);
 
 	// Methods
-	[DllImport ("SandCat_Runner_Windows")] private static extern int 	SC_GetMethodsCount();
-	[DllImport ("SandCat_Runner_Windows")] private static extern int 	SC_GetMethodIndexName(int methodIndex, StringBuilder strBuffer);
-	[DllImport ("SandCat_Runner_Windows")] private static extern int 	SC_GetMethodIndexNameLength(int methodIndex);
+	[DllImport ("SandCat_Runner")] private static extern int 	SC_GetMethodsCount();
+	[DllImport ("SandCat_Runner")] private static extern int 	SC_GetMethodIndexName(int methodIndex, StringBuilder strBuffer);
+	[DllImport ("SandCat_Runner")] private static extern int 	SC_GetMethodIndexNameLength(int methodIndex);
 
 	// Actions
-	[DllImport ("SandCat_Runner_Windows")] private static extern int 	SC_GetActionsCount();
-	[DllImport ("SandCat_Runner_Windows")] private static extern void 	SC_GetActionNameFromIndex(int actionIndex, StringBuilder strBuffer);
-	[DllImport ("SandCat_Runner_Windows")] private static extern int 	SC_GetActionIndexNameLength(int index);
+	[DllImport ("SandCat_Runner")] private static extern int 	SC_GetActionsCount();
+	[DllImport ("SandCat_Runner")] private static extern void 	SC_GetActionNameFromIndex(int actionIndex, StringBuilder strBuffer);
+	[DllImport ("SandCat_Runner")] private static extern int 	SC_GetActionIndexNameLength(int index);
 
-	[DllImport ("SandCat_Runner_Windows")] private static extern int 	SC_DoesActionExist(string actionName);
-	[DllImport ("SandCat_Runner_Windows")] private static extern void 	SC_DoAction(string actionName, StringBuilder errorBuffer, int errorBufferSize);
+	[DllImport ("SandCat_Runner")] private static extern int 	SC_DoesActionExist(string actionName);
+	[DllImport ("SandCat_Runner")] private static extern void 	SC_DoAction(string actionName, StringBuilder errorBuffer, int errorBufferSize);
 
 	// Fluents
-	[DllImport ("SandCat_Runner_Windows")] private static extern float	SC_GetFluentValue(string fluentName);
-	[DllImport ("SandCat_Runner_Windows")] private static extern int 	SC_DoesFluentExist(string fluentName);
+	[DllImport ("SandCat_Runner")] private static extern float	SC_GetFluentValue(string fluentName);
+	[DllImport ("SandCat_Runner")] private static extern int 	SC_DoesFluentExist(string fluentName);
 
 	// Entities
-	[DllImport ("SandCat_Runner_Windows")] private static extern int 	SC_DoesEntityExist(string entityName);
-	[DllImport ("SandCat_Runner_Windows")] private static extern float	SC_GetEntityFluent(string entityName, string fluentName);
+	[DllImport ("SandCat_Runner")] private static extern int 	SC_DoesEntityExist(string entityName);
+	[DllImport ("SandCat_Runner")] private static extern float	SC_GetEntityFluent(string entityName, string fluentName);
 
 	// Arrays
-	[DllImport ("SandCat_Runner_Windows")] private static extern int 	SC_GetFluentInArray(string ArrayName, int ArrayIndex, string FluentName);
-	[DllImport ("SandCat_Runner_Windows")] private static extern bool 	SC_ArrayExists(string srrayName);
+	[DllImport ("SandCat_Runner")] private static extern int 	SC_GetFluentInArray(string ArrayName, int ArrayIndex, string FluentName);
+	[DllImport ("SandCat_Runner")] private static extern bool 	SC_ArrayExists(string srrayName);
 
 	// Testing
-	[DllImport ("SandCat_Runner_Windows")] private static extern int 	SC_IntTest(int input);
+	[DllImport ("SandCat_Runner")] private static extern int 	SC_IntTest(int input);
 #endif
 
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -79,8 +79,7 @@ public class SandCat : MonoBehaviour
 #endif
 
 	[HideInInspector] public string prevError;
-
-	public bool doTest;
+	[HideInInspector] public bool doTest;
 
 	public void Awake()
 	{
