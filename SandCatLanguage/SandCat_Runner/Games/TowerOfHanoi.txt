@@ -1,8 +1,9 @@
-PegLeft, PegMiddle, PegRight = {LevelOne = 0, LevelTwo = 0, LevelThree = 0}.
+PegLeft, PegMiddle, PegRight = {LevelOne = 0, LevelTwo = 0, LevelThree = 0, LevelFour = 0}.
 
 PegLeft'LevelOne = 1.
 PegLeft'LevelTwo = 2.
 PegLeft'LevelThree = 3.
+PegLeft'LevelFour = 4.
 
 DiscHeld = 0.
 
@@ -13,7 +14,8 @@ PickupFromPeg = Event
 	using Peg
 	does DiscHeld = Peg'LevelOne, Peg'LevelOne = 0 			if not Peg'LevelOne = 0
 	does DiscHeld = Peg'LevelTwo, Peg'LevelTwo = 0 			if not Peg'LevelTwo = 0 and DiscHeld = 0
-	does DiscHeld = Peg'LevelThree, Peg'LevelThree = 0 		if not Peg'LevelThree = 0 and DiscHeld = 0.
+	does DiscHeld = Peg'LevelThree, Peg'LevelThree = 0 		if not Peg'LevelThree = 0 and DiscHeld = 0
+	does DiscHeld = Peg'LevelFour, Peg'LevelFour = 0 		if not Peg'LevelFour = 0 and DiscHeld = 0.
 
 PickupLeft = PlayerAction does PickupFromPeg(PegLeft) if DiscHeld = 0.
 PickupMiddle = PlayerAction does PickupFromPeg(PegMiddle) if DiscHeld = 0.
@@ -26,7 +28,8 @@ DropOnPeg = Event
 	using Peg
 	does Peg'LevelOne = DiscHeld, DiscHeld = 0 		if Peg'LevelTwo > DiscHeld and Peg'LevelOne = 0
 	does Peg'LevelTwo = DiscHeld, DiscHeld = 0 		if Peg'LevelThree > DiscHeld and Peg'LevelTwo = 0 and not DiscHeld = 0
-	does Peg'LevelThree = DiscHeld, DiscHeld = 0 	if not DiscHeld = 0 and Peg'LevelThree = 0.
+	does Peg'LevelThree = DiscHeld, DiscHeld = 0 	if Peg'LevelFour > DiscHeld and Peg'LevelThree = 0 and not DiscHeld = 0
+	does Peg'LevelFour = DiscHeld, DiscHeld = 0 	if not DiscHeld = 0 and Peg'LevelFour = 0.
 
 DropOnLeft = PlayerAction does DropOnPeg(PegLeft) if not DiscHeld = 0.
 DropOnMiddle = PlayerAction does DropOnPeg(PegMiddle) if not DiscHeld = 0.

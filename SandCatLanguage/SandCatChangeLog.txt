@@ -19,3 +19,5 @@
 0.0.4
 - Cleaned the syntax, it's much more consistent now. 
 - Added arrays.
+
+0.0.5

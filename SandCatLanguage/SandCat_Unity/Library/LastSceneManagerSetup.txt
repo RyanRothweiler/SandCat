@@ -1,4 +1,4 @@
 sceneSetups:
-- path: Assets/Games/Situps/Situps.unity
+- path: Assets/Games/TowerOfHanoi/TowerOfHanoi.unity
   isLoaded: 1
   isActive: 1
