@@ -7,22 +7,27 @@ var NewsTitles = ['Update Three','Update Two','Update One'];var NewsDates = ['5/
 
 // This is for the games page. When adding, always add on the left
 var GamesImages = [
+'games/Situps/Situps.png',
 'games/TowerOfHanoi/TowerOfHanoi.png'
 ];
 
 var GamesDate = [
+'7/6/2017',
 '7/5/2017'
 ];
 
 var GamesName = [
+'Situps',
 'Tower of Hanoi'
 ];
 
 var GamesDescription = [
+'Moving workers and collecting resources.',
 'The classic Tower of Hanoi stacking disk game.'
 ];
 
 var GamesPageLink = [
+'games/Situps/Situps.html',
 'games/TowerOfHanoi/TowerOfHanoi.html'
 ];
 // ----
@@ -34,7 +39,11 @@ function PageLoad(pageName, locationPrefix) {
 
   if (pageName == "Index") {    
     document.getElementById("PostOne").innerHTML = GetPostHTML(0);
-    document.getElementById("PostTwo").innerHTML = GetPostHTML(1);    
+    document.getElementById("PostTwo").innerHTML = GetPostHTML(1); 
+
+    document.getElementById("GameOne").innerHTML = GetGameIndexHTML(0); 
+    document.getElementById("GameTwo").innerHTML = GetGameIndexHTML(1); 
+
   } else if (pageName == "News") {
     for (index = 0; index < NewsTitles.length; index++) {
       document.getElementById("posts").innerHTML += GetNewsPostHTML(index);
@@ -57,6 +66,16 @@ function PrefixNavbar(prefix) {
   finalHTML += "<th><a href='" + prefix + "download.html'>Download</a></th>"
   finalHTML += "<th><a href='" + prefix + "about.html'>About</a></th>"
   finalHTML += "</tr></thead></table></div></div></div>";
+  return (finalHTML);
+}
+
+function GetGameIndexHTML(index) {
+  var finalHTML = "";
+  finalHTML += '<img class="u-max-full-width" src="' + GamesImages[index] + '">';
+  finalHTML += '<div class="clearfix mxn2"><div class="sm-col sm-col-6 md-col-5 lg-col-6 px2">'
+  finalHTML += '<h5><strong><a href="' + GamesPageLink[index] + '">' + GamesName[index] + '</a></strong></h5></div>';
+  finalHTML += '<div class="sm-col sm-col-6 md-col-7 lg-col-6 px2">'
+  finalHTML += '<p>' + GamesDescription[index] + '</p></div></div>';
   return (finalHTML);
 }
 
