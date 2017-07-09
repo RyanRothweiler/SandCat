@@ -879,7 +879,7 @@ InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
 				// Fluent in an array
 
 				// Get the number of tokens until the closing square
-				int32 CountUntilClose = 0;
+				int32 CountUntilClose = 1;
 				while (Tokens[AccumIndex + CountUntilClose - 1].Type != token_type::closeSquare) {
 					CountUntilClose++;
 				}
@@ -1536,7 +1536,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 					}
 
 					// Get the number of StateUsing->Tokens until the closing square
-					int32 CountUntilClose = 0;
+					int32 CountUntilClose = 1;
 					while (StateUsing->Tokens[StateUsing->TokenIndex + CountUntilClose - 1].Type != token_type::closeSquare) {
 						CountUntilClose++;
 					}
@@ -2429,7 +2429,7 @@ main(int argc, char const **argv)
 		int32 CharactersCount = 0;
 		// Load the program into the parser
 		{
-			string UnityGameFile = "T:/SandCatLanguage/SandCat_Unity/Assets/Games/TowerOfHanoi/TowerOfHanoi.txt";
+			string UnityGameFile = "T:/SandCatLanguage/SandCat_Unity/Assets/Games/Situps/Situps.txt";
 			// string UnityGameFile = "../SandCat_Unity/Assets/Games/Test/Test.txt";
 			HANDLE FileHandle = CreateFile(UnityGameFile.CharArray, GENERIC_READ, FILE_SHARE_READ,
 			                               NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);

@@ -282,7 +282,7 @@ action(PlantCellP) does PlacePlant{CellP}.
 This line — <code>Cell1, Cell2, Cell : [Plant(0), Color(0)].</code><br>
 is equivalent to — <code>Cell[1..3] : [Plant(0), Color(0)].</code><br>
 I think this feature has many uses even outside of grids, so it’s something I had planned on doing regardless.</li>
-<li>Array Structures.&lt;br&gt;<br>
+<li>Array Structures.<br>
 I’m much less confident this is a good idea, but I think it’s fundamentally required because designers need to be able to index into a structure. Without arrays designers are forced to manually iterate through unorganized objects. For example, in the Topsoil test game I’m forced to iterate through the cells multiple times — the logic could be drastically simplified if I could index directly into the grid structure.</li>
 </ul>
 <p class="BodyCopy">I want each new feature to have many uses. I’m consciously trying to avoid the trap of creating a very specific feature which only solves very specific situations. I don’t think these two features fall into that trap, but with each new language feature I feel that I’m getting closer to that sort of problem. With this in mind, I plan to add the line expansion feature first, then recreate Topsoil using the feature. From there I’ll reassess and decide if array structures are still required. I imagine they will be, considering how many games fundamentally rely on grids and spatial relations to function.</p>
