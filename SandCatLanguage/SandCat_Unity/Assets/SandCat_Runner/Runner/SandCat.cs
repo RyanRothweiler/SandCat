@@ -218,6 +218,7 @@ public class SandCat : MonoBehaviour
 	{
 		if (SC_ArrayExists(arrayName)) {
 			// TODO Check if that fluent exists
+			// Make sure the array index isn't out of bounds, that crashes things.
 
 			return (SC_GetFluentInArray(arrayName, arrayIndex, fluentName));
 		} else {

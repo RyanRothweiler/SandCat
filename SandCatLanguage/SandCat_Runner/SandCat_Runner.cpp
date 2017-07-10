@@ -595,7 +595,8 @@ struct fluent {
 	string Name;
 	real64 Value;
 
-	/* If the fluent has arithmetic as a fluent value, then it is stored here.
+	/*
+	- If the fluent has arithmetic as a fluent value, then it is stored here.
 		This is is only used when the fluent is part of an event.
 		The initial fluents are evaluated when they're parsed.
 		Event fluents are evaluated when they're triggered, so they need to be saved and 'parsed' when they're triggered.
@@ -950,7 +951,8 @@ InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
 				AccumIndex++;
 			}
 
-			if (Tokens[AccumIndex].Type == token_type::period) {
+			if (Tokens[AccumIndex].Type == token_type::period ||
+			        Tokens[AccumIndex].Type == token_type::comma) {
 				AccumIndex--;
 			}
 		} else {
@@ -963,49 +965,6 @@ InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
 
 	return (Accum);
 }
-
-
-// // This is only used in Evaluate Boolean to get the operands
-// real64
-// BoolGetValue(token_info* Tokens, int32* NextLogicOp,
-//              fluent* Fluents, int32 FluentsCount,
-//              entity* Entities, int32 EntitiesCount)
-// {
-// 	real64 Val = 0.0f;
-
-// 	if (StringIsInt(Tokens[*NextLogicOp].Name)) {
-// 		// This is just a number
-// 		Val = StringToInt32(Tokens[*NextLogicOp].Name);
-// 		(*NextLogicOp)++;
-// 	} else if (Tokens[*NextLogicOp].Type == token_type::id &&
-// 	           Tokens[*NextLogicOp + 1].Type != token_type::openSquare) {
-// 		// This is dot notation
-// 		fluent_search_return Ret = FluentSearch(Tokens, *NextLogicOp,
-// 		                                        Fluents, FluentsCount, Entities, EntitiesCount);
-// 		(*NextLogicOp) += Ret.TokensConsumed;
-// 		Val = Ret.Fluent->Value;
-// 	} else if (Tokens[*NextLogicOp + 1].Type == token_type::openSquare) {
-// 		// This is an array, they always have dot notation
-// 		string ArrayName = Tokens[*NextLogicOp].Name;
-// 		(*NextLogicOp) += 2;
-
-// 		real64 ArrayIndex = InfixAccumulate(Tokens, *NextLogicOp, Fluents, FluentsCount, Entities, EntitiesCount);
-
-// 		// Move past the array index
-// 		while (Tokens[*NextLogicOp].Type != token_type::dot) {
-// 			(*NextLogicOp)++;
-// 		}
-// 		(*NextLogicOp) += 2;
-
-// 		string FluentName = Tokens[*NextLogicOp].Name;
-
-// 		Val = GetFluentInArray(ArrayName, FluentName, ArrayIndex, Tokens[*NextLogicOp].LineNumber, Entities, EntitiesCount)->Value;
-// 	} else {
-// 		ThrowError(Tokens[*NextLogicOp].LineNumber, "Invalid token pattern in an if statment");
-// 	}
-
-// 	return (Val);
-// }
 
 bool32
 EvaluateBoolean(token_info* ConditionalTokens, int32 ConditionalsCount,
@@ -1978,10 +1937,10 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 						This is the entity that we're duplicating and putting into the array.
 						Basically the entity is duplicated, given a name based on the name and index, and placed into the array.
 						*/
-						entity BaseEntity = {};
-						GrabEntityFluents(&BaseEntity, Tokens.Tokens, StatementStart + 4, GameDefinition);
-
 						for (int32 Index  = 0; Index < ArrayLength; Index++) {
+							entity BaseEntity = {};
+							GrabEntityFluents(&BaseEntity, Tokens.Tokens, StatementStart + 4, GameDefinition);
+
 							GameDefinition->InstancedEntities[GameDefinition->InstancedEntitiesCount] = BaseEntity;
 							GameDefinition->InstancedEntities[GameDefinition->InstancedEntitiesCount].Name = BuildArrayFluentID(NextArray->Name, Index);
 
@@ -2429,7 +2388,7 @@ main(int argc, char const **argv)
 		int32 CharactersCount = 0;
 		// Load the program into the parser
 		{
-			string UnityGameFile = "T:/SandCatLanguage/SandCat_Unity/Assets/Games/Situps/Situps.txt";
+			string UnityGameFile = "T:/SandCatLanguage/SandCat_Unity/Assets/Games/Yahtz/Yahtz.txt";
 			// string UnityGameFile = "../SandCat_Unity/Assets/Games/Test/Test.txt";
 			HANDLE FileHandle = CreateFile(UnityGameFile.CharArray, GENERIC_READ, FILE_SHARE_READ,
 			                               NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
