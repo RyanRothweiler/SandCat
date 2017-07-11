@@ -1,0 +1,8 @@
+Items[Axe]'Atk = 10.
+Items[Axe]'Def = 0.
+Items[Axe]'Range = 1.
+
+Items[Bow]'Atk = 5.
+Items[Bow]'Def = 0.
+Items[Bow]'Range = 0.
+

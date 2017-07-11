@@ -54,6 +54,9 @@
      <Compile Include="Assets\Games\TowerOfHanoi\Disc.cs" />
      <Compile Include="Assets\Games\TowerOfHanoi\DiscHeld.cs" />
      <Compile Include="Assets\Games\TowerOfHanoi\Tower.cs" />
+     <Compile Include="Assets\Games\Yahtz\Character.cs" />
+     <Compile Include="Assets\Games\Yahtz\Crystal.cs" />
+     <Compile Include="Assets\Games\Yahtz\InitCoins.cs" />
      <Compile Include="Assets\SandCat_Runner\Runner\SandCat.cs" />
      <Compile Include="Assets\SandCat_Runner\Utilities\ActionButton.cs" />
      <Compile Include="Assets\SandCat_Runner\Utilities\Comparison.cs" />
@@ -70,6 +73,7 @@
      <None Include="Assets\Games\Test\Test.txt" />
      <None Include="Assets\Games\0.0.2\Scyther\Scyther.txt" />
      <None Include="Assets\Games\0.0.2\Topsoil\Topsoil.txt" />
+     <None Include="Assets\Games\Yahtz\Yahtz.txt" />
      <None Include="Assets\Games\Situps\Situps.txt" />
      <None Include="Assets\Games\TowerOfHanoi\TowerOfHanoi.txt" />
  <Reference Include="UnityEngine.UI">

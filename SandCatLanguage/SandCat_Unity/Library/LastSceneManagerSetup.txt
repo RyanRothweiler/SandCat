@@ -1,4 +1,4 @@
 sceneSetups:
-- path: Assets/Games/Situps/Situps.unity
+- path: Assets/Games/Yahtz/Yahtz.unity
   isLoaded: 1
   isActive: 1

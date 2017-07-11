@@ -53,6 +53,7 @@
      <None Include="Assets\Games\Test\Test.txt" />
      <None Include="Assets\Games\0.0.2\Scyther\Scyther.txt" />
      <None Include="Assets\Games\0.0.2\Topsoil\Topsoil.txt" />
+     <None Include="Assets\Games\Yahtz\Yahtz.txt" />
      <None Include="Assets\Games\Situps\Situps.txt" />
      <None Include="Assets\Games\TowerOfHanoi\TowerOfHanoi.txt" />
  <Reference Include="UnityEditor.Advertisements">

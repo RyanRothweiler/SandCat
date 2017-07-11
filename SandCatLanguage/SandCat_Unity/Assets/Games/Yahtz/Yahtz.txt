@@ -1,0 +1,19 @@
+BoardWidth = 5.
+BoardHeight = 12.
+
+Crystals = [5]{X = 0, Y = 3 + random 0 to 2, HP = 0}.
+Crystals[0]'X = 0.
+Crystals[1]'X = 1.
+Crystals[2]'X = 2.
+Crystals[3]'X = 3.
+Crystals[4]'X = 4.
+
+InitCoins = [2]{X = 0, Y = 2, Alive = 1}.
+InitCoins[1]'X = 4.
+
+Characters = [3]{Speed = 1 + random 0 to 1, HP = 8, GoldHeld = 0, ItemOne = 0, ItemTwo = 0, X = 0, Y = 0}.
+Characters[1]'X = 2.
+Characters[2]'X = 4.
+
+TotalActionPoints = 4.
+CurrentActionPoints = TotalActionPoints.
