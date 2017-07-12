@@ -2,7 +2,7 @@ call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary
 
 rem Windows dll
 cd Build\WindowsDll
-cl -DDLL=0 /LD T:\SandCatLanguage\SandCat_Runner\SandCat_Runner.cpp -nologo /EHsc user32.lib
+cl /LD T:\SandCatLanguage\SandCat_Runner\SandCat_Runner.cpp -nologo /EHsc user32.lib
 copy /Y SandCat_Runner.dll T:\SandCatLanguage\SandCat_Unity\Assets\SandCat_Runner\Runner
 
 rem Windows exe

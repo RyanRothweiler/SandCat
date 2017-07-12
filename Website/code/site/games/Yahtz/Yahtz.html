@@ -1,0 +1,190 @@
+<!-- These go at the top of every page -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta charset="utf-8">
+  <title>SandCat</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- FONT
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+
+
+  <!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link href="https://unpkg.com/basscss@8.0.2/css/basscss.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/normalize.css">
+  <link rel="stylesheet" href="../../css/skeleton.css">
+
+  <link href="../../styles.css" rel="stylesheet">
+  <script src="https://use.typekit.net/prn5ylg.js"></script>
+  <script>try{Typekit.load({ async: true });}catch(e){}</script>
+
+  <!-- Favicon
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="icon" type="image/png" href="../../images/favicon.png">
+
+</head>
+<body>
+
+  <!-- Primary Page Layout
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+
+<script src="Build/UnityLoader.js"></script>
+    <script>
+      var gameInstance = UnityLoader.instantiate("gameContainer", "Build/SandCatWebGL.json");
+    </script>
+<script src="../../processor.js"></script>
+<body onload="PageLoad('Game', '../../');">
+<div id="header"></div>
+
+<!--  -->
+
+        <pre></pre>
+
+
+        <div class="container">
+          <div class="row">
+            <div class="six columns">
+			<h1><strong>Yahtz</strong></h1>
+              
+            </div>
+            <div class="six columns">
+            <h5>Collecting coins, moving characters, action points.</h5>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="container">
+          <div class="row">
+    <div id="gameContainer" class='u-max-full-width'></div>
+
+      <h4>Instructions and Details</h4>
+<p>This game is a proof of concept to test the language. There was a lot more planned for the design of this, which I might come back and complete later. Enemies were planned, which when killed would drop coins. But the dropping coin bit was overly complicated, so I decided to adjust the language to fix that.</p>
+
+
+        <pre></pre>
+        <pre></pre>
+
+
+          <div class="row">
+            <div class="six columns">
+      <h4>SandCat Rules</h4>
+              
+            </div>
+            <div class="six columns">
+      <p>language version 0.0.4</p>
+      </div>
+      </div>
+
+
+        <pre><code>
+BoardWidth = 5.
+BoardHeight = 12.
+
+Crystals = [5]{X = 0, Y = 3 + random 0 to 2, HP = 0}.
+Crystals[0]'X = 0.
+Crystals[1]'X = 1.
+Crystals[2]'X = 2.
+Crystals[3]'X = 3.
+Crystals[4]'X = 4.
+
+InitCoins = [2]{X = 0, Y = 2, Alive = 1}.
+InitCoins[1]'X = 4.
+
+Characters = [3]{Speed = 1 + random 0 to 1, HP = 8, GoldHeld = 0, ItemOne = 0, ItemTwo = 0, X = 0, Y = 0}.
+Characters[1]'X = 2.
+Characters[2]'X = 4.
+
+TotalActionPoints = 4.
+CurrentActionPoints = TotalActionPoints.
+
+
+
+# Moving characters
+MoveCharUp = Event
+  using Character
+  does Character'Y = Character'Y + 1, ActionPointUsed()
+  if Character'Y < BoardHeight - 1.
+
+MoveCharOneUp = PlayerAction does MoveCharUp(Characters[0]).
+MoveCharTwoUp = PlayerAction does MoveCharUp(Characters[1]).
+MoveCharThreeUp = PlayerAction does MoveCharUp(Characters[2]).
+
+MoveCharDown = Event
+  using Character
+  does Character'Y = Character'Y - 1, ActionPointUsed()
+  if Character'Y > 0.
+
+MoveCharOneDown = PlayerAction does MoveCharDown(Characters[0]).
+MoveCharTwoDown = PlayerAction does MoveCharDown(Characters[1]).
+MoveCharThreeDown = PlayerAction does MoveCharDown(Characters[2]).
+
+MoveCharLeft = Event
+  using Character
+  does Character'X = Character'X - 1, ActionPointUsed()
+  if Character'X > 0.
+
+MoveCharOneLeft = PlayerAction does MoveCharLeft(Characters[0]).
+MoveCharTwoLeft = PlayerAction does MoveCharLeft(Characters[1]).
+MoveCharThreeLeft = PlayerAction does MoveCharLeft(Characters[2]).
+
+MoveCharRight = Event
+  using Character
+  does Character'X = Character'X + 1, ActionPointUsed()
+  if Character'X < BoardWidth - 1.
+
+MoveCharOneRight = PlayerAction does MoveCharRight(Characters[0]).
+MoveCharTwoRight = PlayerAction does MoveCharRight(Characters[1]).
+MoveCharThreeRight = PlayerAction does MoveCharRight(Characters[2]).
+####
+
+
+# Pickup coins
+CharOnCoin = Event
+  using Character, Coin
+  does Character'GoldHeld = Character'GoldHeld + 1, Coin'Alive = 0
+  if Character'X = Coin'X and Character'Y = Coin'Y and Coin'Alive = 1.
+
+CharCoinCheck = Event
+  using Character
+  does CharOnCoin(Character, InitCoins[0])
+  does CharOnCoin(Character, InitCoins[1]).
+
+PickupCoins = Event
+  does CharCoinCheck(Characters[0]), CharCoinCheck(Characters[1]), CharCoinCheck(Characters[2]).
+####
+
+
+
+ActionPointUsed = Event
+  does CurrentActionPoints = CurrentActionPoints - 1, PickupCoins()
+  does RoundEnd() if CurrentActionPoints = 0.
+
+RoundEnd = Event
+  does CurrentActionPoints = TotalActionPoints.
+</code></pre>
+        
+
+          </div>
+        </div>
+
+
+        <pre></pre>
+        <pre></pre>
+
+        <div id="posts"></div>
+
+</body>
+</body>
+</html>

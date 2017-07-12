@@ -17,3 +17,68 @@ Characters[2]'X = 4.
 
 TotalActionPoints = 4.
 CurrentActionPoints = TotalActionPoints.
+
+
+
+# Moving characters
+MoveCharUp = Event
+	using Character
+	does Character'Y = Character'Y + 1, ActionPointUsed()
+	if Character'Y < BoardHeight - 1.
+
+MoveCharOneUp = PlayerAction does MoveCharUp(Characters[0]).
+MoveCharTwoUp = PlayerAction does MoveCharUp(Characters[1]).
+MoveCharThreeUp = PlayerAction does MoveCharUp(Characters[2]).
+
+MoveCharDown = Event
+	using Character
+	does Character'Y = Character'Y - 1, ActionPointUsed()
+	if Character'Y > 0.
+
+MoveCharOneDown = PlayerAction does MoveCharDown(Characters[0]).
+MoveCharTwoDown = PlayerAction does MoveCharDown(Characters[1]).
+MoveCharThreeDown = PlayerAction does MoveCharDown(Characters[2]).
+
+MoveCharLeft = Event
+	using Character
+	does Character'X = Character'X - 1, ActionPointUsed()
+	if Character'X > 0.
+
+MoveCharOneLeft = PlayerAction does MoveCharLeft(Characters[0]).
+MoveCharTwoLeft = PlayerAction does MoveCharLeft(Characters[1]).
+MoveCharThreeLeft = PlayerAction does MoveCharLeft(Characters[2]).
+
+MoveCharRight = Event
+	using Character
+	does Character'X = Character'X + 1, ActionPointUsed()
+	if Character'X < BoardWidth - 1.
+
+MoveCharOneRight = PlayerAction does MoveCharRight(Characters[0]).
+MoveCharTwoRight = PlayerAction does MoveCharRight(Characters[1]).
+MoveCharThreeRight = PlayerAction does MoveCharRight(Characters[2]).
+####
+
+
+# Pickup coins
+CharOnCoin = Event
+	using Character, Coin
+	does Character'GoldHeld = Character'GoldHeld + 1, Coin'Alive = 0
+	if Character'X = Coin'X and Character'Y = Coin'Y and Coin'Alive = 1.
+
+CharCoinCheck = Event
+	using Character
+	does CharOnCoin(Character, InitCoins[0])
+	does CharOnCoin(Character, InitCoins[1]).
+
+PickupCoins = Event
+	does CharCoinCheck(Characters[0]), CharCoinCheck(Characters[1]), CharCoinCheck(Characters[2]).
+####
+
+
+
+ActionPointUsed = Event
+	does CurrentActionPoints = CurrentActionPoints - 1, PickupCoins()
+	does RoundEnd() if CurrentActionPoints = 0.
+
+RoundEnd = Event
+	does CurrentActionPoints = TotalActionPoints.

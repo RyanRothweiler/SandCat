@@ -7,26 +7,31 @@
 
 // This is for the games page. When adding, always add on the left
 var GamesImages = [
+'games/Yahtz/Yahtz.png',
 'games/Situps/Situps.png',
 'games/TowerOfHanoi/TowerOfHanoi.png'
 ];
 
 var GamesDate = [
+'7/11/2017',
 '7/6/2017',
 '7/5/2017'
 ];
 
 var GamesName = [
+'Yahtz',
 'Situps',
 'Tower of Hanoi'
 ];
 
 var GamesDescription = [
+'Collecting coins, moving characters, action points.',
 'Moving workers and collecting resources.',
 'The classic Tower of Hanoi stacking disk game.'
 ];
 
 var GamesPageLink = [
+'games/Yahtz/Yahtz.html',
 'games/Situps/Situps.html',
 'games/TowerOfHanoi/TowerOfHanoi.html'
 ];

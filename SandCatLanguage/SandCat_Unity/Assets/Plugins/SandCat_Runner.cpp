@@ -1624,6 +1624,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 
 						StateUsing = &StateStack[StackTop];
 						StateUsing->TokenIndex = 0;
+						CheckedValid = false;
 					}
 
 					continue;
