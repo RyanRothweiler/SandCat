@@ -204,3 +204,41 @@ PlayerAbilityMoveWorld = PlayerAction
 Start, End, 
 
 ##
+
+
+
+
+
+
+7/11/17
+
+Rules - events which are evaluates anytime an player action is taken
+
+There are pain points in iteration. I think just bypassing iteration completely (and relying on recurion when iteration is necessary) is the best solution.
+- Can create and destroy array indecies anytime. Think of them more like linked lists. 
+- Shouldn't need to 'declare' an array. Can make any number of 'things' at any time.
+
+Create 5 Crystals = {X, Y}.
+Crystals[1]'X = 20.
+Crystals[2]'X = 30.
+Destroy Crystals[0].
+
+Create and destroy other things? Should all entities just be arrays?
+
+# This creates 5 crystals.
+Create 5 Crystals = {X, Y}.
+
+# They can be accesed like arrays
+Crystals[0].
+
+# Can add and remove crystals at any time.
+Create 2 Crystals.
+
+Problems Here
+- What about declaring members? 
+- Just assume the same members? 
+- They don't necessarily NEED to have the same members. It is probably a good practice though. 
+- Maybe this means we need a decleration of types. All objects of 
+- All objects of one 'type' don't necessarily need to live in one array. Any reason for them not to?
+
+Dog = {Happy, Sad}.

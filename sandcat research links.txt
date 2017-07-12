@@ -1,9 +1,0 @@
-machinations
-	http://www.jorisdormans.nl/machinations/
-
-Mark J Neilson
-	http://www.kmjn.org/
-	http://www.kmjn.org/notes/generating_mechanics_bibliography.html
-
-How we design games and why
-	http://www.gamasutra.com/blogs/KatharineNeil/20161214/287515/How_we_design_games_now_and_why.php
