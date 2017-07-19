@@ -45,7 +45,7 @@ Grid = [10x10].
 ##
 1. Add object at index.
 2. Get object by index.
-3. Iterate through the array, get, set, and chnage arbitrarily. 
+3. Iterate through the array, get, set, and change arbitrarily. 
 4. Insert objects. 
 5. Remove objects.
 
@@ -133,7 +133,7 @@ MovePlayerUp = PlayerAction
 
 # Validation with state
 Health = 0.
-Health mustbe Health > 0 and Health < 10.
+Health mustbe > 0 and < 10.
 
 AddHealth = PlayerAction 
 	does Health = Health + 1.
@@ -240,5 +240,158 @@ Problems Here
 - They don't necessarily NEED to have the same members. It is probably a good practice though. 
 - Maybe this means we need a decleration of types. All objects of 
 - All objects of one 'type' don't necessarily need to live in one array. Any reason for them not to?
+- How to get them to edit them after they've been created?
+
+
+
+
+
+7/12/16
+
+Possible Solutions
+	- A more traditional type system.
+
+		Coin is type {X, Y}.
+		CoinOne is Coin.
+		CoinTwo is Coin.
+
+		or 
+
+		CoinOne is {X, Y}.
+		CoinTwo is {X, Y}.
+
+	Now need to worry about type and name identifiers.
+
+
+
+# Phases
+
+Phase PlaceWorker
+{
+	# anything in here is only 'in scope' if the phase PlaceWorker is enabled
+}
+
+DoPlaceWorker = Event
+	does EnablePhase PlaceWorker
+
 
 Dog = {Happy, Sad}.
+Dog = 2{Happy, Sad}.
+Dog = Dog + 2{Happy, Sad} + {Happy, Sad}.
+
+A kind type definition is necessary. If we're going to be adding to the array, then we want to add someething of the same type.
+Maybe all things of the same type are in an array automatically? And you can just access them as you like, don't need to specify that they're in an array.
+
+
+Define Crystal as {X, Y}.
+Create 2 Crystal.
+Crystal[0]'X = 1.
+Crystal[1]'X = 2.
+Create 1 Crystal.
+Crystal[3]'X = 3.
+Destory Crystal[0].
+
+Arrays stay as small as possible, deleting an index shrinks the array.
+Now we're left with only two crystals. Crystal[0]'X == 2 is true, and Crystal[1]'X == 3 is true.
+
+Can get the length of the array.
+Crystals'Count.
+
+Can simply create things without creating a type for them. Anonymous types you might say.
+Dog = {Happy, Sad}.
+Dog is an entity which has members of Happy and Sad, but no type.
+
+This is a big changes, is it NECESSARY? It seems we can do most of the same stuff with what we currently have by simply adding a .Length and .Remove member to arrays.
+
+
+
+
+!!! This is the best thing to do next imo
+InitCoins = [2]{X = 0, Y = 2, Alive = 1}.
+InitCoins'Add 1.
+InitCoins[InitCoins'Length]'X = 5.
+InitCoins'RemoveAt 0.
+
+This relys on more traditional programming techniques but means there is less to learn, this makes the language more slim and powerfull... I believe.
+Should things be 0 or 1 indexed? From this, it looks like 1. No pointers in the language.
+
+
+
+
+????
+Can simply iterate through all Crystals.
+These iterations are ALWAYS combinatorial.
+
+Crystals'X = Crystals'Y.
+This is the same as 
+Crystals[0]'X = Crystals[0]'Y, 
+Crystals[0]'X = Crystals[1]'Y,
+Crystals[0]'X = Crystals[2]'Y,
+
+Crystals[1]'X = Crystals[0]'Y, 
+Crystals[1]'X = Crystals[1]'Y,
+Crystals[1]'X = Crystals[2]'Y
+
+Do arrays combine with themselves?
+This is a problem... Is there some other solution. Some sql system?
+Maybe don't solve this? Just let designers use recursion.
+???
+
+Define Dogs
+
+
+
+
+
+
+
+
+
+
+
+
+7/13/17 
+
+Now how do we iterate over the coins? How to check if any character is on any coin when the array of coins is always changing. ?
+
+
+
+
+
+7/14/17 
+
+How to iterate over the coins?
+Want to say, if any character is standing on any coin then he gets gold and the coin is destroyed. 
+
+# true if any character is standing on any coin.
+if Coins'X = Characters'X and Coins'Y = Characters'Y.
+
+# true if any coin is in the same place as another coin, but doesn't count the same coin to be in the same place as itself.
+if Coins'X = Coins'X and Coins'Y = Coins'Y and not Coins'Index = Coins'Index.
+
+- (Works somewhat like sql)
+- Evaluated left to right.
+
+- Iterate through all the coins until a successful combination is found for which true is evaluated. 
+- Hold those operands and use them for the remainder of the operation instead of iterating through the array to find new operands
+
+if A:Coins B:Coins where A'X = B'X and A'Y = B'Y and not A'Index = B'Index.
+
+Test = Event
+	foreach A in Coins, B in Coins
+	does A'Alive = 10
+	if A'X = B'X and A'Y = B'Y and not A'Index = B'Index.
+
+
+
+
+7/15/17
+
+
+# Can move a coin[0] around. When it is on the same space as another coin, the other coin is removed and it's values is added to the coin being controled.
+Coins = 5{X = 0, Y = 0, Value = Random 1 to 10}
+
+Test = Event
+	foreach A in Coins, B in Coins
+	does A'Value = A'Value + B'Value, Coins'RemoveAt(B'Index)
+	if A'X = B'X and A'Y = B'Y and not A'Index = B'Index.
