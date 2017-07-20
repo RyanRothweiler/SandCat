@@ -28,3 +28,4 @@
 - Added array iteration by passing entire array into event.
 - Added array dot add, to add to the end of arrays.
 - Added array dot RemoveAt, to remove from anywhere in the array.
+- Added tab menu to runner to see raw state live.

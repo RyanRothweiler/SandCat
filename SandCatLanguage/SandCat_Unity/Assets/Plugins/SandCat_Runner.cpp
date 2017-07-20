@@ -1789,10 +1789,11 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 
 					// Execute method last
 
-					param RealParamsIter[50];
 
 					int32 IterCounter[50];
 					int32 IterCounterLimits[50];
+					ZeroMemory(IterCounter, 50 * sizeof(int32));
+					ZeroMemory(IterCounterLimits, 50 * sizeof(int32));
 
 					Assert(ParamRealsCount < 48);
 
@@ -1814,6 +1815,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 						// Check and setup the usings tokens for array iteration
 
 						// Replace all the tokens using the iter counter to fill in the array indecies
+						param RealParamsIter[50];
 						ZeroMemory(RealParamsIter, 50 * sizeof(param));
 						int32 NextIterIndex = 0;
 

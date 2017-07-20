@@ -7,6 +7,7 @@ var NewsTitles = ['Update Three','Update Two','Update One'];var NewsDates = ['5/
 
 // This is for the games page. When adding, always add on the left
 var GamesImages = [
+'games/Racetrack/Racetrack.png',
 'games/CoinCollecter/CoinCollector.png',
 'games/Yahtz/Yahtz.png',
 'games/Situps/Situps.png',
@@ -14,6 +15,7 @@ var GamesImages = [
 ];
 
 var GamesDate = [
+'7/18/2017',
 '7/17/2017',
 '7/11/2017',
 '7/6/2017',
@@ -21,6 +23,7 @@ var GamesDate = [
 ];
 
 var GamesName = [
+'Racetrack',
 'CoinCollector',
 'Yahtz',
 'Situps',
@@ -28,6 +31,7 @@ var GamesName = [
 ];
 
 var GamesDescription = [
+'Replication of the pen and paper Racetrack game.',
 'Moving around a character and picking up coins. Arrays and iteration proof of concept.',
 'Collecting coins, moving characters, action points.',
 'Moving workers and collecting resources.',
@@ -35,6 +39,7 @@ var GamesDescription = [
 ];
 
 var GamesPageLink = [
+'games/Racetrack/Racetrack.html',
 'games/CoinCollecter/CoinCollector.html',
 'games/Yahtz/Yahtz.html',
 'games/Situps/Situps.html',
