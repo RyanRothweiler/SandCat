@@ -1,0 +1,139 @@
+<!-- These go at the top of every page -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta charset="utf-8">
+  <title>SandCat</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- FONT
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+
+
+  <!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link href="https://unpkg.com/basscss@8.0.2/css/basscss.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/normalize.css">
+  <link rel="stylesheet" href="../../css/skeleton.css">
+
+  <link href="../../styles.css" rel="stylesheet">
+  <script src="https://use.typekit.net/prn5ylg.js"></script>
+  <script>try{Typekit.load({ async: true });}catch(e){}</script>
+
+  <!-- Favicon
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="icon" type="image/png" href="../../images/favicon.png">
+
+</head>
+<body>
+
+  <!-- Primary Page Layout
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+
+<script src="Build/UnityLoader.js"></script>
+    <script>
+      var gameInstance = UnityLoader.instantiate("gameContainer", "Build/SandCatWebGL.json");
+    </script>
+<script src="../../processor.js"></script>
+<body onload="PageLoad('Game', '../../');">
+<div id="header"></div>
+
+<!--  -->
+
+        <pre></pre>
+
+
+        <div class="container">
+          <div class="row">
+            <div class="six columns">
+			<h1><strong>CoinCollector</strong></h1>
+              
+            </div>
+            <div class="six columns">
+            <h5>Moving around a character and picking up coins. Arrays and iteration proof of concept.</h5>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="container">
+          <div class="row">
+    <div id="gameContainer" class='u-max-full-width'></div>
+
+      <h4>Instructions and Details</h4>
+<p>This is a proof of concept for the new iteration feature. Iterating through the coins is easily specified without complicated recurion or loop flow control. Coins can be added or removed from the array, though that feature isn't in yet, but this iteration would addapt to those changes.</p>
+
+
+        <pre></pre>
+        <pre></pre>
+
+
+          <div class="row">
+            <div class="six columns">
+      <h4>SandCat Rules</h4>
+              
+            </div>
+            <div class="six columns">
+      <p>language version 0.0.5</p>
+      </div>
+      </div>
+
+
+        <pre><code>
+BoardWidth = 10.
+BoardHeight = 10.
+
+Coins = [20]{X = random 1 to BoardWidth - 1, Y = random 1 to BoardHeight - 1, Value = random 1 to 5, Alive = 1}.
+
+PlayerX = 0.
+PlayerY = 0.
+PlayerValue = 0.
+
+CollectCoins = Event
+  using Coin
+  does PlayerValue = PlayerValue + Coin'Value, Coin'Alive = 0
+  if Coin'Alive = 1 and Coin'X = PlayerX and Coin'Y = PlayerY.
+
+MoveUp = PlayerAction
+  does PlayerY = PlayerY + 1
+  if PlayerY + 1 < BoardHeight
+  does CollectCoins(Coins).
+
+MoveDown = PlayerAction
+  does PlayerY = PlayerY - 1
+  if PlayerY > 0
+  does CollectCoins(Coins).
+
+MoveRight = PlayerAction
+  does PlayerX = PlayerX + 1
+  if PlayerX + 1 < BoardWidth
+  does CollectCoins(Coins).
+
+MoveLeft = PlayerAction
+  does PlayerX = PlayerX - 1
+  if PlayerX > 0
+  does CollectCoins(Coins).
+</code></pre>
+        
+
+          </div>
+        </div>
+
+
+        <pre></pre>
+        <pre></pre>
+
+        <div id="posts"></div>
+
+</body>
+</body>
+</html>

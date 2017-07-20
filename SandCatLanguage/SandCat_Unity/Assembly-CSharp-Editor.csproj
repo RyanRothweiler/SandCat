@@ -50,12 +50,14 @@
      <Compile Include="Assets\Editor\SandCatEditor.cs" />
      <None Include="Assets\Games\0.0.2\Cavern2\Cavern2.txt" />
      <None Include="Assets\Games\0.0.2\Topsoil2\Topsoil.txt" />
-     <None Include="Assets\Games\Test\Test.txt" />
+     <None Include="Assets\Games\0.0.4\Test\Test.txt" />
      <None Include="Assets\Games\0.0.2\Scyther\Scyther.txt" />
      <None Include="Assets\Games\0.0.2\Topsoil\Topsoil.txt" />
-     <None Include="Assets\Games\Yahtz\Yahtz.txt" />
-     <None Include="Assets\Games\Situps\Situps.txt" />
-     <None Include="Assets\Games\TowerOfHanoi\TowerOfHanoi.txt" />
+     <None Include="Assets\Games\0.0.5\Racetrack\Racetrack.txt" />
+     <None Include="Assets\Games\0.0.4\Yahtz\Yahtz.txt" />
+     <None Include="Assets\Games\0.0.4\Situps\Situps.txt" />
+     <None Include="Assets\Games\0.0.5\CoinCollect\CoinCollect.txt" />
+     <None Include="Assets\Games\0.0.4\TowerOfHanoi\TowerOfHanoi.txt" />
  <Reference Include="UnityEditor.Advertisements">
  <HintPath>C:/Program Files/UnityVersions/Unity_5.6.2f/Editor/Data/UnityExtensions/Unity/Advertisements/Editor/UnityEditor.Advertisements.dll</HintPath>
  </Reference>

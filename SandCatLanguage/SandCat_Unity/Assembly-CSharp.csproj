@@ -49,14 +49,18 @@
      <Compile Include="Assets\Games\0.0.2\Cavern2\ActionSpace.cs" />
      <Compile Include="Assets\Games\0.0.2\Cavern2\Cavern2.cs" />
      <Compile Include="Assets\Games\0.0.2\Topsoil\NextColor.cs" />
-     <Compile Include="Assets\Games\Situps\ResourceCell.cs" />
-     <Compile Include="Assets\Games\Situps\Worker.cs" />
-     <Compile Include="Assets\Games\TowerOfHanoi\Disc.cs" />
-     <Compile Include="Assets\Games\TowerOfHanoi\DiscHeld.cs" />
-     <Compile Include="Assets\Games\TowerOfHanoi\Tower.cs" />
-     <Compile Include="Assets\Games\Yahtz\Character.cs" />
-     <Compile Include="Assets\Games\Yahtz\Crystal.cs" />
-     <Compile Include="Assets\Games\Yahtz\InitCoins.cs" />
+     <Compile Include="Assets\Games\0.0.4\Situps\ResourceCell.cs" />
+     <Compile Include="Assets\Games\0.0.4\Situps\Worker.cs" />
+     <Compile Include="Assets\Games\0.0.4\TowerOfHanoi\Disc.cs" />
+     <Compile Include="Assets\Games\0.0.4\TowerOfHanoi\DiscHeld.cs" />
+     <Compile Include="Assets\Games\0.0.4\TowerOfHanoi\Tower.cs" />
+     <Compile Include="Assets\Games\0.0.4\Yahtz\Character.cs" />
+     <Compile Include="Assets\Games\0.0.4\Yahtz\Crystal.cs" />
+     <Compile Include="Assets\Games\0.0.4\Yahtz\InitCoins.cs" />
+     <Compile Include="Assets\Games\0.0.5\CoinCollect\Bank.cs" />
+     <Compile Include="Assets\Games\0.0.5\CoinCollect\Coin.cs" />
+     <Compile Include="Assets\Games\0.0.5\CoinCollect\Player.cs" />
+     <Compile Include="Assets\Games\0.0.5\Racetrack\Car.cs" />
      <Compile Include="Assets\SandCat_Runner\Runner\SandCat.cs" />
      <Compile Include="Assets\SandCat_Runner\Utilities\ActionButton.cs" />
      <Compile Include="Assets\SandCat_Runner\Utilities\Comparison.cs" />
@@ -70,12 +74,14 @@
      <Compile Include="Assets\SandCat_Runner\Utilities\ValueToSprite\ValuesToSprite.cs" />
      <None Include="Assets\Games\0.0.2\Cavern2\Cavern2.txt" />
      <None Include="Assets\Games\0.0.2\Topsoil2\Topsoil.txt" />
-     <None Include="Assets\Games\Test\Test.txt" />
+     <None Include="Assets\Games\0.0.4\Test\Test.txt" />
      <None Include="Assets\Games\0.0.2\Scyther\Scyther.txt" />
      <None Include="Assets\Games\0.0.2\Topsoil\Topsoil.txt" />
-     <None Include="Assets\Games\Yahtz\Yahtz.txt" />
-     <None Include="Assets\Games\Situps\Situps.txt" />
-     <None Include="Assets\Games\TowerOfHanoi\TowerOfHanoi.txt" />
+     <None Include="Assets\Games\0.0.5\Racetrack\Racetrack.txt" />
+     <None Include="Assets\Games\0.0.4\Yahtz\Yahtz.txt" />
+     <None Include="Assets\Games\0.0.4\Situps\Situps.txt" />
+     <None Include="Assets\Games\0.0.5\CoinCollect\CoinCollect.txt" />
+     <None Include="Assets\Games\0.0.4\TowerOfHanoi\TowerOfHanoi.txt" />
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Program Files/UnityVersions/Unity_5.6.2f/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>

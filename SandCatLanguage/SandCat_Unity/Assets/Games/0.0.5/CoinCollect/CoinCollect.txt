@@ -1,0 +1,33 @@
+BoardWidth = 10.
+BoardHeight = 10.
+
+Coins = [20]{X = random 1 to BoardWidth - 1, Y = random 1 to BoardHeight - 1, Value = random 1 to 5, Alive = 1}.
+
+PlayerX = 0.
+PlayerY = 0.
+PlayerValue = 0.
+
+CollectCoins = Event
+	using Coin
+	does PlayerValue = PlayerValue + Coin'Value, Coin'Alive = 0
+	if Coin'Alive = 1 and Coin'X = PlayerX and Coin'Y = PlayerY.
+
+MoveUp = PlayerAction
+	does PlayerY = PlayerY + 1
+	if PlayerY + 1 < BoardHeight
+	does CollectCoins(Coins).
+
+MoveDown = PlayerAction
+	does PlayerY = PlayerY - 1
+	if PlayerY > 0
+	does CollectCoins(Coins).
+
+MoveRight = PlayerAction
+	does PlayerX = PlayerX + 1
+	if PlayerX + 1 < BoardWidth
+	does CollectCoins(Coins).
+
+MoveLeft = PlayerAction
+	does PlayerX = PlayerX - 1
+	if PlayerX > 0
+	does CollectCoins(Coins).

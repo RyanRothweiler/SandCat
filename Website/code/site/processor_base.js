@@ -7,30 +7,40 @@
 
 // This is for the games page. When adding, always add on the left
 var GamesImages = [
+'games/Racetrack/Racetrack.png',
+'games/CoinCollecter/CoinCollector.png',
 'games/Yahtz/Yahtz.png',
 'games/Situps/Situps.png',
 'games/TowerOfHanoi/TowerOfHanoi.png'
 ];
 
 var GamesDate = [
+'7/18/2017',
+'7/17/2017',
 '7/11/2017',
 '7/6/2017',
 '7/5/2017'
 ];
 
 var GamesName = [
+'Racetrack',
+'CoinCollector',
 'Yahtz',
 'Situps',
 'Tower of Hanoi'
 ];
 
 var GamesDescription = [
+'Replication of the pen and paper Racetrack game.',
+'Moving around a character and picking up coins. Arrays and iteration proof of concept.',
 'Collecting coins, moving characters, action points.',
 'Moving workers and collecting resources.',
 'The classic Tower of Hanoi stacking disk game.'
 ];
 
 var GamesPageLink = [
+'games/Racetrack/Racetrack.html',
+'games/CoinCollecter/CoinCollector.html',
 'games/Yahtz/Yahtz.html',
 'games/Situps/Situps.html',
 'games/TowerOfHanoi/TowerOfHanoi.html'

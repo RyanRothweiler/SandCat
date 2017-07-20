@@ -20,3 +20,11 @@
 - Cleaned the syntax, it's much more consistent now. 
 - Added arrays.
 - Randoms in array declerations now is evaluated for each individual index, not once for the whole array.
+
+0.0.5
+- Array indexing starts at 1.
+- Added automatic 'Index option to array members.
+- Added automatic 'Count option to arrays. Readonly.
+- Added array iteration by passing entire array into event.
+- Added array dot add, to add to the end of arrays.
+- Added array dot RemoveAt, to remove from anywhere in the array.

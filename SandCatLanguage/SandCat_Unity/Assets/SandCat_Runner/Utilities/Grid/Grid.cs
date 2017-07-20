@@ -5,6 +5,7 @@ using UnityEngine;
 public class Grid : MonoBehaviour
 {
 
+	public bool showGrid = true;
 	public string widthFluentName;
 	public string heightFluentName;
 	public GameObject gridCell;
@@ -26,7 +27,7 @@ public class Grid : MonoBehaviour
 			}
 
 			// Create new grid
-			{
+			if (showGrid) {
 				int width = (int)SandCat.instance.GetFluentValue(widthFluentName);
 				int height = (int)SandCat.instance.GetFluentValue(heightFluentName);
 

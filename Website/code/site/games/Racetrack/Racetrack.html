@@ -1,0 +1,126 @@
+<!-- These go at the top of every page -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta charset="utf-8">
+  <title>SandCat</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- FONT
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+
+
+  <!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link href="https://unpkg.com/basscss@8.0.2/css/basscss.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/normalize.css">
+  <link rel="stylesheet" href="../../css/skeleton.css">
+
+  <link href="../../styles.css" rel="stylesheet">
+  <script src="https://use.typekit.net/prn5ylg.js"></script>
+  <script>try{Typekit.load({ async: true });}catch(e){}</script>
+
+  <!-- Favicon
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="icon" type="image/png" href="../../images/favicon.png">
+
+</head>
+<body>
+
+  <!-- Primary Page Layout
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+
+<script src="Build/UnityLoader.js"></script>
+    <script>
+      var gameInstance = UnityLoader.instantiate("gameContainer", "Build/SandCatWebGL.json");
+    </script>
+<script src="../../processor.js"></script>
+<body onload="PageLoad('Game', '../../');">
+<div id="header"></div>
+
+<!--  -->
+
+        <pre></pre>
+
+
+        <div class="container">
+          <div class="row">
+            <div class="six columns">
+			<h1><strong>Racetrack</strong></h1>
+              
+            </div>
+            <div class="six columns">
+            <h5>Replication of the pen and paper Racetrack game.</h5>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="container">
+          <div class="row">
+    <div id="gameContainer" class='u-max-full-width'></div>
+
+      <h4>Instructions and Details</h4>
+<p>Racetrack is a game simple enough to be played on pen and paper. The mechanics simulate a moving car with inertia. This is a single player version of the mechanics. Typically, the gaol of the game is to get around the track before the other cars do, but this version lask any colliion detection and opponents.</p>
+
+
+        <pre></pre>
+        <pre></pre>
+
+
+          <div class="row">
+            <div class="six columns">
+      <h4>SandCat Rules</h4>
+              
+            </div>
+            <div class="six columns">
+      <p>language version 0.0.5</p>
+      </div>
+      </div>
+
+
+        <pre><code>
+PlayerX = 0.
+PlayerY = 0.
+
+SlopeX = 0.
+SlopeY = 0.
+
+ApplySlope = Event
+  does PlayerX = PlayerX + SlopeX, PlayerY = PlayerY + SlopeY.
+
+MoveCenter  = PlayerAction does ApplySlope().
+MoveNorth   = PlayerAction does SlopeY = SlopeY + 1, ApplySlope().
+MoveSouth   = PlayerAction does SlopeY = SlopeY - 1, ApplySlope().
+MoveEast    = PlayerAction does SlopeX = SlopeX + 1, ApplySlope().
+MoveWest    = PlayerAction does SlopeX = SlopeX - 1, ApplySlope().
+
+MoveNE      = PlayerAction does SlopeY = SlopeY + 1, SlopeX = SlopeX + 1, ApplySlope().
+MoveSE      = PlayerAction does SlopeY = SlopeY - 1, SlopeX = SlopeX + 1, ApplySlope().
+MoveSW      = PlayerAction does SlopeY = SlopeY - 1, SlopeX = SlopeX - 1, ApplySlope().
+MoveNW      = PlayerAction does SlopeY = SlopeY + 1, SlopeX = SlopeX - 1, ApplySlope().
+
+</code></pre>
+        
+
+          </div>
+        </div>
+
+
+        <pre></pre>
+        <pre></pre>
+
+        <div id="posts"></div>
+
+</body>
+</body>
+</html>

@@ -1,0 +1,19 @@
+PlayerX = 0.
+PlayerY = 0.
+
+SlopeX = 0.
+SlopeY = 0.
+
+ApplySlope = Event
+	does PlayerX = PlayerX + SlopeX, PlayerY = PlayerY + SlopeY.
+
+MoveCenter 	= PlayerAction does ApplySlope().
+MoveNorth 	= PlayerAction does SlopeY = SlopeY + 1, ApplySlope().
+MoveSouth 	= PlayerAction does SlopeY = SlopeY - 1, ApplySlope().
+MoveEast 	= PlayerAction does SlopeX = SlopeX + 1, ApplySlope().
+MoveWest 	= PlayerAction does SlopeX = SlopeX - 1, ApplySlope().
+
+MoveNE 		= PlayerAction does SlopeY = SlopeY + 1, SlopeX = SlopeX + 1, ApplySlope().
+MoveSE 		= PlayerAction does SlopeY = SlopeY - 1, SlopeX = SlopeX + 1, ApplySlope().
+MoveSW 		= PlayerAction does SlopeY = SlopeY - 1, SlopeX = SlopeX - 1, ApplySlope().
+MoveNW 		= PlayerAction does SlopeY = SlopeY + 1, SlopeX = SlopeX - 1, ApplySlope().

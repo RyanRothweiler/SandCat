@@ -43,6 +43,9 @@ public class SandCat : MonoBehaviour
 
 	// Testing
 	[DllImport ("SandCat_Runner")] private static extern int 	SC_IntTest(int input);
+	[DllImport ("SandCat_Runner")] private static extern void 	SC_GetStatePrintout(StringBuilder PrintoutBuffer, int BufferSize);
+
+
 #endif
 
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -76,10 +79,15 @@ public class SandCat : MonoBehaviour
 
 	// Testing
 	[DllImport ("__Internal")] private static extern int 		SC_IntTest(int input);
+	[DllImport ("__Internal")] private static extern void 		SC_GetStatePrintout(StringBuilder PrintoutBuffer, int BufferSize);
 #endif
 
 	[HideInInspector] public string prevError;
 	[HideInInspector] public bool doTest;
+	[HideInInspector] public bool showInfo;
+
+	private Rect windowRect = new Rect(0, 0, 200, 200);
+	private Vector2 windowScrollPos = new Vector2();
 
 	public void Awake()
 	{
@@ -99,6 +107,10 @@ public class SandCat : MonoBehaviour
 	{
 		if (instance == null) {
 			instance = this;
+		}
+
+		if (Input.GetKeyDown(KeyCode.Tab)) {
+			showInfo = !showInfo;
 		}
 	}
 
@@ -225,5 +237,24 @@ public class SandCat : MonoBehaviour
 			Debug.LogError("Array name of " + arrayName + " does not exist.");
 			return (1.0f);
 		}
+	}
+
+	public void OnGUI()
+	{
+		if (showInfo) {
+			GUILayout.Window(0, new Rect(0, 0, 300, Screen.height), StateWindow, "Raw State");
+		}
+	}
+
+	public void StateWindow(int windowId)
+	{
+		windowScrollPos = GUILayout.BeginScrollView(windowScrollPos);
+
+		StringBuilder state = new StringBuilder(5000);
+		SC_GetStatePrintout(state, 5000);
+
+		GUILayout.Label(state.ToString());
+
+		GUILayout.EndScrollView();
 	}
 }

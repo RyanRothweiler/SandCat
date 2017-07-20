@@ -7,7 +7,7 @@ copy /Y SandCat_Runner.dll T:\SandCatLanguage\SandCat_Unity\Assets\SandCat_Runne
 
 rem Windows exe
 cd ..\Exe
-cl T:\SandCatLanguage\SandCat_Runner\SandCat_Runner.cpp -nologo -Zi /EHsc user32.lib -FeSandCat_Exe.exe
+cl -DEXE=1 T:\SandCatLanguage\SandCat_Runner\SandCat_Runner.cpp -nologo -Zi /EHsc user32.lib -FeSandCat_Exe.exe
 
 rem Copy sandcat source to the unity proj
 copy /Y T:\SandCatLanguage\SandCat_Runner\SandCat_Runner.cpp T:\SandCatLanguage\SandCat_Unity\Assets\Plugins

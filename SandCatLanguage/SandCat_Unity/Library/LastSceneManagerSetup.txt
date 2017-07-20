@@ -1,4 +1,4 @@
 sceneSetups:
-- path: Assets/Games/Yahtz/Yahtz.unity
+- path: Assets/Games/0.0.5/CoinCollect/CoinCollecter.unity
   isLoaded: 1
   isActive: 1
