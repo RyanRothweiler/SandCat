@@ -20,6 +20,8 @@
 - Cleaned the syntax, it's much more consistent now. 
 - Added arrays.
 - Randoms in array declerations now is evaluated for each individual index, not once for the whole array.
+- Can now build webgl in Unity and play games online. (7/12/17)
+- Launch of website. (7/12/17)
 
 0.0.5
 - Array indexing starts at 1.
