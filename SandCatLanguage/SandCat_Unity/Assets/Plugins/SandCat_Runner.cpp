@@ -2692,7 +2692,7 @@ main(int argc, char const **argv)
 		// Load the program into the parser
 		{
 			// string UnityGameFile = "T:/SandCatLanguage/SandCat_Unity/Assets/Games/0.0.5/Racetrack/Racetrack.txt";
-			string UnityGameFile = "T:/SandCatLanguage/SandCat_Unity/Assets/Games/0.0.5/CoinCollect/CoinCollect.txt";
+			string UnityGameFile = "T:/SandCatLanguage/SandCat_Unity/Assets/Games/0.0.5/Yoga/Yoga.txt";
 			// string UnityGameFile = "../SandCat_Unity/Assets/Games/Test/Test.txt";
 			HANDLE FileHandle = CreateFile(UnityGameFile.CharArray, GENERIC_READ, FILE_SHARE_READ,
 			                               NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);

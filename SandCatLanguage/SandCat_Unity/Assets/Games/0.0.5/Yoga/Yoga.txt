@@ -1,0 +1,5 @@
+Grid = [10]{Health = 0}.
+
+AddHealth = PlayerAction
+	using X
+	does Grid[X]'Health = Grid[X]'Health + 2.

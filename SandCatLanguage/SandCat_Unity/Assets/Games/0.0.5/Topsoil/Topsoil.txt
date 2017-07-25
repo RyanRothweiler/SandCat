@@ -1,0 +1,45 @@
+# Plant ids 1, 2, 3, 4 is the shovel only for queued plants, and 1000 is nothing.
+# Color ids 1, 2, 3
+
+TotalPlantTypes = 3.
+
+Grid = [16]{Plant = 1000, Color = random 1 to TotalPlantTypes, Marked = 0}.
+
+PlantQueue = [5]{Plant = random 1 to TotalPlantTypes}.
+PlantQueue[4]'Plant = 4.
+PlantQueue[5]'Plant = 1000.
+
+ShiftQueueDown = Event
+	does PlantQueue[1] = PlantQueue[2]
+	does PlantQueue[2] = PlantQueue[3]
+	does PlantQueue[3] = PlantQueue[4]
+	does PlantQueue[4] = PlantQueue[5].
+
+RefillQueue = Event
+	does PlantQueue[1] = random 1 to TotalPlantTypes
+	does PlantQueue[2] = random 1 to TotalPlantTypes
+	does PlantQueue[3] = random 1 to TotalPlantTypes
+	does PlantQueue[4] = 4
+	does PlantQueue[5] = 1000.
+
+
+# Placing Plant
+PlacePlant = PlayerAction
+	using X, Y
+	does PlacePlant(X, Y)
+	if X < Grid'Width and Y < Grid'Height and not Grid[X, Y]'Plant = 1000.
+
+PlacePlant = Event
+	using X, Y
+	does MarkAdj(X, Y, Grid, Grid), CleanMarks(Grid), ShiftQueueDown().
+
+MarkAdj
+	using X, Y, First, Second
+	does Grid[X, Y]'Marked = 1
+	does First'Marked = 1 if First'Plant = Second'Plant and Second'Marked = 1 and Second'X = First'X and Second'Y - 1 = First'Y
+	does First'Marked = 1 if First'Plant = Second'Plant and Second'Marked = 1 and Second'X = First'X and Second'Y + 1 = First'Y
+	does First'Marked = 1 if First'Plant = Second'Plant and Second'Marked = 1 and Second'X - 1 = First'X and Second'Y = First'Y
+	does First'Marked = 1 if First'Plant = Second'Plant and Second'Marked = 1 and Second'X + 1 = First'X and Second'Y = First'Y.
+
+# Removes all the marks
+CleanMarks = Event using Gr does Gr'Marked = 0.

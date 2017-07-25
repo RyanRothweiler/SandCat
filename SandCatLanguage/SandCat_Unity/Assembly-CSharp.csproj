@@ -61,6 +61,7 @@
      <Compile Include="Assets\Games\0.0.5\CoinCollect\Coin.cs" />
      <Compile Include="Assets\Games\0.0.5\CoinCollect\Player.cs" />
      <Compile Include="Assets\Games\0.0.5\Racetrack\Car.cs" />
+     <Compile Include="Assets\Games\0.0.5\Topsoil\QueuedPlant.cs" />
      <Compile Include="Assets\SandCat_Runner\Runner\SandCat.cs" />
      <Compile Include="Assets\SandCat_Runner\Utilities\ActionButton.cs" />
      <Compile Include="Assets\SandCat_Runner\Utilities\Comparison.cs" />
@@ -68,6 +69,7 @@
      <Compile Include="Assets\SandCat_Runner\Utilities\Fluent.cs" />
      <Compile Include="Assets\SandCat_Runner\Utilities\FluentTextDisplay.cs" />
      <Compile Include="Assets\SandCat_Runner\Utilities\Grid\Grid.cs" />
+     <Compile Include="Assets\SandCat_Runner\Utilities\StateValue.cs" />
      <Compile Include="Assets\SandCat_Runner\Utilities\ValueToColor\MapFluentToColor.cs" />
      <Compile Include="Assets\SandCat_Runner\Utilities\ValueToColor\ValuesToColor.cs" />
      <Compile Include="Assets\SandCat_Runner\Utilities\ValueToSprite\MapFluentToSprite.cs" />
@@ -75,6 +77,7 @@
      <None Include="Assets\Games\0.0.2\Cavern2\Cavern2.txt" />
      <None Include="Assets\Games\0.0.2\Topsoil2\Topsoil.txt" />
      <None Include="Assets\Games\0.0.4\Test\Test.txt" />
+     <None Include="Assets\Games\0.0.5\Topsoil\Topsoil.txt" />
      <None Include="Assets\Games\0.0.2\Scyther\Scyther.txt" />
      <None Include="Assets\Games\0.0.2\Topsoil\Topsoil.txt" />
      <None Include="Assets\Games\0.0.5\Racetrack\Racetrack.txt" />

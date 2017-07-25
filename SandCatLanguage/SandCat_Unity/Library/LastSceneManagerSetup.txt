@@ -1,4 +1,4 @@
 sceneSetups:
-- path: Assets/Games/0.0.5/Racetrack/Racetrack.unity
+- path: Assets/Games/0.0.5/Topsoil/Topsoil.unity
   isLoaded: 1
   isActive: 1

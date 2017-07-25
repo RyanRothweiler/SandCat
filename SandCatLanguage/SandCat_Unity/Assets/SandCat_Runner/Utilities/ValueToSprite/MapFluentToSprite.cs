@@ -7,13 +7,9 @@ using UnityEngine.UI;
 public class MapFluentToSprite : MonoBehaviour
 {
 
-	public FluentDisplayType type;
-
+	public StateValue stateVal;
 
 	public ValuesToSprite pairing;
-	public string entityName;
-	public string fluentName;
-
 	private Image image;
 
 	void Start ()
@@ -24,12 +20,7 @@ public class MapFluentToSprite : MonoBehaviour
 	// Update is called once per frame
 	void Update ()
 	{
-		int fluentValue = 0;
-		if (type == FluentDisplayType.Fluent) {
-			fluentValue = (int)SandCat.instance.GetFluentValue(fluentName);
-		} else if (type == FluentDisplayType.Entity) {
-			fluentValue = (int)SandCat.instance.GetEntityFluentValue(entityName, fluentName);
-		}
+		int fluentValue = (int)stateVal.GetValue();
 
 		foreach (ValuesToSprite.Pair pair in pairing.pairings) {
 			if (fluentValue == pair.value) {
