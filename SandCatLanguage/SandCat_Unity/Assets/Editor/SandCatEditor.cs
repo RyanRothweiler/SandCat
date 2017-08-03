@@ -27,24 +27,13 @@ public class SandCatEditor : Editor
 				EditorGUILayout.LabelField("Syntax Error : ", EditorStyles.boldLabel);
 				EditorGUILayout.LabelField(cat.prevError);
 			} else {
-				// Actions
+				// Events
 				{
-					int actionsCount = SandCat.instance.GetActionsCount();
-					showActions = EditorGUILayout.Foldout(showActions, "Actions (" + actionsCount + ")");
-					if (showActions) {
-						for (int index = 0; index < actionsCount; index++) {
-							EditorGUILayout.LabelField(SandCat.instance.GetActionIndexName(index));
-						}
-					}
-				}
-
-				// Methods
-				{
-					int methodsCount = SandCat.instance.GetMethodsCount();
-					showMethods = EditorGUILayout.Foldout(showMethods, "Methods (" + methodsCount + ")");
+					int methodsCount = SandCat.instance.GetEventsCount();
+					showMethods = EditorGUILayout.Foldout(showMethods, "PlayerActions / Events (" + methodsCount + ")");
 					if (showMethods) {
 						for (int index = 0; index < methodsCount; index++) {
-							EditorGUILayout.LabelField(SandCat.instance.GetMethodIndexName(index));
+							EditorGUILayout.LabelField(SandCat.instance.GetEventIndexName(index));
 						}
 					}
 				}

@@ -553,7 +553,7 @@ enum class token_type {
 	event, usingg,
 
 	// action
-	does, iff,
+	does, iff, ifAll,
 
 	// math symbols
 	sub, add, div, mult,
@@ -592,6 +592,9 @@ struct array {
 	// This is used so we can add more to the array at anytime.
 	token_info BaseTokens[100];
 	int32 BaseTokensCount;
+
+	int32 Width;
+	int32 Height;
 };
 
 // This type has been streatched, should reall break it down into smaller pieces.
@@ -645,26 +648,32 @@ struct does_if {
 	token_info DoesTokens[100];
 	int32 DoesTokensCount;
 
-	token_info IfTokens[50];
+	// If this is true, then the does is only evaluated one time, and only if ALL the if tokens return true
+	// This is used to tell the automatic iteration to put everything into one if
+	bool32 IfAll;
+
+	token_info IfTokens[200];
 	int32 IfTokensCount;
 };
 
-// These are PlayerAction.
-struct event {
-	string Name;
+enum class event_type {
+	// changes the game initiates
+	game,
 
-	does_if DoesIf[100];
-	int32 DoesIfCount;
+	// changes the player initiates
+	player
 };
 
 // These are Events
-struct method {
+struct event {
+	event_type Type;
+
 	string Name;
 
 	string Usings[100];
 	int32 UsingsCount;
 
-	does_if DoesIf[30];
+	does_if DoesIf[100];
 	int32 DoesIfCount;
 };
 
@@ -685,9 +694,6 @@ struct game_def {
 	// These are instances
 	entity* InstancedEntities;
 	int32 InstancedEntitiesCount;
-
-	method* Methods;
-	int32 MethodsCount;
 };
 
 fluent*
@@ -703,6 +709,17 @@ FindFluentInList(string Name, fluent* Fluents, int32 FluentsCount)
 	return (NULL);
 }
 
+array*
+FindArray(string Name, array* Arrays, int32 ArraysCount)
+{
+	for (int32 Index = 0; Index < ArraysCount; Index++) {
+		if (Arrays[Index].Name == Name) {
+			return (&Arrays[Index]);
+		}
+	}
+
+	return (NULL);
+}
 
 entity*
 FindEntity(string Name, entity* Entities, int32 EntitiesCount)
@@ -841,6 +858,12 @@ GetFluentInArray(string EntityName, string FluentName, int32 ArrayIndex, int32 L
 	return (FluentEditing);
 }
 
+int32
+TwoDimToOneDim(int32 X, int32 Y, int32 Height)
+{
+	return ((X - 1) * Height) + (Y - 1) + 1;
+}
+
 real64
 InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
                 fluent* Fluents, int32 FluentsCount,
@@ -856,6 +879,7 @@ InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
 	        Tokens[AccumIndex].Type != token_type::none &&
 	        Tokens[AccumIndex].Type != token_type::closedCurly &&
 	        Tokens[AccumIndex].Type != token_type::closeSquare &&
+	        Tokens[AccumIndex].Type != token_type::closeParen &&
 	        Tokens[AccumIndex].Type != token_type::lessThan &&
 	        Tokens[AccumIndex].Type != token_type::lessThanOrEqual &&
 	        Tokens[AccumIndex].Type != token_type::greaterThan &&
@@ -877,14 +901,7 @@ InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
 				if (Entity == NULL) {
 					// Entity wasn't found, check if it's an array instead
 
-					array* ArrayEditing;
-					for (int32 Index = 0; Index < ArraysCount; Index++) {
-						if (Arrays[Index].Name == Tokens[AccumIndex].Name) {
-							ArrayEditing = &Arrays[Index];
-							break;
-						}
-					}
-
+					array* ArrayEditing = FindArray(Tokens[AccumIndex].Name, Arrays, ArraysCount);
 					if (ArrayEditing == NULL) {
 						// Nope, not an array either, so definitely an error
 						ThrowError(Tokens[AccumIndex].LineNumber, EntityNotFoundPrefix + Tokens[AccumIndex].Name);
@@ -900,7 +917,7 @@ InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
 				}
 
 				AccumIndex += 2;
-			} else if (Tokens[AccumIndex + 1].Type == token_type::openSquare) {// ply
+			} else if (Tokens[AccumIndex + 1].Type == token_type::openSquare) {
 				// Fluent in an array
 
 				// Get the number of tokens until the closing square
@@ -912,12 +929,45 @@ InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
 				string EntityName = Tokens[AccumIndex].Name;
 				string FluentName = Tokens[AccumIndex + CountUntilClose + 1].Name;
 				int32 TokenLineNum = Tokens[AccumIndex].LineNumber;
+				array* ArrayAbout = FindArray(EntityName, Arrays, ArraysCount);
+				if (ArrayAbout == NULL) {
+					ThrowError(Tokens[AccumIndex].LineNumber, "Could not find array of name " + EntityName);
+				}
 
-				int32 ArrayIndex = InfixAccumulate(Tokens, AccumIndex + 2, Fluents,
-				                                   FluentsCount, Entities, EntitiesCount, Arrays, ArraysCount);
+				int32 FirstDim = 1;
+				int32 SecondDim = 1;
+				/* This is the final array index.
+				If the game is using 2d indexing, then that is converted to 1d, else this just uses the games 1d indexing*/
+				int32 ArrayIndex = 0;
+
+				FirstDim = InfixAccumulate(Tokens, AccumIndex + 2, Fluents,
+				                           FluentsCount, Entities, EntitiesCount, Arrays, ArraysCount);
+				if (Tokens[AccumIndex + 3].Type == token_type::comma) {
+					// There are two dims, so the rules wants to 2d index, so get the second index and convert it to 1d
+					SecondDim = InfixAccumulate(Tokens, AccumIndex + 4, Fluents,
+					                            FluentsCount, Entities, EntitiesCount, Arrays, ArraysCount);
+
+					ArrayIndex = TwoDimToOneDim(FirstDim, SecondDim, ArrayAbout->Height);
+				} else {
+					// There is only one dim, so the rules wants to 1d index, so the first dim is the 1d index
+					ArrayIndex = FirstDim;
+				}
+
+				// y = index / width;
+				// x = index % width;
 
 				if (FluentName == "Index") {
 					NewOperand = ArrayIndex;
+				} else if (FluentName == "X") {
+					if (ArrayAbout == NULL) {
+						ThrowError(Tokens[AccumIndex + 1].LineNumber, "Array of " + EntityName + " does not exist");
+					}
+					NewOperand = ((ArrayIndex - 1) / ArrayAbout->Height) + 1;
+				} else if (FluentName == "Y") {
+					if (ArrayAbout == NULL) {
+						ThrowError(Tokens[AccumIndex + 1].LineNumber, "Array of " + EntityName + " does not exist");
+					}
+					NewOperand = ((ArrayIndex - 1) % ArrayAbout->Height) + 1;
 				} else {
 					fluent* FluentEditing = GetFluentInArray(EntityName, FluentName, ArrayIndex, TokenLineNum, Entities, EntitiesCount);
 					NewOperand = FluentEditing->Value;
@@ -968,6 +1018,7 @@ InfixAccumulate(token_info* Tokens, int32 TokenIndexStart,
 			        Tokens[AccumIndex].Type != token_type::period &&
 			        Tokens[AccumIndex].Type != token_type::does &&
 			        Tokens[AccumIndex].Type != token_type::iff &&
+			        Tokens[AccumIndex].Type != token_type::ifAll &&
 			        Tokens[AccumIndex].Type != token_type::none) {
 				AccumIndex++;
 			}
@@ -1134,21 +1185,6 @@ PrintFillFluent(string InitialPrint, fluent* Fluent)
 	PrintFill(InitialPrint + Fluent->Name + "" + " " + ValueString);
 }
 
-
-// void
-// PrintHeader(string Str)
-// {
-// 	Print("---- " + Str + " ----");
-// }
-
-// void
-// PrintFluent(string InitialPrint, fluent* Fluent)
-// {
-// 	string ValueString = "";
-// 	ValueString = Fluent->Value;
-// 	Print(InitialPrint + Fluent->Name + " " + " " + ValueString);
-// }
-
 void
 StatePrintoutFillBuffer(char* PrintoutBuffer, int32 BufferSize, game_def* Def)
 {
@@ -1170,24 +1206,6 @@ StatePrintoutFillBuffer(char* PrintoutBuffer, int32 BufferSize, game_def* Def)
 			}
 		}
 	}
-
-	// // print arrays
-	// for (int32 Index = 0; Index < Def->ArraysCount; Index++) {
-	// 	array* Array = &Def->Arrays[Index];
-
-	// 	printf(Array->Name.CharArray);
-	// 	printf("[");
-	// 	for (int32 AIndex = 0; AIndex < Array->ArrayCount; AIndex++) {
-	// 		if (AIndex != 0) {
-	// 			printf(", ");
-	// 		}
-
-	// 		printf(Array->Array[AIndex].CharArray);
-	// 	}
-	// 	printf("] \n");
-	// }
-
-	// Print("\n");
 }
 void
 
@@ -1234,10 +1252,18 @@ PrintOptions(game_def* Def)
 	{
 		PrintHeader("POSSIBLE ACTIONS");
 		for (int32 Index = 0; Index < Def->EventsCount; Index++) {
-			string StrIndex = Index;
-			Print(StrIndex + ") " + Def->Events[Index].Name);
+			if (Def->Events[Index].Type == event_type::player) {
+				string StrIndex = Index;
+
+				string UsingsString = "";
+				for (int32 UsingIndex = 0; UsingIndex < Def->Events[Index].UsingsCount; UsingIndex++) {
+					UsingsString = UsingsString + Def->Events[Index].Usings[UsingIndex];
+				}
+
+				Print(StrIndex + ") " + Def->Events[Index].Name + " - " + UsingsString);
+			}
+			// Print("----------------------- ");
 		}
-		// Print("----------------------- ");
 	}
 
 	Print("\n \n----------------------- ");
@@ -1307,17 +1333,23 @@ GrabFluent(token_info* Tokens, int32 StackStart, bool32 Evaluate,
 {
 	fluent FluentAdding = {};
 	FluentAdding.Name = Tokens[StackStart].Name;
+	FluentAdding.Value = 0;
 
-	// This skips over the ID = part, and gets to the statement itself
-	int32 AccumIndex = StackStart + 2;
+	// If there is a comma next, then the fluent isn't assignent any new value.
+	if (Tokens[StackStart + 1].Type != token_type::comma) {
+		// This one is assigned to stuff.
 
-	if (Evaluate) {
-		FluentAdding.Value = InfixAccumulate(Tokens, AccumIndex, Fluents, FluentsCount, Entities, EntitiesCount, Arrays, ArraysCount);
-	} else {
-		while (Tokens[AccumIndex].Type != token_type::period) {
-			FluentAdding.Arithmetic[FluentAdding.ArithCount] = Tokens[AccumIndex];
-			FluentAdding.ArithCount++;
-			AccumIndex++;
+		// This skips over the ID = part, and gets to the statement itself
+		int32 AccumIndex = StackStart + 2;
+
+		if (Evaluate) {
+			FluentAdding.Value = InfixAccumulate(Tokens, AccumIndex, Fluents, FluentsCount, Entities, EntitiesCount, Arrays, ArraysCount);
+		} else {
+			while (Tokens[AccumIndex].Type != token_type::period) {
+				FluentAdding.Arithmetic[FluentAdding.ArithCount] = Tokens[AccumIndex];
+				FluentAdding.ArithCount++;
+				AccumIndex++;
+			}
 		}
 	}
 
@@ -1343,7 +1375,10 @@ GetDoesIf(token_stack* Tokens, int32 TI)
 			TI++;
 		}
 
-		while (Tokens->Tokens[TI].Type != token_type::iff && Tokens->Tokens[TI].Type != token_type::period && Tokens->Tokens[TI].Type != token_type::does) {
+		while (Tokens->Tokens[TI].Type != token_type::iff &&
+		        Tokens->Tokens[TI].Type != token_type::ifAll &&
+		        Tokens->Tokens[TI].Type != token_type::period &&
+		        Tokens->Tokens[TI].Type != token_type::does) {
 
 			if (IsStartingToken(Tokens->Tokens[TI].Type)) {
 				ThrowError(Tokens->Tokens[TI].LineNumber, InvalidStatementStarterPrefix);
@@ -1356,7 +1391,13 @@ GetDoesIf(token_stack* Tokens, int32 TI)
 	}
 
 	// only get the conditionals if they exist
-	if (Tokens->Tokens[TI].Type == token_type::iff) {
+	if (Tokens->Tokens[TI].Type == token_type::iff || Tokens->Tokens[TI].Type == token_type::ifAll) {
+
+		// mark ifAll
+		if (Tokens->Tokens[TI].Type == token_type::ifAll) {
+			DoesIf->IfAll = true;
+		}
+
 		// Move past the if
 		TI++;
 
@@ -1423,7 +1464,7 @@ struct param {
 };
 
 struct token_rep_ret {
-	token_info ReplacedTokens[100];
+	token_info ReplacedTokens[500];
 	int32 ReplacedTokensIndex;
 };
 
@@ -1435,7 +1476,7 @@ TokenReplacement(param* ParamReals, int32 ParamRealsCount,
 	token_rep_ret Ret = {};
 
 	for (int32 Index = 0; Index < TokensReplacingCount; Index++) {
-		Assert(Ret.ReplacedTokensIndex < 100);
+		Assert(Ret.ReplacedTokensIndex < 500);
 
 		// Check if we need to keep the original, or use the tokens passed in
 		bool32 DoReplacement = false;
@@ -1448,6 +1489,11 @@ TokenReplacement(param* ParamReals, int32 ParamRealsCount,
 				DoReplacement = true;
 				break;
 			}
+		}
+
+		// This is because we never want to replace away an entities fluent. We're only replacing fluent standins.
+		if (Index > 0 && TokensReplacing[Index - 1].Type == token_type::dot) {
+			DoReplacement = false;
 		}
 
 		if (DoReplacement) {
@@ -1468,14 +1514,20 @@ TokenReplacement(param* ParamReals, int32 ParamRealsCount,
 }
 
 // TokenChnageState State. Used to hold the state of a TokenChangeState iteration. So we don't recursively call it.
+enum class tcs_verification {
+	needs, valid, invalid
+};
+
 struct tcs_state {
-	token_info Tokens[50];
+	token_info Tokens[100];
 	int32 TokensCount;
 	int32 TokenIndex;
 
 	// This is only used on methods and is only needed to unroll the recursion.
-	token_info IfTokens[50];
+	token_info IfTokens[200];
 	int32 IfTokensCount;
+
+	tcs_verification Verification;
 };
 
 bool32
@@ -1509,42 +1561,40 @@ AddToArray(array* Array, game_def* GameDefinition)
 void
 TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 {
-	int32 StackSize = 100;
+	int32 StackSize = 3000;
 	int32 StackTop = 0;
 	tcs_state* StateStack = (tcs_state*)malloc(sizeof(tcs_state) * StackSize);
 	ZeroMemory(StateStack, sizeof(tcs_state) * StackSize);
 
-	memcpy(StateStack[0].Tokens, Tokens, sizeof(token_info) * (TokensCount + 1));
+	memcpy(StateStack[0].Tokens, Tokens, sizeof(token_info) * TokensCount);
 	StateStack[0].TokensCount = TokensCount;
-
-	// This is only for executing methods without recursion
-	bool32 CheckedValid = false;
 
 	while (StackTop >= 0) {
 		tcs_state* StateUsing = &StateStack[StackTop];
 
-		while (StateUsing->TokenIndex < StateUsing->TokensCount) {
+		while (StateUsing->TokenIndex < StateUsing->TokensCount && StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::none) {
 
 			// This is only for methods. Check if the tokens if statement is valid
-			bool32 Valid = true;
-			if (StateUsing->IfTokensCount > 0 && !CheckedValid) {
-				CheckedValid = true;
+			if (StateUsing->IfTokensCount > 0) {
+				if (StateUsing->Verification == tcs_verification::needs) {
+					int32 NextLogicOp = 0;
+					bool32 Ret = EvaluateBoolean(StateUsing->IfTokens, StateUsing->IfTokensCount, &NextLogicOp,
+					                             GameDef->Fluents, GameDef->FluentsCount,
+					                             GameDef->InstancedEntities, GameDef->InstancedEntitiesCount,
+					                             GameDef->Arrays, GameDef->ArraysCount);
 
-				int32 NextLogicOp = 0;
-				bool32 Ret = EvaluateBoolean(StateUsing->IfTokens, StateUsing->IfTokensCount, &NextLogicOp,
-				                             GameDef->Fluents, GameDef->FluentsCount,
-				                             GameDef->InstancedEntities, GameDef->InstancedEntitiesCount,
-				                             GameDef->Arrays, GameDef->ArraysCount);
-				if (!Ret) {
-					// if not valid, then don't change any state, so move onto the next state using from the stack
-					CheckedValid = false;
-					Valid = false;
-					StackTop--;
-					StateUsing = &StateStack[StackTop];
+					if (Ret) {
+						StateUsing->Verification = tcs_verification::valid;
+					} else {
+						StateUsing->Verification = tcs_verification::invalid;
+					}
 				}
+			} else {
+				StateUsing->Verification = tcs_verification::valid;
 			}
 
-			if (Valid) {
+
+			if (StateUsing->Verification == tcs_verification::valid) {
 
 				if (StateUsing->Tokens[StateUsing->TokenIndex].Type == token_type::id &&
 				        StateUsing->Tokens[StateUsing->TokenIndex + 1].Type == token_type::dot &&
@@ -1579,6 +1629,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 					// Move StateUsing->TokenIndex
 					while (StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::comma &&
 					        StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::iff &&
+					        StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::ifAll &&
 					        StateUsing->TokenIndex < StateUsing->TokensCount) {
 						StateUsing->TokenIndex++;
 					}
@@ -1590,13 +1641,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 				           (StateUsing->Tokens[StateUsing->TokenIndex + 2].Type == token_type::arrAdd || StateUsing->Tokens[StateUsing->TokenIndex + 2].Type == token_type::arrRemove)) {
 					// Adding or removing from arary
 
-					array* ArrayEditing;
-					for (int32 Index = 0; Index < GameDef->ArraysCount; Index++) {
-						if (GameDef->Arrays[Index].Name == StateUsing->Tokens[StateUsing->TokenIndex].Name) {
-							ArrayEditing = &GameDef->Arrays[Index];
-							break;
-						}
-					}
+					array* ArrayEditing = FindArray(StateUsing->Tokens[StateUsing->TokenIndex].Name, GameDef->Arrays, GameDef->ArraysCount);
 
 					int32 NumChanging = StringToInt32(StateUsing->Tokens[StateUsing->TokenIndex + 3].Name);
 
@@ -1661,6 +1706,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 					// Move StateUsing->TokenIndex until next comma
 					while (StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::comma  &&
 					        StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::iff &&
+					        StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::ifAll &&
 					        StateUsing->TokenIndex < StateUsing->TokensCount) {
 						StateUsing->TokenIndex++;
 					}
@@ -1671,22 +1717,34 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 				           StateUsing->Tokens[StateUsing->TokenIndex + 1].Type == token_type::openSquare) {
 					// array assignment by index. These always have dot notation
 
-					int32 IndexEditing = (int32)InfixAccumulate(StateUsing->Tokens, StateUsing->TokenIndex + 2,
-					                     GameDef->Fluents, GameDef->FluentsCount,
-					                     GameDef->InstancedEntities, GameDef->InstancedEntitiesCount,
-					                     GameDef->Arrays, GameDef->ArraysCount) - 1;
-
-					array* ArrayEditing;
-					for (int32 Index = 0; Index < GameDef->ArraysCount; Index++) {
-						if (GameDef->Arrays[Index].Name == StateUsing->Tokens[StateUsing->TokenIndex].Name) {
-							ArrayEditing = &GameDef->Arrays[Index];
-							break;
-						}
-					}
+					array* ArrayEditing = FindArray(StateUsing->Tokens[StateUsing->TokenIndex].Name, GameDef->Arrays, GameDef->ArraysCount);
 
 					if (ArrayEditing == NULL) {
 						ThrowError(StateUsing->Tokens[StateUsing->TokenIndex].LineNumber, "Array of name " + StateUsing->Tokens[StateUsing->TokenIndex].Name + " does not exist.");
 					}
+
+
+					// NOTE this is also copied in InfixAccumulation. When adding support for arithmetic, then move them to their own method
+					int32 ArrayIndex = 0;
+					{
+						int32 FirstDim = 1;
+						int32 SecondDim = 2;
+						FirstDim = InfixAccumulate(StateUsing->Tokens, StateUsing->TokenIndex + 2,
+						                           GameDef->Fluents, GameDef->FluentsCount,
+						                           GameDef->InstancedEntities, GameDef->InstancedEntitiesCount,
+						                           GameDef->Arrays, GameDef->ArraysCount);
+						if (StateUsing->Tokens[StateUsing->TokenIndex + 3].Type == token_type::comma) {
+							SecondDim = (int32)InfixAccumulate(StateUsing->Tokens, StateUsing->TokenIndex + 4,
+							                                   GameDef->Fluents, GameDef->FluentsCount,
+							                                   GameDef->InstancedEntities, GameDef->InstancedEntitiesCount,
+							                                   GameDef->Arrays, GameDef->ArraysCount);
+
+							ArrayIndex = TwoDimToOneDim(FirstDim, SecondDim, ArrayEditing->Height);
+						} else {
+							ArrayIndex = FirstDim;
+						}
+					}
+
 
 					// Get the number of StateUsing->Tokens until the closing square
 					int32 CountUntilClose = 1;
@@ -1697,13 +1755,8 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 					if (StateUsing->Tokens[StateUsing->TokenIndex + CountUntilClose].Type == token_type::dot) {
 						string EntityName = StateUsing->Tokens[StateUsing->TokenIndex].Name;
 						string FluentName = StateUsing->Tokens[StateUsing->TokenIndex + CountUntilClose + 1].Name;
+
 						int32 TokenLineNum = StateUsing->Tokens[StateUsing->TokenIndex].LineNumber;
-
-						int32 ArrayIndex = InfixAccumulate(StateUsing->Tokens, StateUsing->TokenIndex + 2,
-						                                   GameDef->Fluents, GameDef->FluentsCount,
-						                                   GameDef->InstancedEntities, GameDef->InstancedEntitiesCount,
-						                                   GameDef->Arrays, GameDef->ArraysCount);
-
 						fluent* FluentEditing = GetFluentInArray(EntityName, FluentName, ArrayIndex, TokenLineNum, GameDef->InstancedEntities, GameDef->InstancedEntitiesCount);
 
 						FluentEditing->Value = InfixAccumulate(StateUsing->Tokens, StateUsing->TokenIndex + CountUntilClose + 3,
@@ -1712,15 +1765,27 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 						                                       GameDef->Arrays, GameDef->ArraysCount);
 					} else if (StateUsing->Tokens[StateUsing->TokenIndex + CountUntilClose].Type == token_type::equalTo) {
 						// We're putting a new fluent into the array
-						ArrayEditing->Array[IndexEditing] = StateUsing->Tokens[StateUsing->TokenIndex + CountUntilClose + 5].Name;
+						ArrayEditing->Array[ArrayIndex] = StateUsing->Tokens[StateUsing->TokenIndex + CountUntilClose + 5].Name;
 					} else {
 						ThrowError(StateUsing->Tokens[StateUsing->TokenIndex].LineNumber, "Unexpected token after array.");
 					}
 
+					// This is because commas DON'T signify a change in state math when they're within square brackets
+					bool32 WithinSquare = false;
 					// Move until the period
 					while (StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::period &&
-					        StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::none &&
-					        StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::comma) {
+					        StateUsing->Tokens[StateUsing->TokenIndex].Type != token_type::none) {
+						if (!WithinSquare && StateUsing->Tokens[StateUsing->TokenIndex].Type == token_type::comma) {
+							break;
+						}
+						if (StateUsing->Tokens[StateUsing->TokenIndex].Type == token_type::openSquare) {
+							WithinSquare = true;
+						}
+						if (StateUsing->Tokens[StateUsing->TokenIndex].Type == token_type::closeSquare) {
+							WithinSquare = false;
+						}
+
+
 						StateUsing->TokenIndex++;
 					}
 
@@ -1730,22 +1795,19 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 
 				} else if (StateUsing->Tokens[StateUsing->TokenIndex].Type == token_type::id &&
 				           StateUsing->Tokens[StateUsing->TokenIndex + 1].Type == token_type::openParen) {
-					// This is a method
+					// This is an event
 
-					// Find the method to do
-					method* MethodDoing;
-					for (int32 Index = 0; Index < GameDef->MethodsCount; Index++) {
-						if (GameDef->Methods[Index].Name == StateUsing->Tokens[StateUsing->TokenIndex].Name) {
-							MethodDoing = &GameDef->Methods[Index];
-							break;
-						}
-					}
-					if (MethodDoing == NULL) {
+					event* EventDoing = FindEvent(StateUsing->Tokens[StateUsing->TokenIndex].Name, GameDef->Events, GameDef->EventsCount);
+					if (EventDoing == NULL) {
 						// Could not find that method. Error here
 						ThrowError(StateUsing->Tokens[StateUsing->TokenIndex].LineNumber, MethodNotFoundPrefix + StateUsing->Tokens[StateUsing->TokenIndex].Name);
 					}
 
-					Assert(MethodDoing->UsingsCount < 50);
+					if (EventDoing->Name == "RefillQueue") {
+						int x = 0;
+					}
+
+					Assert(EventDoing->UsingsCount < 50);
 
 					// The real params are the literal strings which are being passed in. Replace the method parameters with these literals.
 					int32 ParamCountMax = 20;
@@ -1803,12 +1865,21 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 						for (int32 ArraysIndex = 0; ArraysIndex < GameDef->ArraysCount; ArraysIndex++) {
 							if (ParamReals[ParamIndex].TokenCount == 1 &&
 							        GameDef->Arrays[ArraysIndex].Name == ParamReals[ParamIndex].Tokens[0].Name) {
-								IterCounterLimits[NextIterIndex] = GameDef->Arrays[ParamIndex].ArrayCount;
+								if (GameDef->Arrays[ArraysIndex].Width > 0 && GameDef->Arrays[ArraysIndex].Height > 0) {
+									// This is a 2d array
+									IterCounterLimits[NextIterIndex] = GameDef->Arrays[ArraysIndex].Width * GameDef->Arrays[ArraysIndex].Height;
+								} else {
+									// This is a 1d array
+									IterCounterLimits[NextIterIndex] = GameDef->Arrays[ArraysIndex].ArrayCount;
+								}
 								NextIterIndex++;
 								break;
 							}
 						}
 					}
+
+					// This holds indecies into the StateStack which stay which stack we are compressing for the ifall
+					int32 StatesIndexCompressing[50];
 
 					bool32 Running = true;
 					while (Running) {
@@ -1822,7 +1893,6 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 						for (int32 Index = 0; Index < ParamRealsCount; Index++) {
 							if (ParamReals[Index].TokenCount == 1 &&
 							        ArrayExists(ParamReals[Index].Tokens[0].Name, GameDef->Arrays, GameDef->ArraysCount)) {
-								RealParamsIter[0].TokenCount = 0;
 
 								int32 TokenLineNum = ParamReals[Index].Tokens[0].LineNumber;
 
@@ -1858,7 +1928,7 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 						if (NextIterIndex != 0) {
 							IterCounter[0]++;
 							for (int32 Index = 0; Index < 50; Index++) {
-								if (IterCounter[Index] > IterCounterLimits[Index]) {
+								if (IterCounterLimits[Index] > 1 && IterCounter[Index] > IterCounterLimits[Index] - 1) {
 									IterCounter[Index] = 0;
 									IterCounter[Index + 1]++;
 
@@ -1869,44 +1939,72 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 							}
 						}
 
-						if (Running) {
-							for (int32 DoesIfIndex = MethodDoing->DoesIfCount - 1; DoesIfIndex >= 0; DoesIfIndex--) {
-								does_if* DI = &MethodDoing->DoesIf[DoesIfIndex];
+						int32 NextCompressionIndex = 0;
+						for (int32 DoesIfIndex = EventDoing->DoesIfCount - 1; DoesIfIndex >= 0; DoesIfIndex--) {
+							does_if* DI = &EventDoing->DoesIf[DoesIfIndex];
 
-								// We only push the event on the stack, its validity is checked at the top
-								token_rep_ret ReplacedIfs = TokenReplacement(RealParamsIter, ParamRealsCount,
-								                            DI->IfTokens, DI->IfTokensCount,
-								                            MethodDoing->Usings, MethodDoing->UsingsCount);
-								Assert(ReplacedIfs.ReplacedTokensIndex < 50);
+							// We only push the event on the stack, its validity is checked at the top
+							token_rep_ret ReplacedIfs = TokenReplacement(RealParamsIter, ParamRealsCount,
+							                            DI->IfTokens, DI->IfTokensCount,
+							                            EventDoing->Usings, EventDoing->UsingsCount);
 
-								token_info ReplacedDoesTokens[100];
-								int32 ReplacedDoesTokensIndex = 0;
+							token_rep_ret ReplacedDoes = TokenReplacement(RealParamsIter, ParamRealsCount,
+							                             DI->DoesTokens, DI->DoesTokensCount,
+							                             EventDoing->Usings, EventDoing->UsingsCount);
 
-								token_rep_ret ReplacedDoes =  TokenReplacement(RealParamsIter, ParamRealsCount,
-								                              DI->DoesTokens, DI->DoesTokensCount,
-								                              MethodDoing->Usings, MethodDoing->UsingsCount);
-								Assert(ReplacedDoes.ReplacedTokensIndex < 50);
 
-								// Push new state onto the stack, and start from that state.
-								// TokensChangeState(ReplacedDoes.ReplacedTokens, ReplacedDoes.ReplacedTokensIndex, GameDef);
 
-								StackTop++;
-								memcpy(StateStack[StackTop].Tokens, ReplacedDoes.ReplacedTokens, sizeof(token_info) * (ReplacedDoes.ReplacedTokensIndex + 1));
-								memcpy(StateStack[StackTop].IfTokens, ReplacedIfs.ReplacedTokens, sizeof(token_info) * (ReplacedIfs.ReplacedTokensIndex + 1));
-								// StateStack[StackTop].Tokens = ReplacedDoes.ReplacedTokens;
+#define INIT_STACK StackTop++; StackIndexUsing = StackTop; ZeroMemory(&StateStack[StackTop], sizeof(tcs_state));
 
-								StateStack[StackTop].TokensCount = ReplacedDoes.ReplacedTokensIndex;
-								StateStack[StackTop].IfTokensCount = ReplacedIfs.ReplacedTokensIndex;
+							int32 StackIndexUsing = 0;
+							if (DI->IfAll) {
 
+								if (StatesIndexCompressing[NextCompressionIndex] == 0) {
+									// This is the first time through, so we need to add to the top of the stack like usual and fill the stack indecies
+									INIT_STACK
+									StateUsing = &StateStack[StackTop];
+									StateUsing->TokenIndex = 0;
+									StateUsing->Verification = tcs_verification::needs;
+
+									StatesIndexCompressing[NextCompressionIndex] = StackTop;
+								} else {
+									// Not the first time through, so we're adding ifs to middle of the stack, so get that point.
+									StackIndexUsing = StatesIndexCompressing[NextCompressionIndex];
+								}
+								NextCompressionIndex++;
+
+							} else {
+								INIT_STACK
 								StateUsing = &StateStack[StackTop];
 								StateUsing->TokenIndex = 0;
-								CheckedValid = false;
+								StateUsing->Verification = tcs_verification::needs;
+							}
+							Assert(StackTop < StackSize);
+
+
+							if (StatesIndexCompressing[NextCompressionIndex - 1] != 0 && StateStack[StackIndexUsing].IfTokensCount > 0) {
+								// concat what is currently there, and use an AND in between
+								int32 IfIndex = StateStack[StackIndexUsing].IfTokensCount;
+								StateStack[StackIndexUsing].IfTokens[IfIndex].Type = token_type::andd;
+								StateStack[StackIndexUsing].IfTokens[IfIndex].Name = "";
+								StateStack[StackIndexUsing].IfTokensCount++;
 							}
 
-							if (NextIterIndex == 0) {
-								Running = false;
-							}
+							memcpy(StateStack[StackIndexUsing].Tokens, ReplacedDoes.ReplacedTokens, sizeof(token_info) * ReplacedDoes.ReplacedTokensIndex);
+							// Add the new stuff on the end
+							// int32 EndOfArray = sizeof(token_info) * StateStack[StackTop].IfTokensCount;
+							memcpy(StateStack[StackIndexUsing].IfTokens + StateStack[StackTop].IfTokensCount, ReplacedIfs.ReplacedTokens, sizeof(token_info) * ReplacedIfs.ReplacedTokensIndex);
 
+							StateStack[StackIndexUsing].TokensCount = ReplacedDoes.ReplacedTokensIndex;
+							StateStack[StackIndexUsing].IfTokensCount += ReplacedIfs.ReplacedTokensIndex;
+
+							Assert(StateStack[StackIndexUsing].TokensCount < 100);
+							Assert(StateStack[StackIndexUsing].IfTokensCount < 200);
+
+						}
+
+						if (NextIterIndex == 0) {
+							Running = false;
 						}
 					}
 
@@ -1915,18 +2013,188 @@ TokensChangeState(token_info* Tokens, int32 TokensCount, game_def * GameDef)
 					// This method changes state when given tokens. We could not find a pattern of those tokens which made sense.
 					ThrowError(StateUsing->Tokens[StateUsing->TokenIndex].LineNumber, "Invalid token type in a does statement.");
 				}
+			} else {
+				// This means this state is invalid so don't change any state, so move onto the next state using from the stack
+				StackTop--;
+				StateUsing = &StateStack[StackTop];
 			}
 		}
 
 		// Pop off the stack, and continue with the next token change state.
 		StackTop--;
-		CheckedValid = false;
 	}
+
+	free(StateStack);
 }
 
 
+string ActionLiteral = "PlayerAction";
+string MethodLiteral = "Event";
+string UsingLiteral = "using";
+string DoesLiteral = "does";
+string IfLiteral = "if";
+string IfAllLiteral = "ifall";
+string BindLiteral = "bind";
+string ForEachLiteral = "foreach";
+string EntityLiteral = "entity";
+string InstanceLiteral = "instance";
+string IsLiteral = "is";
+string WhenLiteral = "when";
+string ArrAddLiteral = "Add ";
+string ArrRemoveLiteral = "RemoveAt";
+string GreaterThanOrEqualLiteral = ">=";
+string LessThanOrEqualLiteral = "<=";
+string AndLiteral = "and";
+string OrLiteral = "or";
+string NotLiteral = "not";
+string RandomLiteral = "random";
+string ToLiteral = "to";
+
+void GetTokens(token_stack * Tokens, int32 RulesLength, char* RulesData, int32 * PlayerActionsCount)
+{
+	parser Parser;
+	ZeroMemory(&Parser, sizeof(parser));
+	ResetParserWord(&Parser);
+
+	int32 CharactersCount = RulesLength;
+	Parser.CharOn = RulesData;
+
+	bool32 InCommentMode = false;
+
+	int32 CurrLineNum =  1;
+
+	for (int32 Index = 0; Index < CharactersCount; Index++) {
+
+		char ThisChar = *Parser.CharOn;
+
+		if (ThisChar == NULL) {
+			break;
+		}
+
+		if (ThisChar == '\n') {
+			CurrLineNum++;
+		}
+
+		// ignore comments
+		if (InCommentMode) {
+			if (ThisChar == '\n') {
+				InCommentMode = false;
+			}
+			Parser.CharOn++;
+			continue;
+		}
+
+#define ADDTOKEN(token) AddToken(&Parser, Tokens, token, Parser.WordOn, CurrLineNum);
+
+		//NOTE order of these ifs is very important
+		if (ThisChar == NULL) {
+			// end of program
+			break;
+		} else if (Parser.WordOn == ToLiteral) {
+			// CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
+			ADDTOKEN(token_type::to);
+		} else if (Parser.WordOn == RandomLiteral) {
+			ADDTOKEN(token_type::random);
+		} else if (Parser.WordOn == NotLiteral) {
+			ADDTOKEN(token_type::nott);
+		} else if (Parser.WordOn == OrLiteral) {
+			ADDTOKEN(token_type::orr);
+		} else if (Parser.WordOn == DoesLiteral) {
+			ADDTOKEN(token_type::does);
+		} else if (Parser.WordOn == IfAllLiteral) {
+			ADDTOKEN(token_type::ifAll);
+		} else if (Parser.WordOn == IfLiteral && *Parser.CharOn == ' ') {
+			ADDTOKEN(token_type::iff);
+		} else if (Parser.WordOn == BindLiteral) {
+			ADDTOKEN(token_type::bind);
+		} else if (Parser.WordOn == UsingLiteral) {
+			ADDTOKEN(token_type::usingg);
+		} else if (Parser.WordOn == ArrRemoveLiteral) {
+			ADDTOKEN(token_type::arrRemove);
+		} else if (Parser.WordOn == ArrAddLiteral) {
+			ADDTOKEN(token_type::arrAdd);
+		} else if (Parser.WordOn == MethodLiteral) {
+			ADDTOKEN(token_type::event);
+			(*PlayerActionsCount)++;
+		} else if (Parser.WordOn == AndLiteral) {
+			ADDTOKEN(token_type::andd);
+		} else if (Parser.WordOn == ActionLiteral) {
+			ADDTOKEN(token_type::playerAction);
+			(*PlayerActionsCount)++;
+		} else if (Parser.WordOn == GreaterThanOrEqualLiteral) {
+			ADDTOKEN(token_type::greaterThanOrEqual);
+		} else if (Parser.WordOn == LessThanOrEqualLiteral) {
+			ADDTOKEN(token_type::lessThanOrEqual);
+		} else if (Parser.WordOnIndex != 0 && StringIsInt(Parser.WordOn) && !CharIsInt(ThisChar) && (ThisChar == ')' || Index + 1 == CharactersCount)) {
+			ADDTOKEN(token_type::number);
+		}
+
+		if (Parser.WordOnIndex != 0 && (ThisChar == ' ' || ThisChar == '.')) {
+			CheckNumberOrID(&Parser, Tokens, CurrLineNum);
+		}
+
+		if (ThisChar == '.') {
+			ADDTOKEN(token_type::period);
+		} else if (ThisChar == ':') {
+			CheckNumberOrID(&Parser, Tokens, CurrLineNum);
+			ADDTOKEN(token_type::colon);
+		} else if (ThisChar == ',') {
+			CheckNumberOrID(&Parser, Tokens, CurrLineNum);
+			ADDTOKEN(token_type::comma);
+		} else if (ThisChar == '#') {
+			InCommentMode = true;
+		} else if (ThisChar == '=') {
+			ADDTOKEN(token_type::equalTo);
+		} else if (ThisChar == '<') {
+			ADDTOKEN(token_type::lessThan);
+		} else if (ThisChar == '>') {
+			ADDTOKEN(token_type::greaterThan);
+		} else if (ThisChar == '-') {
+			CheckNumberOrID(&Parser, Tokens, CurrLineNum);
+			ADDTOKEN(token_type::sub);
+		} else if (ThisChar == '+') {
+			CheckNumberOrID(&Parser, Tokens, CurrLineNum);
+			ADDTOKEN(token_type::add);
+		} else if (ThisChar == '/') {
+			CheckNumberOrID(&Parser, Tokens, CurrLineNum);
+			ADDTOKEN(token_type::div);
+		} else if (ThisChar == '*') {
+			CheckNumberOrID(&Parser, Tokens, CurrLineNum);
+			ADDTOKEN(token_type::mult);
+		} else if (ThisChar == ')') {
+			CheckNumberOrID(&Parser, Tokens, CurrLineNum);
+			ADDTOKEN(token_type::closeParen);
+		} else if (ThisChar == '(') {
+			CheckNumberOrID(&Parser, Tokens, CurrLineNum);
+			ADDTOKEN(token_type::openParen);
+		} else if (ThisChar == ']') {
+			CheckNumberOrID(&Parser, Tokens, CurrLineNum);
+			ADDTOKEN(token_type::closeSquare);
+		} else if (ThisChar == '[') {
+			CheckNumberOrID(&Parser, Tokens, CurrLineNum);
+			ADDTOKEN(token_type::openSquare);
+		} else if (ThisChar == '}') {
+			CheckNumberOrID(&Parser, Tokens, CurrLineNum);
+			ADDTOKEN(token_type::closedCurly);
+		} else if (ThisChar == '{') {
+			CheckNumberOrID(&Parser, Tokens, CurrLineNum);
+			ADDTOKEN(token_type::openCurly);
+		} else if (ThisChar == DotNotationChar) {
+			CheckNumberOrID(&Parser, Tokens, CurrLineNum);
+			ADDTOKEN(token_type::dot);
+		} else if (ThisChar == '\r') {
+			CheckNumberOrID(&Parser, Tokens, CurrLineNum);
+		} else if (*Parser.CharOn != ' ' && ThisChar != '\r' && ThisChar != '\t' && ThisChar != '\n') {
+			Parser.WordOn[Parser.WordOnIndex] = *Parser.CharOn;
+			Parser.WordOnIndex++;
+		}
+
+		Parser.CharOn++;
+	}
+}
+
 bool32 firstLoad = true;
-string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefinition)
+string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def * GameDefinition)
 {
 #ifndef UNITY_WEBGL
 	GlobalProgState = prog_state::compiletime;
@@ -1949,7 +2217,6 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 		GameDefinition->Fluents = (fluent*)malloc(MaxCount * sizeof(fluent));
 		GameDefinition->BoundEvents = (event_bind*)malloc(MaxCount * sizeof(event_bind));
 		GameDefinition->InstancedEntities = (entity*)malloc(MaxCount * sizeof(entity));
-		GameDefinition->Methods = (method*)malloc(MaxCount * sizeof(method));
 		GameDefinition->Arrays = (array*)malloc(MaxCount * sizeof(array));
 
 	}
@@ -1957,18 +2224,16 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 	ZeroMemory(GameDefinition->Fluents, sizeof(fluent) * MaxCount);
 	ZeroMemory(GameDefinition->BoundEvents, sizeof(event_bind) * MaxCount);
 	ZeroMemory(GameDefinition->InstancedEntities, sizeof(entity) * MaxCount);
-	ZeroMemory(GameDefinition->Methods, sizeof(method) * MaxCount);
 	ZeroMemory(GameDefinition->Arrays, sizeof(array) * MaxCount);
 
 	GameDefinition->FluentsCount = 0;
 	GameDefinition->EventsCount = 0;
 	GameDefinition->BoundCount = 0;
 	GameDefinition->InstancedEntitiesCount = 0;
-	GameDefinition->MethodsCount = 0;
 	GameDefinition->ArraysCount = 0;
 
 	// Count how many player actions there are when we lex it, so we can allocate exactly what we need.
-	int32 PlayerActionsCount = 0;
+	int32 EventsCount = 0;
 
 	// lexer and parser system.
 	{
@@ -1977,169 +2242,11 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 		Tokens.Tokens = (token_info*)malloc(sizeof(token_info) * Tokens.TokensSize);
 
 		// Create all the tokens
-		{
-			parser Parser;
-			ZeroMemory(&Parser, sizeof(parser));
-			ResetParserWord(&Parser);
-
-			int32 CharactersCount = RulesLength;
-			Parser.CharOn = RulesData;
-
-			bool32 InCommentMode = false;
-
-			string ActionLiteral = "PlayerAction";
-			string MethodLiteral = "Event";
-			string UsingLiteral = "using";
-			string DoesLiteral = "does";
-			string IfLiteral = "if";
-			string BindLiteral = "bind";
-			string ForEachLiteral = "foreach";
-			string EntityLiteral = "entity";
-			string InstanceLiteral = "instance";
-			string IsLiteral = "is";
-			string WhenLiteral = "when";
-			string ArrAddLiteral = "Add";
-			string ArrRemoveLiteral = "RemoveAt";
-			string GreaterThanOrEqualLiteral = ">=";
-			string LessThanOrEqualLiteral = "<=";
-			string AndLiteral = "and";
-			string OrLiteral = "or";
-			string NotLiteral = "not";
-			string RandomLiteral = "random";
-			string ToLiteral = "to";
-
-			int32 CurrLineNum =  1;
-
-			for (int32 Index = 0; Index < CharactersCount; Index++) {
-
-				char ThisChar = *Parser.CharOn;
-
-				if (ThisChar == NULL) {
-					break;
-				}
-
-				if (ThisChar == '\n') {
-					CurrLineNum++;
-				}
-
-				// ignore comments
-				if (InCommentMode) {
-					if (ThisChar == '\n') {
-						InCommentMode = false;
-					}
-					Parser.CharOn++;
-					continue;
-				}
-
-#define ADDTOKEN(token) AddToken(&Parser, &Tokens, token, Parser.WordOn, CurrLineNum);
-
-				//NOTE order of these ifs is very important
-				if (ThisChar == NULL) {
-					// end of program
-					break;
-				} else if (Parser.WordOn == ToLiteral) {
-					// CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
-					ADDTOKEN(token_type::to);
-				} else if (Parser.WordOn == RandomLiteral) {
-					ADDTOKEN(token_type::random);
-				} else if (Parser.WordOn == NotLiteral) {
-					ADDTOKEN(token_type::nott);
-				} else if (Parser.WordOn == OrLiteral) {
-					ADDTOKEN(token_type::orr);
-				} else if (Parser.WordOn == DoesLiteral) {
-					ADDTOKEN(token_type::does);
-				} else if (Parser.WordOn == IfLiteral) {
-					ADDTOKEN(token_type::iff);
-				} else if (Parser.WordOn == BindLiteral) {
-					ADDTOKEN(token_type::bind);
-				} else if (Parser.WordOn == UsingLiteral) {
-					ADDTOKEN(token_type::usingg);
-				} else if (Parser.WordOn == ArrRemoveLiteral) {
-					ADDTOKEN(token_type::arrRemove);
-				} else if (Parser.WordOn == ArrAddLiteral) {
-					ADDTOKEN(token_type::arrAdd);
-				} else if (Parser.WordOn == MethodLiteral) {
-					ADDTOKEN(token_type::event);
-				} else if (Parser.WordOn == AndLiteral) {
-					ADDTOKEN(token_type::andd);
-				} else if (Parser.WordOn == ActionLiteral) {
-					ADDTOKEN(token_type::playerAction);
-					PlayerActionsCount++;
-				} else if (Parser.WordOn == GreaterThanOrEqualLiteral) {
-					ADDTOKEN(token_type::greaterThanOrEqual);
-				} else if (Parser.WordOn == LessThanOrEqualLiteral) {
-					ADDTOKEN(token_type::lessThanOrEqual);
-				} else if (Parser.WordOnIndex != 0 && StringIsInt(Parser.WordOn) && !CharIsInt(ThisChar) && ThisChar == ')') {
-					ADDTOKEN(token_type::number);
-				}
-
-				if (Parser.WordOnIndex != 0 && (ThisChar == ' ' || ThisChar == '.')) {
-					CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
-				}
-
-				if (ThisChar == '.') {
-					ADDTOKEN(token_type::period);
-				} else if (ThisChar == ':') {
-					CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
-					ADDTOKEN(token_type::colon);
-				} else if (ThisChar == ',') {
-					CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
-					ADDTOKEN(token_type::comma);
-				} else if (ThisChar == '#') {
-					InCommentMode = true;
-				} else if (ThisChar == '=') {
-					ADDTOKEN(token_type::equalTo);
-				} else if (ThisChar == '<') {
-					ADDTOKEN(token_type::lessThan);
-				} else if (ThisChar == '>') {
-					ADDTOKEN(token_type::greaterThan);
-				} else if (ThisChar == '-') {
-					CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
-					ADDTOKEN(token_type::sub);
-				} else if (ThisChar == '+') {
-					CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
-					ADDTOKEN(token_type::add);
-				} else if (ThisChar == '/') {
-					CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
-					ADDTOKEN(token_type::div);
-				} else if (ThisChar == '*') {
-					CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
-					ADDTOKEN(token_type::mult);
-				} else if (ThisChar == ')') {
-					CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
-					ADDTOKEN(token_type::closeParen);
-				} else if (ThisChar == '(') {
-					CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
-					ADDTOKEN(token_type::openParen);
-				} else if (ThisChar == ']') {
-					CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
-					ADDTOKEN(token_type::closeSquare);
-				} else if (ThisChar == '[') {
-					CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
-					ADDTOKEN(token_type::openSquare);
-				} else if (ThisChar == '}') {
-					CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
-					ADDTOKEN(token_type::closedCurly);
-				} else if (ThisChar == '{') {
-					CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
-					ADDTOKEN(token_type::openCurly);
-				} else if (ThisChar == DotNotationChar) {
-					CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
-					ADDTOKEN(token_type::dot);
-				} else if (ThisChar == '\r') {
-					CheckNumberOrID(&Parser, &Tokens, CurrLineNum);
-				} else if (*Parser.CharOn != ' ' && ThisChar != '\r' && ThisChar != '\t' && ThisChar != '\n') {
-					Parser.WordOn[Parser.WordOnIndex] = *Parser.CharOn;
-					Parser.WordOnIndex++;
-				}
-
-				Parser.CharOn++;
-			}
-		}
+		GetTokens(&Tokens, RulesLength, RulesData, &EventsCount);
 
 		// allocate things
-		GameDefinition->Events = (event*)malloc(PlayerActionsCount * sizeof(event));
-		ZeroMemory(GameDefinition->Events, sizeof(event) * PlayerActionsCount);
+		GameDefinition->Events = (event*)malloc(EventsCount * sizeof(event));
+		ZeroMemory(GameDefinition->Events, sizeof(event) * EventsCount);
 
 
 		// go throught the tokens. Filling the data structures with the stuff.
@@ -2224,11 +2331,20 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 						Assert(GameDefinition->ArraysCount < 100);
 
 						NextArray->Name = Tokens.Tokens[StatementStart].Name;
-						int32 ArrayLength = StringToInt32(Tokens.Tokens[StatementStart + 3].Name);
+
+						int32 TI = StatementStart + 4;
+
+						NextArray->Width = StringToInt32(Tokens.Tokens[StatementStart + 3].Name);
+						NextArray->Height = 1;
+						if (Tokens.Tokens[StatementStart + 4].Type == token_type::comma) {
+							NextArray->Height = StringToInt32(Tokens.Tokens[StatementStart + 5].Name);
+							TI += 2;
+						}
+
+						int32 ArrayLength = NextArray->Width * NextArray->Height;
 
 						// Grab the base tokens which are used to add to the array
 						{
-							int32 TI = StatementStart + 4;
 							// Move past the opening bracket
 							TI += 2;
 
@@ -2317,7 +2433,7 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 					} else if (Tokens.Tokens[StatementStart].Type == token_type::id &&
 					           Tokens.Tokens[StatementStart + 1].Type == token_type::openSquare) {
 						// array assignment by index. These always have dot notation. This behavior is in TokensChangeState, because this is not a decleration.
-						TokensChangeState(Tokens.Tokens + StatementStart, StatementEnd - StatementStart, GameDefinition);
+						TokensChangeState(Tokens.Tokens + StatementStart, (StatementEnd - StatementStart) + 1, GameDefinition);
 						RESET
 					} else if (Tokens.Tokens[StatementStart].Type == token_type::id &&
 					           Tokens.Tokens[StatementStart + 1].Type == token_type::period) {
@@ -2332,35 +2448,22 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 						RESET
 					} else if (Tokens.Tokens[StatementStart].Type == token_type::id &&
 					           Tokens.Tokens[StatementStart + 1].Type == token_type::equalTo &&
-					           Tokens.Tokens[StatementStart + 2].Type == token_type::playerAction) {
-						// PlayerAction
+					           (Tokens.Tokens[StatementStart + 2].Type == token_type::event || Tokens.Tokens[StatementStart + 2].Type == token_type::playerAction)) {
+						// Method or player action (basically the same thing).
 
-						event* Event = &GameDefinition->Events[GameDefinition->EventsCount];
+						event* NextEvent = {};
+						NextEvent = &GameDefinition->Events[GameDefinition->EventsCount];
 						GameDefinition->EventsCount++;
-						Event->Name = Tokens.Tokens[StatementStart].Name;
 
-						int32 TI = StatementStart + 3;
-
-						// Get all the does-ifs
-						while (Tokens.Tokens[TI].Type != token_type::period) {
-							does_if_return Ret = GetDoesIf(&Tokens, TI);
-							TI += Ret.TokensConsumed;
-
-							Event->DoesIf[Event->DoesIfCount] = Ret.DoesIf;
-							Event->DoesIfCount++;
+						if (Tokens.Tokens[StatementStart + 2].Type == token_type::playerAction) {
+							NextEvent->Type = event_type::player;
+						} else if (Tokens.Tokens[StatementStart + 2].Type == token_type::event) {
+							NextEvent->Type = event_type::game;
+						} else {
+							ThrowError(Tokens.Tokens[StatementStart + 2].LineNumber, "Somethings wrong here. ");
 						}
 
-						RESET
-					} else if (Tokens.Tokens[StatementStart].Type == token_type::id &&
-					           Tokens.Tokens[StatementStart + 1].Type == token_type::equalTo &&
-					           Tokens.Tokens[StatementStart + 2].Type == token_type::event) {
-						// Method
-
-						method* NextMethod = &GameDefinition->Methods[GameDefinition->MethodsCount];
-						ZeroMemory(NextMethod, sizeof(method));
-
-						GameDefinition->MethodsCount++;
-						NextMethod->Name = Tokens.Tokens[StatementStart].Name;
+						NextEvent->Name = Tokens.Tokens[StatementStart].Name;
 
 						int32 UsingOffset = 4;
 
@@ -2374,8 +2477,8 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 								}
 
 								if (Tokens.Tokens[StatementStart + UsingOffset].Type == token_type::id) {
-									NextMethod->Usings[NextMethod->UsingsCount] = Tokens.Tokens[StatementStart + UsingOffset].Name;
-									NextMethod->UsingsCount++;
+									NextEvent->Usings[NextEvent->UsingsCount] = Tokens.Tokens[StatementStart + UsingOffset].Name;
+									NextEvent->UsingsCount++;
 								}
 								UsingOffset++;
 							}
@@ -2388,8 +2491,8 @@ string LoadGameDefinition(char* RulesData, int32 RulesLength, game_def* GameDefi
 							does_if_return Ret = GetDoesIf(&Tokens, StatementStart + UsingOffset);
 							UsingOffset += Ret.TokensConsumed;
 
-							NextMethod->DoesIf[NextMethod->DoesIfCount] = Ret.DoesIf;
-							NextMethod->DoesIfCount++;
+							NextEvent->DoesIf[NextEvent->DoesIfCount] = Ret.DoesIf;
+							NextEvent->DoesIfCount++;
 						}
 
 						RESET
@@ -2454,7 +2557,7 @@ This is effectivel the 'runtime'. All state changes are done through these event
 Any errors that occur during runtime are returned here.
 */
 string
-DoEvent(event* Event, game_def* Rules)
+DoEvent(string EventName, string StrParams, game_def * Rules)
 {
 #ifndef UNITY_WEBGL
 	GlobalProgState = prog_state::runtime;
@@ -2464,16 +2567,21 @@ DoEvent(event* Event, game_def* Rules)
 	}
 #endif
 
-	if (Event == NULL) {
-		ThrowError(0, "Action is null, you probably typed the action name incorrectly.");
-	}
+	// do the event
+	string FullCall = EventName + "(" + StrParams + ")";
 
-	for (int32 Index = 0; Index < Event->DoesIfCount; Index++) {
-		does_if* DoesIf = &Event->DoesIf[Index];
-		if (IfTokensValid(DoesIf->IfTokens, DoesIf->IfTokensCount, Rules)) {
-			TokensChangeState(DoesIf->DoesTokens, DoesIf->DoesTokensCount, Rules);
-		}
-	}
+
+	// This isn't needed here, only here because GetTokens wants it.
+	int32 PlayerActions = 0;
+
+	token_stack Tokens = {};
+	ZeroMemory(&Tokens, sizeof(token_stack));
+	Tokens.TokensSize = 50;
+	Tokens.Tokens = (token_info*)malloc(sizeof(token_info) * Tokens.TokensSize);
+	GetTokens(&Tokens, StringLength(FullCall), FullCall.CharArray, &PlayerActions);
+
+	TokensChangeState(Tokens.Tokens, 50, Rules);
+
 
 	return ("x");
 }
@@ -2501,28 +2609,28 @@ extern "C"
 		StringCopy(Error.CharArray, ErrorDescBuffer);
 	}
 
-	int32 EXPORT SC_GetMethodsCount()
+	int32 EXPORT SC_GetEventsCount()
 	{
-		return (GlobalRulesDef.MethodsCount);
+		return (GlobalRulesDef.EventsCount);
 	}
 
 	// If methodIndex is out of bounds then returns 123456
-	int EXPORT SC_GetMethodIndexNameLength(int methodIndex)
+	int EXPORT SC_GetEventIndexNameLength(int methodIndex)
 	{
-		if (methodIndex > GlobalRulesDef.MethodsCount) {
+		if (methodIndex > GlobalRulesDef.EventsCount) {
 			return (123456);
 		}
 
-		return (StringLength(GlobalRulesDef.Methods[methodIndex].Name));
+		return (StringLength(GlobalRulesDef.Events[methodIndex].Name));
 	}
 
-	void EXPORT SC_GetMethodIndexName(int MethodIndex, char* BufferFilling)
+	void EXPORT SC_GetEventIndexName(int MethodIndex, char* BufferFilling)
 	{
-		if (MethodIndex > GlobalRulesDef.MethodsCount) {
+		if (MethodIndex > GlobalRulesDef.EventsCount) {
 			string OutString = "INDEX OUT OF BOUNDS";
 			StringCopy(OutString.CharArray, BufferFilling);
 		} else {
-			StringCopy(GlobalRulesDef.Methods[MethodIndex].Name.CharArray, BufferFilling);
+			StringCopy(GlobalRulesDef.Events[MethodIndex].Name.CharArray, BufferFilling);
 		}
 	}
 
@@ -2612,61 +2720,18 @@ extern "C"
 		// return (0);
 	}
 
-	// Does an action. Assumes the action exists, checks to make sure the action is valid.
-	// Fills the error buffer with x if no error, otherwise fills it with the error
-	void EXPORT SC_DoAction(char* ActionName, char* ErrorBuffer, int32 ErrorBufferSize)
+	/*
+	The Param parameter is comma separated, so 'param1, param2'
+	*/
+	void EXPORT SC_DoAction(char* ActionName, char* Params)
 	{
-		ZeroMemory(ErrorBuffer, ErrorBufferSize);
-
-		event* EventChecking;
-		for (int32 Index = 0; Index < GlobalRulesDef.EventsCount; Index++) {
-			if (ActionName == GlobalRulesDef.Events[Index].Name) {
-				EventChecking = &GlobalRulesDef.Events[Index];
-				break;
-			}
-		}
-
-		string Ret = DoEvent(EventChecking, &GlobalRulesDef);;
-		StringCopy(Ret.CharArray, ErrorBuffer);
+		DoEvent(ActionName,  Params, &GlobalRulesDef);
 	}
 
 	void EXPORT SC_GetStatePrintout(char* PrintoutBuffer, int32 BufferSize)
 	{
 		ZeroMemory(PrintoutBuffer, BufferSize);
 		StatePrintoutFillBuffer(PrintoutBuffer, BufferSize, &GlobalRulesDef);
-	}
-
-	int32 EXPORT SC_GetActionsCount()
-	{
-		return (GlobalRulesDef.EventsCount);
-	}
-
-
-	// This returns 123456 name if the index is out of bounds
-	int32 EXPORT SC_GetActionIndexNameLength(int Index)
-	{
-		if (Index < GlobalRulesDef.EventsCount) {
-			return (StringLength(GlobalRulesDef.Events[Index].Name));
-		} else {
-			return (123456);
-		}
-	}
-
-	// This returns "INDEX OUT OF BOUND" name if the index is out of bounds
-	// This will cut off the action name if the bufferSize isn't big enough
-	void EXPORT SC_GetActionNameFromIndex(int ActionIndex, char* BufferFilling)
-	{
-		if (ActionIndex > GlobalRulesDef.EventsCount) {
-			string OutString = "INDEX OUT OF BOUNDS";
-			for (int32 Index = 0; Index < StringLength(OutString); Index++) {
-				BufferFilling[Index] = OutString.CharArray[Index];
-			}
-		} else {
-			string actionName = GlobalRulesDef.Events[ActionIndex].Name;
-			for (int32 Index = 0; Index < StringLength(actionName); Index++) {
-				BufferFilling[Index] = actionName.CharArray[Index];
-			}
-		}
 	}
 
 	int32 EXPORT SC_GetFluentInArray(char* ArrayName, int ArrayIndex, char* FluentName)
@@ -2679,6 +2744,25 @@ extern "C"
 	{
 		return (ArrayExists(ArrayName, GlobalRulesDef.Arrays, GlobalRulesDef.ArraysCount));
 	}
+
+	// This assumes the array exists
+	int32 EXPORT SC_GetArrayLength(string ArrayName)
+	{
+		return (FindArray(ArrayName, GlobalRulesDef.Arrays, GlobalRulesDef.ArraysCount)->ArrayCount);
+	}
+
+	// This assumes the array exists
+	int32 EXPORT SC_GetArrayWidth(string ArrayName)
+	{
+		return (FindArray(ArrayName, GlobalRulesDef.Arrays, GlobalRulesDef.ArraysCount)->Width);
+	}
+
+	// This assumes the array exists
+	int32 EXPORT SC_GetArrayHeight(string ArrayName)
+	{
+		return (FindArray(ArrayName, GlobalRulesDef.Arrays, GlobalRulesDef.ArraysCount)->Height);
+	}
+
 }
 
 
@@ -2691,8 +2775,8 @@ main(int argc, char const **argv)
 		int32 CharactersCount = 0;
 		// Load the program into the parser
 		{
-			// string UnityGameFile = "T:/SandCatLanguage/SandCat_Unity/Assets/Games/0.0.5/Racetrack/Racetrack.txt";
-			string UnityGameFile = "T:/SandCatLanguage/SandCat_Unity/Assets/Games/0.0.5/Yoga/Yoga.txt";
+			string UnityGameFile = "T:/SandCatLanguage/SandCat_Unity/Assets/Games/0.0.5/Auro/AuroRules.txt";
+			// string UnityGameFile = "T:/SandCatLanguage/SandCat_Unity/Assets/Games/0.0.5/Yoga/Yoga.txt";
 			// string UnityGameFile = "../SandCat_Unity/Assets/Games/Test/Test.txt";
 			HANDLE FileHandle = CreateFile(UnityGameFile.CharArray, GENERIC_READ, FILE_SHARE_READ,
 			                               NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -2726,15 +2810,25 @@ main(int argc, char const **argv)
 				PrintOptions(&GameDefinition);
 
 				while (true) {
+					// events are input in the format of eventIndex(param1,param2)
 					char Input[100];
+					ZeroMemory(&Input, 100);
 					scanf("%99s", &Input);
 					char Selection = Input[0];
+					Input[0] = ' ';
 					system("cls");
 
 					string SelStr = Selection;
 					int32 SelInt = StringToInt32(SelStr);
 					if (SelInt < GameDefinition.EventsCount) {
-						DoEvent(&GameDefinition.Events[SelInt], &GameDefinition);
+						for (int32 Index = 0; Index < 100; Index++) {
+							if (Input[Index] == '(' || Input[Index] == ')') {
+								Input[Index] = ' ';
+							}
+						}
+
+						string SParams = Input;
+						DoEvent(GameDefinition.Events[SelInt].Name, SParams, &GameDefinition);
 					} else {
 						Print("Not a valid action");
 					}

@@ -1,0 +1,44 @@
+Before v0.1
+	- Can put not in different places.
+		x not = y
+		not x = y
+		should both work
+	- Comment unity utilities
+	- Create basic video intro tutorial guide.
+	- In Unity, rename fluent to value.
+	- In Unity, don't crash on array ouf of bounds.
+	- Also make sure ArrayIndex in StateValue is > 1
+	- Does unity received runtime errors?
+	- Throw error if trying to assing to something not a fluent
+		so like 
+			does PlantQueue[1] = PlantQueue[2]
+		needs to be
+			does PlantQueue[1]'Plant = PlantQueue[2]'Plant
+		Throw error if it's the first one
+	- Throw error if trying to call a method in a does which doesn't exist.
+	- Make sure no two events have the same name. Throw error if so.
+
+
+
+Next TODO
+	- Add support for 2d arrays to the StateValue editor
+		 - In Unity
+		 	- Allow 2d indexing in StateValue class
+		 	- Throw error if trying to 2d index into a 1d array
+		 	- Throw error if array index is out of bounds
+
+	- Added Win when X and Lose when X and autoamtic display in the Unity Runner.
+	- Make sure that usings names don't conflict with any global identifiers. Throw error if so.
+	- Check to see if nested automatic array iteration works.
+	- Does two usings automatic array iteration work?
+	- Add button input utilitiy class to Unity. So a button does an action.
+
+	- Go through Before v0.1 list. 
+	- Get feedback and launch patreon.
+
+
+Inconsistencies
+	- Can't use arithmetic when 2d indexing an array.
+
+General todo 
+	- Are there problems when an id starts with a reserved word? Such as whendy. Since when is a reserved word, it gets split?

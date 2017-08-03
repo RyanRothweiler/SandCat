@@ -48,13 +48,16 @@
   <ItemGroup>
      <Compile Include="Assets\Editor\SandCatEditor.cs" />
      <Compile Include="Assets\Editor\StateValueEditor.cs" />
+     <None Include="Assets\Games\0.0.5\Yoga\Yoga.txt" />
      <None Include="Assets\Games\0.0.2\Cavern2\Cavern2.txt" />
      <None Include="Assets\Games\0.0.2\Topsoil2\Topsoil.txt" />
      <None Include="Assets\Games\0.0.4\Test\Test.txt" />
      <None Include="Assets\Games\0.0.5\Topsoil\Topsoil.txt" />
+     <None Include="Assets\Games\0.0.5\SolarSettlers\SolarSettlersRules.txt" />
      <None Include="Assets\Games\0.0.2\Scyther\Scyther.txt" />
      <None Include="Assets\Games\0.0.2\Topsoil\Topsoil.txt" />
      <None Include="Assets\Games\0.0.5\Racetrack\Racetrack.txt" />
+     <None Include="Assets\Games\0.0.5\Auro\AuroRules.txt" />
      <None Include="Assets\Games\0.0.4\Yahtz\Yahtz.txt" />
      <None Include="Assets\Games\0.0.4\Situps\Situps.txt" />
      <None Include="Assets\Games\0.0.5\CoinCollect\CoinCollect.txt" />

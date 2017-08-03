@@ -1,0 +1,35 @@
+PlayerOxygen = 3.
+PlayerMetal = 1.
+PlayerEnergy = 2.
+
+BoardWidth = 3.
+BoardHeight = 3.
+
+Board = [3,3]{
+AOneOxygen = random 1 to 4, AOneMetal = random 1 to 4, AOneEnergy = random 1 to 4, 
+ATwoOxygen = random 1 to 4, ATwoMetal = random 1 to 4, ATwoEnergy = random 1 to 4}.
+
+Workers = [3]{X, Y, Exhausted}.
+Workers[1]'X = 1.
+Workers[1]'Y = 1.
+
+Workers[2]'X = 2.
+Workers[2]'Y = 2.
+
+Workers[3]'X = 3.
+Workers[3]'Y = 3.
+
+
+
+
+
+SelectedWorker = 1000.
+
+SelectWorkerOne = PlayerAction does SelectedWorker = 1.
+SelectWorkerTwo = PlayerAction does SelectedWorker = 2.
+SelectWorkerThree = PlayerAction does SelectedWorker = 3.
+
+MoveWorkerUp = PlayerAction
+	does Workers[SelectedWorker]'Y = Workers[SelectedWorker]'Y + 1 if Workers[SelectedWorker]'Y < BoardHeight.
+
+

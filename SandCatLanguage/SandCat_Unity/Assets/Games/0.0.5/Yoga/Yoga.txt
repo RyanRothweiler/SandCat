@@ -1,5 +1,12 @@
-Grid = [10]{Health = 0}.
+Grid = [4, 4]{XPos, YPos, Value = 100}.
 
 AddHealth = PlayerAction
-	using X
-	does Grid[X]'Health = Grid[X]'Health + 2.
+	does Fill(Grid).
+
+Fill = Event
+	using GR
+	does GR'XPos = GR'X, GR'YPos = GR'Y.
+
+CheckValue = PlayerAction
+	using X, Y
+	does Grid[X, Y]'Value = Grid[X, Y]'Value + 1.

@@ -1,0 +1,19 @@
+PlayerX = 2.
+PlayerY = 1.
+
+BoardWidth = 5.
+BoardHeight = 5.
+
+Water = [4]{X = random 1 to BoardWidth, Y = random 1 to BoardHeight}.
+Water[1]'X = 2.
+Water[1]'Y = 5.
+
+
+
+MovePlayer = Event
+	using NewX, NewY, Wat
+	does PlayerX = NewX, PlayerY = NewY
+	ifall not (Wat'X = NewX and Wat'Y = NewY).
+
+
+MovePlayerUp = PlayerAction does MovePlayer(PlayerX, PlayerY + 1, Water).

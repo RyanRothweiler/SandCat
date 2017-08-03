@@ -9,6 +9,7 @@ using UnityEngine.UI;
 public class ActionButton : MonoBehaviour
 {
 
+	public string[] actionParameters;
 	public string actionName;
 	private Button button;
 
@@ -21,6 +22,6 @@ public class ActionButton : MonoBehaviour
 
 	public void OnClick()
 	{
-		SandCat.instance.DoAction(actionName);
+		SandCat.instance.DoAction(actionName, actionParameters);
 	}
 }

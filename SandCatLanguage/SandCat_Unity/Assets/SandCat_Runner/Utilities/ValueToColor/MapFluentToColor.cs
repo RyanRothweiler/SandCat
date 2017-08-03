@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public class MapFluentToColor : MonoBehaviour
 {
 
-	public Fluent fluent;
+	public StateValue stateValue;
 	public ValuesToColor pairing;
 
 	private Image image;
@@ -19,7 +19,7 @@ public class MapFluentToColor : MonoBehaviour
 	// Update is called once per frame
 	void Update ()
 	{
-		int fluentValue = (int)fluent.GetValue();
+		int fluentValue = (int)stateValue.GetValue();
 		foreach (ValuesToColor.Pair pair in pairing.pairings) {
 			if (fluentValue == pair.value) {
 				image.color = pair.color;

@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public class NextColor : MonoBehaviour
 {
 
-	public Fluent fluent;
+	public StateValue stateValue;
 	public ValuesToColor pairing;
 
 	private Image image;
@@ -20,7 +20,7 @@ public class NextColor : MonoBehaviour
 	// Update is called once per frame
 	void Update ()
 	{
-		int fluentValue = (int)fluent.GetValue() + 1;
+		int fluentValue = (int)stateValue.GetValue() + 1;
 		if (fluentValue == 4) {
 			fluentValue = 1;
 		}

@@ -15,7 +15,11 @@ public class StateValue : MonoBehaviour
 	public string fluentName;
 	public string entityName;
 	public string arrayName;
+
+	public bool isTwoD;
 	public int arrayIndex;
+	public int arrayX;
+	public int arrayY;
 
 	public float GetValue()
 	{
@@ -24,7 +28,14 @@ public class StateValue : MonoBehaviour
 		} else if (type == StateType.Fluent) {
 			return (SandCat.instance.GetFluentValue(fluentName));
 		} else if (type == StateType.Array) {
-			return (SandCat.instance.GetFluentInArray(entityName, arrayIndex, fluentName));
+			SandCat.instance.CheckArrayExists(arrayName);
+
+			if (isTwoD) {
+				int height = SandCat.instance.GetArrayHeight(arrayName);
+				arrayIndex = ((arrayX - 1) * height) + (arrayY - 1) + 1;
+			}
+
+			return (SandCat.instance.GetFluentInArray(arrayName, arrayIndex, fluentName, this.name));
 		}
 
 		return (0);

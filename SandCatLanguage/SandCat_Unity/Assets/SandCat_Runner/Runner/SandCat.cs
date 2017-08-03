@@ -16,18 +16,13 @@ public class SandCat : MonoBehaviour
 	// Linked Methods
 	[DllImport ("SandCat_Runner")] private static extern void 	SC_LoadGame(string progData, int progCharLength, StringBuilder errorDesc, int errorSize);
 
-	// Methods
-	[DllImport ("SandCat_Runner")] private static extern int 	SC_GetMethodsCount();
-	[DllImport ("SandCat_Runner")] private static extern int 	SC_GetMethodIndexName(int methodIndex, StringBuilder strBuffer);
-	[DllImport ("SandCat_Runner")] private static extern int 	SC_GetMethodIndexNameLength(int methodIndex);
-
-	// Actions
-	[DllImport ("SandCat_Runner")] private static extern int 	SC_GetActionsCount();
-	[DllImport ("SandCat_Runner")] private static extern void 	SC_GetActionNameFromIndex(int actionIndex, StringBuilder strBuffer);
-	[DllImport ("SandCat_Runner")] private static extern int 	SC_GetActionIndexNameLength(int index);
+	// Events
+	[DllImport ("SandCat_Runner")] private static extern int 	SC_GetEventsCount();
+	[DllImport ("SandCat_Runner")] private static extern int 	SC_GetEventIndexName(int methodIndex, StringBuilder strBuffer);
+	[DllImport ("SandCat_Runner")] private static extern int 	SC_GetEventIndexNameLength(int methodIndex);
 
 	[DllImport ("SandCat_Runner")] private static extern int 	SC_DoesActionExist(string actionName);
-	[DllImport ("SandCat_Runner")] private static extern void 	SC_DoAction(string actionName, StringBuilder errorBuffer, int errorBufferSize);
+	[DllImport ("SandCat_Runner")] private static extern void 	SC_DoAction(string actionName, string paras);
 
 	// Fluents
 	[DllImport ("SandCat_Runner")] private static extern float	SC_GetFluentValue(string fluentName);
@@ -39,11 +34,14 @@ public class SandCat : MonoBehaviour
 
 	// Arrays
 	[DllImport ("SandCat_Runner")] private static extern int 	SC_GetFluentInArray(string ArrayName, int ArrayIndex, string FluentName);
-	[DllImport ("SandCat_Runner")] private static extern bool 	SC_ArrayExists(string srrayName);
+	[DllImport ("SandCat_Runner")] private static extern bool 	SC_ArrayExists(string arrayName);
+	[DllImport ("SandCat_Runner")] private static extern int 	SC_GetArrayLength(string arrayName);
+	[DllImport ("SandCat_Runner")] private static extern int 	SC_GetArrayHeight(string arrayName);
+	[DllImport ("SandCat_Runner")] private static extern int 	SC_GetArrayWidth(string arrayName);
 
 	// Testing
 	[DllImport ("SandCat_Runner")] private static extern int 	SC_IntTest(int input);
-	[DllImport ("SandCat_Runner")] private static extern void 	SC_GetStatePrintout(StringBuilder PrintoutBuffer, int BufferSize);
+	[DllImport ("SandCat_Runner")] private static extern void 	SC_GetStatePrintout(StringBuilder printoutBuffer, int bufferSize);
 
 
 #endif
@@ -52,18 +50,14 @@ public class SandCat : MonoBehaviour
 	// Linked Methods
 	[DllImport ("__Internal")] private static extern void 		SC_LoadGame(string progData, int progCharLength, StringBuilder errorDesc, int errorSize);
 
-	// Methods
-	[DllImport ("__Internal")] private static extern int 		SC_GetMethodsCount();
-	[DllImport ("__Internal")] private static extern int 		SC_GetMethodIndexName(int methodIndex, StringBuilder strBuffer);
-	[DllImport ("__Internal")] private static extern int 		SC_GetMethodIndexNameLength(int methodIndex);
+	// Events
+	[DllImport ("__Internal")] private static extern int 		SC_GetEventsCount();
+	[DllImport ("__Internal")] private static extern int 		SC_GetEventIndexName(int methodIndex, StringBuilder strBuffer);
+	[DllImport ("__Internal")] private static extern int 		SC_GetEventIndexNameLength(int methodIndex);
 
-	// Actions
-	[DllImport ("__Internal")] private static extern int 		SC_GetActionsCount();
-	[DllImport ("__Internal")] private static extern void 		SC_GetActionNameFromIndex(int actionIndex, StringBuilder strBuffer);
-	[DllImport ("__Internal")] private static extern int 		SC_GetActionIndexNameLength(int index);
 
 	[DllImport ("__Internal")] private static extern int 		SC_DoesActionExist(string actionName);
-	[DllImport ("__Internal")] private static extern void 		SC_DoAction(string actionName, StringBuilder errorBuffer, int errorBufferSize);
+	[DllImport ("__Internal")] private static extern void 		SC_DoAction(string actionName, string paras);
 
 	// Fluents
 	[DllImport ("__Internal")] private static extern float 		SC_GetFluentValue(string fluentName);
@@ -74,19 +68,22 @@ public class SandCat : MonoBehaviour
 	[DllImport ("__Internal")] private static extern float 		SC_GetEntityFluent(string entityName, string fluentName);
 
 	// Arrays
-	[DllImport ("__Internal")] private static extern int 		SC_GetFluentInArray(string ArrayName, int ArrayIndex, string FluentName);
-	[DllImport ("__Internal")] private static extern bool 		SC_ArrayExists(string srrayName);
+	[DllImport ("__Internal")] private static extern int 		SC_GetFluentInArray(string arrayName, int arrayIndex, string fluentName);
+	[DllImport ("__Internal")] private static extern bool 		SC_ArrayExists(string arrayName);
+	[DllImport ("__Internal")] private static extern int	 	SC_GetArrayLength(string arrayName);
+	[DllImport ("__Internal")] private static extern int	 	SC_GetArrayHeight(string arrayName);
+	[DllImport ("__Internal")] private static extern int	 	SC_GetArrayWidth(string arrayName);
+
 
 	// Testing
 	[DllImport ("__Internal")] private static extern int 		SC_IntTest(int input);
-	[DllImport ("__Internal")] private static extern void 		SC_GetStatePrintout(StringBuilder PrintoutBuffer, int BufferSize);
+	[DllImport ("__Internal")] private static extern void 		SC_GetStatePrintout(StringBuilder printoutBuffer, int bufferSize);
 #endif
 
 	[HideInInspector] public string prevError;
 	[HideInInspector] public bool doTest;
 	[HideInInspector] public bool showInfo;
 
-	private Rect windowRect = new Rect(0, 0, 200, 200);
 	private Vector2 windowScrollPos = new Vector2();
 
 	public void Awake()
@@ -114,23 +111,18 @@ public class SandCat : MonoBehaviour
 		}
 	}
 
-	public int GetMethodsCount()
+	public int GetEventsCount()
 	{
-		return (SC_GetMethodsCount());
+		return (SC_GetEventsCount());
 	}
 
-	public int GetActionsCount()
+	public string GetEventIndexName(int methodIndex)
 	{
-		return (SC_GetActionsCount());
-	}
-
-	public string GetMethodIndexName(int methodIndex)
-	{
-		if (methodIndex > SC_GetMethodsCount()) {
+		if (methodIndex > SC_GetEventsCount()) {
 			Debug.LogError("Method index (" + methodIndex + ") is out of bounds.");
 		}
 
-		int nameLength = SC_GetMethodIndexNameLength(methodIndex);
+		int nameLength = SC_GetEventIndexNameLength(methodIndex);
 		if (nameLength == 123456) {
 			Debug.LogError("Method index (" + methodIndex + ") is out of bounds.");
 		}
@@ -140,7 +132,7 @@ public class SandCat : MonoBehaviour
 		StringBuilder sb = new StringBuilder(nameLength);
 		while (!valid) {
 			sb = new StringBuilder(nameLength);
-			SC_GetMethodIndexName(methodIndex, sb);
+			SC_GetEventIndexName(methodIndex, sb);
 			if (sb.Length > 0) {
 				valid = true;
 			}
@@ -159,30 +151,6 @@ public class SandCat : MonoBehaviour
 		}
 	}
 
-	public string GetActionIndexName(int index)
-	{
-		if (index > GetActionsCount()) {
-			Debug.LogError("Action index " + index + "is out of bounds.");
-		}
-
-		int nameLength = SC_GetActionIndexNameLength(index);
-		if (nameLength == 123456) {
-			Debug.LogError("Action index " + index + "is out of bounds.");
-		}
-
-		// TODO fix this. I don't know why sometimes we get back a blank name
-		bool valid = false;
-		StringBuilder sb = new StringBuilder(nameLength);
-		while (!valid) {
-			sb = new StringBuilder(nameLength);
-			SC_GetActionNameFromIndex(index, sb);
-			if (sb.Length > 0) {
-				valid = true;
-			}
-		}
-		return (sb.ToString());
-	}
-
 	public float GetFluentValue(string fluentName)
 	{
 		if (SC_DoesFluentExist(fluentName) == 1) {
@@ -193,16 +161,15 @@ public class SandCat : MonoBehaviour
 		}
 	}
 
-	public void DoAction(string actionName)
+	public void DoAction(string actionName, string[] paras)
 	{
 		if (SC_DoesActionExist(actionName) == 1) {
-			StringBuilder stringBuilder = new StringBuilder(200);
-			SC_DoAction(actionName, stringBuilder, stringBuilder.Length);
-
-			if (stringBuilder.ToString().Length > 0 && stringBuilder.ToString()[0] != 'x') {
-				Debug.LogError(stringBuilder.ToString());
+			string commaParams = "";
+			for (int index = 0; index < paras.Length; index++) {
+				commaParams += paras[index] + ',';
 			}
 
+			SC_DoAction(actionName, commaParams);
 		} else {
 			Debug.LogError("Acton " + actionName + " does not exist.");
 		}
@@ -226,17 +193,21 @@ public class SandCat : MonoBehaviour
 		}
 	}
 
-	public float GetFluentInArray(string arrayName, int arrayIndex, string fluentName)
+	public float GetFluentInArray(string arrayName, int arrayIndex, string fluentName, string debug_source = "")
 	{
 		if (SC_ArrayExists(arrayName)) {
-			// TODO Check if that fluent exists
-			// Make sure the array index isn't out of bounds, that crashes things.
 
-			return (SC_GetFluentInArray(arrayName, arrayIndex, fluentName));
+			if (SC_GetArrayLength(arrayName) < arrayIndex || arrayIndex <= 0) {
+				Debug.LogError("Array index " + arrayIndex + " into " + arrayName + " is out of bounds on " + debug_source + ".");
+			} else {
+				// TODO Check if that fluent exists
+				return (SC_GetFluentInArray(arrayName, arrayIndex, fluentName));
+			}
 		} else {
 			Debug.LogError("Array name of " + arrayName + " does not exist.");
-			return (1.0f);
 		}
+
+		return (0.0f);
 	}
 
 	public void OnGUI()
@@ -244,6 +215,28 @@ public class SandCat : MonoBehaviour
 		if (showInfo) {
 			GUILayout.Window(0, new Rect(0, 0, 300, Screen.height), StateWindow, "Raw State");
 		}
+	}
+
+	public bool CheckArrayExists(string arrayName)
+	{
+		if (SC_ArrayExists(arrayName)) {
+			return (true);
+		} else {
+			Debug.LogError("The array name of " + arrayName + " does not exist.");
+			return (false);
+		}
+	}
+
+	public int GetArrayHeight(string arrayName)
+	{
+		CheckArrayExists(arrayName);
+		return (SC_GetArrayHeight(arrayName));
+	}
+
+	public int GetArrayLength(string arrayName)
+	{
+		CheckArrayExists(arrayName);
+		return (SC_GetArrayHeight(arrayName));
 	}
 
 	public void StateWindow(int windowId)

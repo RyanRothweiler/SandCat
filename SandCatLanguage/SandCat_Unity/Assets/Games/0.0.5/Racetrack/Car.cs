@@ -35,7 +35,7 @@ public class Car : MonoBehaviour
 			prevPositions[index] = prevPositions[index + 1];
 		}
 
-		SandCat.instance.DoAction(actionName);
+		// SandCat.instance.DoAction(actionName);
 
 		int x = (int)SandCat.instance.GetFluentValue("PlayerX");
 		int y = (int)SandCat.instance.GetFluentValue("PlayerY");

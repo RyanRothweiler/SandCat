@@ -27,7 +27,11 @@
 - Array indexing starts at 1.
 - Added automatic 'Index option to array members.
 - Added automatic 'Count option to arrays. Readonly.
-- Added array iteration by passing entire array into event.
+- Added array iteration by passing an array into event.
 - Added array dot add, to add to the end of arrays.
 - Added array dot RemoveAt, to remove from anywhere in the array.
 - Added tab menu to runner to see raw state live.
+- Can pass params into player actions.
+- Added 2d arrays and all things that you'd expect them to have.
+- Things in arrays automatically get readonly X and Y members.
+- Creating Fluents without assigned values defaults them to 0.

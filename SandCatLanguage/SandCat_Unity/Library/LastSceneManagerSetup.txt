@@ -1,4 +1,4 @@
 sceneSetups:
-- path: Assets/Games/0.0.5/Topsoil/Topsoil.unity
+- path: Assets/Games/0.0.5/Auro/Auro.unity
   isLoaded: 1
   isActive: 1
